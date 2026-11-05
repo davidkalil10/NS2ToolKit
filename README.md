@@ -8,6 +8,8 @@ Na configuração do autor, esta versão completou as quatro etapas do ns2jb, co
 
 Um backup real foi concluído: seis arquivos, 34.708.992 bytes recebidos, tamanhos conferidos, hashes SHA-256 locais registrados e encerramento dos recursos do OunceCake sem erro. Veja o [relatório resumido](docs/CHECKPOINT-2026-11-05.md).
 
+O [índice da documentação](docs/README.md) reúne aprendizados, incidentes, decisões, compatibilidade e roadmap. Há falhas conhecidas na preparação de alguns conteúdos, descritas no [registro de incidentes](docs/INCIDENTES.md); os novos módulos de saves, FTP dedicado e HBLauncher estão planejados, ainda não integrados.
+
 É um checkpoint funcional testado em um console. A aquisição do FS continua sensível à temporização e pode falhar. O backup cobre os arquivos anunciados pelo OunceCake, sem prometer cobertura de todo conteúdo instalado ou comparar hashes fornecidos pelo console. Registros da sessão e dados exportados não fazem parte do repositório.
 
 ## Obter o programa
