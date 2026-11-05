@@ -1,0 +1,35 @@
+PAINEL LOCAL
+O painel inicia o ns2jb já usado nesta pasta, apresenta os comandos do
+SmileBASIC e lê a saída do processo. Não controla o console automaticamente.
+Inclui transporte por stdin para solicitar o encerramento normal de uma
+sessão --rpc verificada. Interromper antes da verificação força a parada.
+O supervisor de aquisição foi ajustado para não iniciar outra tentativa nativa
+na mesma sessão após limpeza incerta, e para preservar o primeiro erro.
+Essa alteração melhora a interrupção e o diagnóstico; não aumenta por si só
+a taxa de sucesso do exploit.
+
+BACKUP
+Origem: https://github.com/misshexa66/OunceCake
+Revisão incluída: 43dd500a10f7fef62a2c6d60b9f67851d3371dc6
+Licença: tools\OunceCake\LICENSE (GPL-2.0).
+O código upstream foi mantido sem alterações. O adaptador local usa suas
+funções de descoberta, montagem e FTP. O download ao PC usa ftplib do Python.
+O destino contém arquivos TAR, tamanhos e hashes SHA-256 calculados no PC.
+Não exporta saves, chaves, NAND completa ou uma imagem NSP/XCI instalável.
+
+VALIDAÇÃO LOCAL
+- Suite original: node --test test.cjs
+- Encerramento por stdin: node --test painel.test.cjs
+- Copiador: python test-painel-download.py
+- Interface e execução de processos simulada:
+  powershell.exe -NoProfile -STA -ExecutionPolicy Bypass -File Painel-NS2.ps1 -SelfTest
+- Executável gerado a partir dos fontes C# por Compilar-Painel.ps1.
+- Interface revisada por capturas renderizadas.
+
+O ns2jb desta pasta completou 4/4 no console antes da criação do painel.
+Checkpoint de 5 de novembro de 2026: painel/runner completaram 4/4 com RPC
+mantido aberto. Um backup real concluiu seis arquivos, 34.708.992 bytes,
+com tamanhos conferidos, hashes locais e encerramento do OunceCake sem erro.
+O resumo sem dados do console fica em docs/CHECKPOINT-2026-11-05.md.
+Isso valida uma configuração e uma transferência, sem garantir todas as
+tentativas ou títulos. Testes simulados não substituem validação no hardware.

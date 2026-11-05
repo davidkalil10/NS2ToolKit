@@ -1,0 +1,8 @@
+/runs/
+/dumps/
+/backups/
+__pycache__/
+*.part
+*.pending
+*.tmp
+/NS2-*.exe

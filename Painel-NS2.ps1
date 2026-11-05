@@ -1,0 +1,32 @@
+param(
+    [switch]$SelfTest,
+    [string]$PreviewPath,
+    [switch]$BackupPreview
+)
+$ErrorActionPreference = 'Stop'
+Add-Type -AssemblyName System.Windows.Forms
+Add-Type -AssemblyName System.Drawing
+$source = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'Painel-NS2.cs') -Raw -Encoding UTF8
+$source += Get-Content -LiteralPath (Join-Path $PSScriptRoot 'Painel-Backup.cs') -Raw -Encoding UTF8
+Add-Type -TypeDefinition $source -ReferencedAssemblies System.Windows.Forms,System.Drawing,System.Web.Extensions
+if ($SelfTest) {
+    [NS2Panel.Checks]::Run($PSScriptRoot)
+    exit
+}
+[System.Windows.Forms.Application]::EnableVisualStyles()
+if ($BackupPreview) {
+    $window = New-Object NS2Panel.BackupWindow($PSScriptRoot, $PSScriptRoot)
+} else {
+    $window = New-Object NS2Panel.MainWindow($PSScriptRoot)
+}
+if ($PreviewPath) {
+    $window.Show()
+    [System.Windows.Forms.Application]::DoEvents()
+    $bitmap = New-Object System.Drawing.Bitmap($window.Width, $window.Height)
+    $window.DrawToBitmap($bitmap, (New-Object System.Drawing.Rectangle(0, 0, $window.Width, $window.Height)))
+    $bitmap.Save($PreviewPath, [System.Drawing.Imaging.ImageFormat]::Png)
+    $bitmap.Dispose()
+    $window.Dispose()
+} else {
+    [System.Windows.Forms.Application]::Run($window)
+}

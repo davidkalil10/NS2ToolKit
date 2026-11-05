@@ -1,0 +1,83 @@
+ASSISTENTE NS2 PARA WINDOWS
+
+Abra "NS2 Assistente.exe" com dois cliques, ou use "Abrir NS2.cmd".
+Mantenha os arquivos nesta pasta; mover apenas o executável não funciona.
+O painel usa o Node.js instalado no PC e o projeto ns2jb desta pasta.
+
+ANTES DE CADA TENTATIVA
+1. PC e Switch 2 conectados por cabo de rede.
+2. SmileBASIC 4.4.9 na memória interna; sistema do console 23.0.1.
+3. Reinicie completamente o console, abra SmileBASIC e entre no modo Direct.
+4. No painel, confira o endereço Ethernet do PC e marque a confirmação.
+
+EXECUTAR
+Clique em "Iniciar conexão" e espere aparecer "PC pronto".
+Digite no Switch uma linha de cada vez, conforme o painel:
+  LOAD "NS2"       (confirme o carregamento)
+  RUN              (espere DIST BOOT READY 1015)
+  REMOVE NSR,&H60000000,&H3FFFFFFF
+                   (Out of memory neste comando é esperado)
+  V=START(...)     (use EXATAMENTE os números mostrados no painel)
+
+Os botões Copiar copiam para o PC. Eles NÃO digitam no Switch.
+Execute REMOVE apenas uma vez por abertura do SmileBASIC.
+Não repita RUN ou REMOVE depois de START.
+Deixe o SmileBASIC aberto e o PC acordado durante toda a execução.
+Se aparecer erro diferente dos resultados esperados, pare e guarde os registros.
+
+RESULTADO
+As quatro etapas precisam terminar com confirmação de execução no FS.
+Chegar à etapa 4 ou ver RPC STOP no console, isoladamente, não prova sucesso.
+No modo normal o programa verifica os resultados, restaura e limpa os recursos
+temporários, e fecha a conexão. Reinicie o console ao terminar.
+O resultado detalhado fica em runs\switch2-...\result.json.
+Use "Abrir registros" para localizar os arquivos e compartilhar erros.
+
+MANTER A CONEXÃO
+A opção "Manter conexão aberta após 4/4" inicia run.cjs com --rpc.
+A sessão fica disponível apenas enquanto PC e SmileBASIC permanecem ligados.
+O painel NÃO inclui HBLauncher, emuladores ou um menu de arquivos NRO.
+Outras ferramentas exigem instalação e compatibilidade próprias.
+Após encerrar uma sessão, reinicie o console.
+Depois de 4/4, Interromper solicita a limpeza e aguarda sua confirmação.
+Durante uma tentativa ainda não verificada, Interromper encerra os processos;
+nesse caso ele não garante limpeza no console. Fechar a janela com uma sessão
+ativa também força o encerramento: prefira Interromper depois de 4/4 e aguarde.
+Termine transferências e operações de outras ferramentas antes de interromper.
+
+BACKUP DOS SEUS JOGOS PARA O PC
+O OunceCake está incluído em tools\OunceCake, com sua licença GPLv2.
+Origem: https://github.com/misshexa66/OunceCake
+O download usa Python 3.9 ou superior, que já está instalado neste PC.
+1. Antes de iniciar, marque "Manter conexão aberta após 4/4".
+2. Execute a sequência no Switch e aguarde "4/4 confirmado" no painel.
+3. Clique em "Backup dos jogos".
+4. Informe o IP DO SWITCH, encontrado em Configurações > Internet.
+   Esse endereço não é o IP do PC mostrado na janela principal.
+5. Clique em "Listar jogos", selecione um título e escolha a pasta no PC.
+6. Clique em "Fazer backup". Deixe o PC e o console ligados.
+7. Aguarde "Backup concluído". Use "Abrir pasta" para ver os arquivos.
+
+Cada tentativa cria uma pasta nova e não substitui backups anteriores.
+Os arquivos .tar contêm os dados exportados; o painel não os extrai.
+O manifesto registra os tamanhos recebidos e os hashes SHA-256 locais.
+Não há hash fornecido pelo console para comparação independente.
+Um backup só é marcado complete:true após receber todos os arquivos anunciados
+e conferir os tamanhos. Cancelamentos preservam os arquivos parciais .part.
+O arquivo manifest.json descreve o resultado da cópia; os registros do painel
+informam se o encerramento do OunceCake também terminou sem erro.
+Não inclui saves, chaves ou uma imagem instalável NSP/XCI.
+Depois do backup, feche a janela de backup e use "Encerrar conexão".
+Espere a limpeza e reinicie o console ao terminar.
+
+SE FALHAR
+Guarde os registros e reinicie completamente o console antes de tentar novamente.
+O programa agora interrompe as repetições automáticas se a limpeza não foi
+confirmada. O primeiro erro aparece no terminal e fica preservado também em
+switch2\acquisition-attempt-1.log dentro da pasta da tentativa.
+Não atualize ou altere as verificações do código para contornar falhas.
+Se o Windows pedir acesso de rede, permita na sua rede privada. Não é necessário
+desativar o firewall nem abrir portas no roteador.
+
+Este painel foi preparado para a configuração desta pasta. Os testes no PC
+não garantem sucesso em todas as tentativas: o exploit depende de temporização.
