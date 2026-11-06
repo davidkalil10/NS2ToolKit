@@ -1,9 +1,9 @@
-﻿param([string]$OutputFolder)
+param([string]$OutputFolder)
 $ErrorActionPreference = 'Stop'
 if (!$OutputFolder) { $OutputFolder = $PSScriptRoot }
 if (!(Test-Path -LiteralPath $OutputFolder -PathType Container)) { throw 'Pasta de saida inexistente.' }
 $source = ''
-foreach ($name in @('Painel-NS2.cs', 'Painel-Backup.cs', 'Painel-Nup.cs', 'Painel-Entry.cs')) {
+foreach ($name in @('Painel-NS2.cs', 'Painel-Backup.cs', 'Painel-Nup.cs', 'Painel-Homebrew.cs', 'Painel-Entry.cs')) {
     $source += Get-Content -LiteralPath (Join-Path $PSScriptRoot $name) -Raw -Encoding UTF8
     $source += "`n"
 }
