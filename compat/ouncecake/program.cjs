@@ -346,7 +346,7 @@ async function selectPatch({ attachment: a, title, source, originalSource, opera
 
     registered = a.domain.oneHandle(opened);
     previous = await readLocation(a, registered, runtimeProgramId);
-    
+
     attempted = true;
     await writeLocation(a, registered, runtimeProgramId, title, patch, 1, 'Register owned patch location');
 
