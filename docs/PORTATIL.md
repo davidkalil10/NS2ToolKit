@@ -18,7 +18,9 @@ A compilação exige Git, Windows PowerShell e a dependência de compressão na 
 
 Antes de gerar o ZIP, executa `Testar-Portatil.ps1` com PATH sem Node/Python: confere a seleção dos runtimes, executa o teste do processo Node, gera e verifica um NUP sintético pela janela real e confirma que um backup incompleto é recusado. Esse teste não se conecta ao console. Validar em outro Windows sem instalações prévias continua sendo uma etapa adicional de distribuição.
 
-Saídas novas em `dist/`, sem substituir pacotes anteriores:
+Saídas novas em `dist/`, sem substituir pacotes anteriores. Para gerar a pasta e o ZIP em outro disco, use `-OutputRoot "D:\Games\NS2ToolKit-releases"`; os arquivos temporários da geração e da compilação do pacote ficam nesse destino. O cache de runtimes permanece em `.runtime/portable-cache/`.
+
+O pacote contém:
 
 - Pasta portátil e ZIP com nome único.
 - `portable-build.json`: versões e origem da compilação.

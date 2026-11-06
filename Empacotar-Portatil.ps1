@@ -1,4 +1,4 @@
-﻿param([switch]$Offline)
+﻿param([switch]$Offline, [string]$OutputRoot)
 $ErrorActionPreference = 'Stop'
 # Build machine only: Git, Windows PowerShell and the already installed zstandard
 # wheel are required. The output has no Git/Python/Node installation dependency.
@@ -21,7 +21,7 @@ if (!(Test-Path -LiteralPath $zstd)) { throw 'Prepare a dependência de build: p
 $version = (Get-Content -LiteralPath (Join-Path $PSScriptRoot 'VERSION') -Raw).Trim()
 if ($version -notmatch '^\d+\.\d+\.\d+$') { throw 'VERSION invalida.' }
 $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
-$dist = Join-Path $PSScriptRoot 'dist'
+$dist = if ($OutputRoot) { [IO.Path]::GetFullPath($OutputRoot) } else { Join-Path $PSScriptRoot 'dist' }
 $package = Join-Path $dist ("NS2ToolKit-v$version-portatil-win-x64-$stamp-" + [guid]::NewGuid().ToString('N').Substring(0,6))
 New-Item -ItemType Directory -Path $package -Force | Out-Null
 $files = @(& git -C $PSScriptRoot ls-files --recurse-submodules)
