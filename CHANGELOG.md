@@ -1,6 +1,6 @@
 # Histórico de versões
 
-## 0.1.1 — em validação
+## 0.1.1 — 6 de novembro de 2026
 
 - Preserva a sessão após recusa conhecida de conteúdo, quando a limpeza e a saúde dos endpoints são confirmadas. Timeouts e estados incertos continuam bloqueados.
 - Lembra separadamente os destinos de jogos e saves entre janelas e reinícios do assistente.
