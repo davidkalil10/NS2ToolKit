@@ -1,6 +1,6 @@
 # Roadmap
 
-Atualizado em 5 de novembro de 2026. O usuário confirmou a ordem diagnóstico → backup de saves → restauração. Implementação e validação no console são estados separados.
+Atualizado em 6 de novembro de 2026. Prioridade: diagnóstico → backup de saves → restauração. Implementação e validação no console são estados separados.
 
 ## Referência já validada
 
@@ -25,11 +25,12 @@ Atualizado em 5 de novembro de 2026. O usuário confirmou a ordem diagnóstico �
 
 ## P1 — backup de saves
 
-**Estado: leitura implementada e testada localmente; validação no console pendente.** Veja [SAVES.md](SAVES.md). A biblioteca de atributos do ns2-savekit foi fixada por revisão, sem aplicar seus patches de escrita.
+**Estado: leitura implementada, com backup concluído em console real em 6 de novembro de 2026.** Veja [SAVES.md](SAVES.md). A biblioteca de atributos do ns2-savekit foi fixada por revisão, sem aplicar seus patches de escrita.
 
 - [x] Fixar a dependência e revisar os patches; este marco de leitura não precisa aplicá-los.
 - [x] Obter usuários e arquivos pelo inventário de saves, separado do catálogo de jogos.
-- [x] Exibir jogo/usuário, selecionar destino e criar pasta nova.
+- [x] Exibir jogo/usuário, selecionar destino e criar pasta com nome do jogo e ID.
+- [x] Aproveitar o IP da conexão inicial para os backups de jogos.
 - [x] Registrar manifesto, hashes, releitura local e cópias incompletas.
 - [x] Excluir o destino padrão do Git; cache e identidades ficam na pasta local da sessão.
 

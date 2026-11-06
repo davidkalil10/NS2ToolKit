@@ -37,8 +37,11 @@ async function main([run, action, destination, id], {attach = attachGame, names 
     } else {
       const entry = available.find(e => e.id === id);
       if (!entry) throw Error('O save selecionado não existe mais ou não é suportado. Atualize a lista.');
+      const games = await fs.readFile(path.join(run, 'painel-games.json'), 'utf8').then(JSON.parse)
+        .catch(error => {if (error.code === 'ENOENT') return []; throw error;});
+      const name = games.find(game => game.title.toLowerCase() === entry.title)?.name;
       progress.begin('save_copy', 'Copiando o save em modo somente leitura');
-      result = await reader.copyArchive(attachment, entry, destination, {stop: () => cancelled, send});
+      result = await reader.copyArchive(attachment, entry, destination, {stop: () => cancelled, send, name});
     }
     if (cancelled) throw Error('Operação cancelada.');
   } catch (error) {failure = error; context = progress.snapshot();}

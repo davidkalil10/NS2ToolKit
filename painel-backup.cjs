@@ -4,7 +4,7 @@ const net = require('node:net');
 const {spawn} = require('node:child_process');
 const {runControlled} = require('./painel-runner.cjs');
 const {emit: send, Progress, failureDetails, closeAttachment} = require('./painel-progress.cjs');
-const {requireHeldSession, lockSession, invalidateSession} = require('./painel-session.cjs');
+const {requireHeldSession, lockSession, invalidateSession, sessionConsoleAddress} = require('./painel-session.cjs');
 const ounce = './tools/OunceCake/engine/';
 const {attachGame} = require(ounce + 'session.cjs');
 const {discoverGames} = require(ounce + 'content.cjs');
@@ -12,8 +12,9 @@ const {prepareGame} = require(ounce + 'mounts.cjs');
 const {deployFtp, readImage} = require(ounce + 'ftp.cjs');
 
 async function main([run, host, destination, title, suppliedName]) {
-  if (!run || !net.isIPv4(host)) throw Error('Informe a sessão e o endereço IPv4 do Switch 2.');
+  if (!run || host !== 'auto' && !net.isIPv4(host)) throw Error('Informe a sessão e o endereço IPv4 do Switch 2.');
   run = await requireHeldSession(run);
+  if (host === 'auto') host = await sessionConsoleAddress(run);
   const unlock = await lockSession(run, title ? 'game-backup' : 'game-list');
   let cancelled = false, attachment, server, downloader;
   const stop = () => {cancelled = true; downloader?.kill();};

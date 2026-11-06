@@ -46,6 +46,14 @@ for section, entries in [('exefs', [('main.npdm', bytes(npdm))]), ('romfs', [('d
     if ([NS2Panel.Checks]::FindNode($PSScriptRoot) -ne (Join-Path $PSScriptRoot 'runtime\node\node.exe')) { throw 'Node externo selecionado.' }
     if ([NS2Panel.Checks]::FindPython($PSScriptRoot) -ne $python) { throw 'Python externo selecionado.' }
     [NS2Panel.Checks]::Run($PSScriptRoot)
+    $sessionFixture = Join-Path $work 'sessao'
+    New-Item -ItemType Directory -Path $sessionFixture | Out-Null
+    '{"consoleAddress":"192.168.18.139"}' | Set-Content -LiteralPath (Join-Path $sessionFixture 'result.json') -Encoding ASCII
+    if ([NS2Panel.BackupWindow]::SessionAddress($sessionFixture) -ne '192.168.18.139') { throw 'IP do console nao foi carregado da sessao.' }
+    $backupWindow = New-Object NS2Panel.BackupWindow($PSScriptRoot, $sessionFixture)
+    $addressField = $backupWindow.GetType().GetField('host', [Reflection.BindingFlags]'NonPublic,Instance').GetValue($backupWindow)
+    if ($addressField.Text -ne '192.168.18.139') { throw 'IP do console nao foi preenchido na interface.' }
+    $backupWindow.Dispose()
     [System.Windows.Forms.Application]::EnableVisualStyles()
     $window = New-Object NS2Panel.NupWindow($PSScriptRoot)
     $flags = [Reflection.BindingFlags]'NonPublic,Instance'

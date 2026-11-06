@@ -1,5 +1,15 @@
 const fs = require('node:fs/promises');
 const path = require('node:path');
+const net = require('node:net');
+
+async function sessionConsoleAddress(run) {
+  for (const name of ['result.json', 'connection.json']) {
+    const state = await fs.readFile(path.join(run, name), 'utf8').then(JSON.parse)
+      .catch(error => {if (error.code === 'ENOENT') return {}; throw error;});
+    if (net.isIPv4(state.consoleAddress)) return state.consoleAddress;
+  }
+  throw Error('Esta sessão não registrou o IP do console. Informe-o manualmente ou inicie uma sessão nova com o assistente atualizado.');
+}
 
 async function requireHeldSession(run) {
   run = path.resolve(run);
@@ -29,4 +39,4 @@ async function invalidateSession(run, reason) {
   await fs.writeFile(path.join(run, 'painel-session-invalid.json'), JSON.stringify({at: new Date().toISOString(), reason}), {mode: 0o600});
 }
 
-module.exports = {requireHeldSession, lockSession, invalidateSession};
+module.exports = {requireHeldSession, lockSession, invalidateSession, sessionConsoleAddress};

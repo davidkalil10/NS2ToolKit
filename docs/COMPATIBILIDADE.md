@@ -6,7 +6,7 @@ Pesquisa de 5 de novembro de 2026. **Documentado por um projeto externo** não s
 | --- | --- |
 | ns2jb 4/4 e RPC mantido | Validado na configuração do checkpoint |
 | Backup de arquivos de jogos | Validado em alguns casos; falhas conhecidas de preparação de conteúdo |
-| Backup de saves | Integrado somente leitura; testes locais passaram, validação no console pendente |
+| Backup de saves | Somente leitura; backup concluído em console real em 06/11/2026 |
 | Restauração de saves | Ainda não integrada |
 | FTP para navegação externa | Ainda não exposto como módulo dedicado; FTP de leitura já é usado pelo backup |
 | HBLauncher | Ainda não integrado |

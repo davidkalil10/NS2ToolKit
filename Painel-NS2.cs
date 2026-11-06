@@ -124,7 +124,7 @@ namespace NS2Panel {
 
         public MainWindow(string folder) {
             root = folder;
-            Text = "NS2 • Assistente de conexão";
+            Text = "NS2 • Assistente de conexão" + (File.Exists(Path.Combine(root, "VERSION")) ? " • v" + File.ReadAllText(Path.Combine(root, "VERSION")).Trim() : "");
             ClientSize = new Size(920, 710);
             MinimumSize = new Size(936, 699);
             StartPosition = FormStartPosition.CenterScreen;

@@ -1,44 +1,37 @@
 # NS2ToolKit
 
-Assistente para Windows que orienta a execução do ns2jb no SmileBASIC, acompanha as quatro etapas e permite exportar os arquivos dos seus jogos para o PC usando OunceCake.
+Assistente para Windows para executar o ns2jb no SmileBASIC, fazer backup de jogos e saves do Nintendo Switch 2 e gerar pacotes NUP no PC.
 
-## Checkpoint validado — 5 de novembro de 2026
+## Download
 
-Na configuração do autor, esta versão completou as quatro etapas do ns2jb, com execução no FS verificada e instruções originais restauradas, e manteve a conexão RPC aberta após 4/4.
+Baixe o **pacote portátil Windows x64** na [página de releases](https://github.com/davidkalil10/NS2ToolKit/releases/latest), extraia o ZIP inteiro para uma pasta gravável e abra **NS2 Assistente.exe**. Mantenha as subpastas junto do executável.
 
-Um backup real foi concluído: seis arquivos, 34.708.992 bytes recebidos, tamanhos conferidos, hashes SHA-256 locais registrados e encerramento dos recursos do OunceCake sem erro. Veja o [relatório resumido](docs/CHECKPOINT-2026-11-05.md).
+O pacote inclui Node, Python, compressão e as DLLs necessárias. Não é preciso instalar essas ferramentas, Git ou compiladores no PC de uso. Requer Windows 10/11 x64 com .NET Framework 4.x. O ZIP de código-fonte gerado automaticamente pelo GitHub não inclui os runtimes nem os submódulos; use o pacote portátil para executar o assistente.
 
-O [índice da documentação](docs/README.md) reúne aprendizados, incidentes, decisões, compatibilidade e roadmap. Há falhas conhecidas na preparação de conteúdos, descritas no [registro de incidentes](docs/INCIDENTES.md). A versão em desenvolvimento inclui backup de saves somente leitura, ainda em validação no console. Restauração, FTP dedicado e HBLauncher permanecem planejados.
+## Recursos
 
-É um checkpoint funcional testado em um console. A aquisição do FS continua sensível à temporização e pode falhar. O backup cobre os arquivos anunciados pelo OunceCake, sem prometer cobertura de todo conteúdo instalado ou comparar hashes fornecidos pelo console. Registros da sessão e dados exportados não fazem parte do repositório.
+- Conexão ns2jb com acompanhamento das quatro etapas e opção de manter a sessão RPC aberta.
+- Backup dos arquivos de jogos com OunceCake, transferência FTP de leitura e detecção automática do IP do console.
+- Backup de saves Account/Device em modo somente leitura, com identificação do jogo e usuário.
+- Geração de NUP pela interface, com conferência dos backups de entrada e verificação integral do pacote.
+- Pastas com **Nome do jogo [ID]**, registros de execução e preservação de operações incompletas.
 
-## Obter o programa
+## Configuração compatível
 
-```sh
-git clone --recurse-submodules https://github.com/davidkalil10/NS2ToolKit.git
-```
-
-Se já clonou sem as dependências, execute `git submodule update --init --recursive`. OunceCake, ns2-savekit e NUP são fixados por revisão em `tools/`. O ZIP automático do GitHub não inclui submódulos: use Git para obter o conjunto completo.
-
-## Versão portátil
-
-A build portátil inclui Node, Python, compressão e suas DLLs: extraia o ZIP inteiro e abra **NS2 Assistente.exe**. Não é necessário instalar essas dependências no PC de uso. Requer Windows 10/11 x64 com .NET Framework 4.x. Veja [distribuição e build portátil](docs/PORTATIL.md). O código-fonte e o ZIP automático do GitHub continuam exigindo preparação das dependências.
-
-## Requisitos
-
-- Windows. Usando o código-fonte: Node.js 22 ou superior e Python 3.10 ou superior. A build portátil inclui ambos.
-- Switch 2 com sistema 23.0.1 e SmileBASIC completo 4.4.9.
-- SmileBASIC na memória interna, com mais de 20 MiB livres no save.
+- Switch 2 com sistema **23.0.1** e **SmileBASIC completo 4.4.9**.
+- SmileBASIC instalado na memória interna, com mais de 20 MiB livres no save.
 - PC e Switch por Ethernet, na mesma rede local.
-- O `bootstrap.bas` correspondente salvo como `NS2` no slot 0 do SmileBASIC.
+- `bootstrap.bas` correspondente salvo como **NS2** no slot 0 do SmileBASIC.
 
-A configuração validada usa Windows, Node.js 22.16.0 e Python 3.13.4. O ns2jb de origem documenta Linux/macOS; este repositório inclui adaptações para Windows. Não é necessário executar como administrador.
+Conexão 4/4, backup de jogos e leitura de saves foram validados nessa configuração. Dois NUPs, incluindo conteúdo base e atualização, foram testados no Eglantine **0d86405bd1-nx2**, build de 04/11/2026. A compatibilidade de outros jogos, versões e ambientes requer testes específicos.
 
-## Executar
+Não é necessário executar o assistente como administrador. Se o Windows solicitar acesso à rede, permita a comunicação na rede privada utilizada pelo console. Não é necessário desativar o firewall ou abrir portas no roteador.
+
+## Iniciar uma sessão
 
 1. Reinicie completamente o Switch, abra o SmileBASIC e entre no modo Direct.
-2. Abra **NS2 Assistente.exe** com dois cliques. Mantenha-o junto dos outros arquivos nesta pasta.
-3. Confira o endereço Ethernet do PC. Para usar o backup, marque **Manter conexão aberta após 4/4**.
+2. Abra **NS2 Assistente.exe** e confira o endereço Ethernet do PC.
+3. Marque **Manter conexão aberta após 4/4** para utilizar os módulos de backup.
 4. Marque a confirmação de preparo, clique em **Iniciar conexão** e aguarde o PC ficar pronto.
 5. Digite no console, uma linha por vez:
 
@@ -50,56 +43,66 @@ A configuração validada usa Windows, Node.js 22.16.0 e Python 3.13.4. O ns2jb 
 
    Confirme o carregamento. `RUN` deve mostrar `DIST BOOT READY 1015`. O erro `Out of memory` de `REMOVE` é esperado.
 
-6. Digite a linha `V=START(...)` exibida pelo painel, com o endereço calculado para sua rede.
-7. Deixe o PC e o SmileBASIC abertos e aguarde a confirmação final.
+6. Digite a linha `V=START(...)` exibida pelo painel, com o endereço calculado para a rede.
+7. Mantenha o SmileBASIC aberto e aguarde a confirmação **4/4** no assistente.
 
-**Copiar** copia para o PC; o botão não digita no console. Execute `REMOVE` uma única vez por abertura do aplicativo. Depois de `START`, não repita `RUN` ou `REMOVE` na mesma sessão.
+O botão **Copiar** copia o comando para o PC. Execute `REMOVE` uma única vez por abertura do aplicativo. Após `START`, não repita `RUN` ou `REMOVE` na mesma sessão.
 
-No modo normal, a conexão encerra após verificar e limpar a demonstração. No modo RPC, ela permanece disponível após 4/4. `RPC RUNNING` ou `RPC STOP` no Switch, isoladamente, não comprova sucesso: confira o resultado no PC.
+`RPC RUNNING` ou `RPC STOP` no Switch, isoladamente, não comprova sucesso. Confira a verificação no assistente. Ao terminar os backups, feche a janela do módulo, clique em **Encerrar conexão**, aguarde a limpeza e reinicie o console.
 
-## Backup dos seus jogos
+## Backup de jogos
 
-1. Inicie com **Manter conexão aberta após 4/4** ativado e espere a confirmação de 4/4.
-2. Clique em **Backup dos jogos** e informe o endereço IPv4 do **Switch**, mostrado nas configurações de Internet do console. É diferente do IP do PC.
-3. Clique em **Listar jogos**, escolha o título e a pasta de destino.
-4. Clique em **Fazer backup** e aguarde a conclusão, incluindo o encerramento dos recursos do OunceCake.
+1. Com a sessão mantida aberta e 4/4 confirmado, clique em **Backup dos jogos**.
+2. O endereço do Switch é preenchido a partir da conexão. Clique em **Listar jogos**.
+3. Escolha o jogo, selecione o destino e clique em **Fazer backup**.
+4. Aguarde a confirmação final, incluindo o encerramento dos recursos de transferência.
 
-Cada tentativa cria uma pasta nova. A cópia produz arquivos `.tar`, um `manifest.json` e registros. Cópias incompletas ficam com `.part`; o manifesto só recebe `complete: true` depois de receber todos os arquivos anunciados e conferir seus tamanhos. Os SHA-256 são calculados no PC, sem hash remoto para comparação independente.
+Cada operação cria uma pasta **Nome do jogo [ID]** com arquivos TAR, manifesto e registros. Os tamanhos são conferidos e os hashes SHA-256 são calculados no PC. O módulo não compara hashes remotos. Operações incompletas preservam os arquivos parciais e não recebem confirmação de sucesso.
 
-Este fluxo não exporta saves ou chaves e não produz uma imagem NSP/XCI instalável. Use seus próprios jogos e console, conforme as instruções do OunceCake.
+Sessões iniciadas com versões antigas podem não ter o IP registrado. Nesse caso, informe o IPv4 do Switch manualmente ou inicie uma sessão nova com a versão atual.
 
-Termine o backup antes de encerrar a conexão. Feche a janela de backup, use **Encerrar conexão**, aguarde a limpeza e reinicie o console ao terminar.
+## Backup de saves
 
-## Backup de saves (novo módulo em validação)
+1. Com a sessão mantida aberta e 4/4 confirmado, clique em **Backup de saves**.
+2. Clique em **Listar saves** e confira o jogo, o identificador do usuário e o tipo.
+3. Escolha o destino e clique em **Fazer backup**.
 
-Após 4/4 com conexão mantida aberta, clique em **Backup de saves**, depois **Listar saves**, confira jogo e usuário, escolha o destino e clique em **Fazer backup**. Não precisa informar o IP do Switch. A versão atual copia saves Account/Device do espaço User e não oferece restauração. Consulte [escopo, manifesto e validação pendente](docs/SAVES.md).
+As pastas usam **Nome do jogo [ID]**. Repetições recebem `(2)`, `(3)` e assim por diante, sem substituir backups anteriores. O manifesto preserva a identidade do save e do usuário.
 
-## Gerar NUP no assistente
+A leitura confere os blocos no console, calcula hashes locais, relê os arquivos no PC e verifica novamente a estrutura. O manifesto só indica conclusão após a limpeza dos recursos. **Restauração ainda não está disponível.** Consulte [escopo e verificação dos saves](docs/SAVES.md).
 
-O [adaptador NUP](docs/NUP.md) foi testado com dois backups próprios, com verificação completa e comparação de árvores. O usuário confirmou funcionamento no Eglantine `0d86405bd1-nx2` (build de 04/11/2026). Consome base/programa 0 e atualizações/programa 0; DLC e outros índices ainda são recusados. Clique em **Gerar NUP**, escolha a pasta do backup completo (com `manifest.json`), escolha o destino e clique em **Gerar e verificar**. Ao concluir, use **Abrir pasta**. Não requer conexão com o console; a opção pelo terminal continua disponível.
+## Gerar NUP
 
-Novos backups guardam o nome do jogo no manifesto. Pastas e NUPs usam **Nome do jogo [ID]**, tratando caracteres inválidos do Windows e acrescentando `(2)` à pasta em caso de repetição, sem substituir arquivos anteriores. Para backups antigos, o gerador aceita `--name "Nome do jogo"`.
+A geração funciona localmente no PC, sem conectar o Switch.
 
-## Se a etapa 2 falhar
+1. Clique em **Gerar NUP** na janela principal.
+2. Selecione a pasta de um backup completo, contendo `manifest.json` e os TARs.
+3. Escolha a pasta de saída. O nome é opcional para backups antigos sem título no manifesto.
+4. Clique em **Gerar e verificar**. Ao concluir, use **Abrir pasta**.
 
-Preserve a pasta da tentativa em `runs/` e reinicie o console antes de repetir. O supervisor local para após limpeza incerta; `switch2/acquisition-attempt-1.log` preserva a primeira causa da falha.
+O pacote e sua pasta usam **Nome do jogo [ID]**. O relatório `build-report.json` registra os hashes e as verificações. Saídas anteriores e backups de origem são preservados. O adaptador aceita `base/program/0` e `updates/<versão>/program/0`; DLC e outros índices de programa são recusados. Consulte [formatos e uso pelo terminal](docs/NUP.md).
 
-Uma rotina usada antes do sucesso foi reiniciar, abrir outro jogo por cerca de 10 segundos, fechá-lo completamente e só então abrir o SmileBASIC. É um experimento, sem garantia de sucesso.
+## Limitações e recuperação
 
-Não é necessário desativar o firewall ou abrir portas no roteador. Se o Windows solicitar acesso à rede, permita a comunicação na rede privada utilizada pelo console.
+A aquisição do FS depende de temporização e pode falhar. Algumas combinações de conteúdo também apresentam falhas de preparação no OunceCake. Após uma falha que invalide a sessão, preserve os registros em `runs/`, encerre a conexão e reinicie o console antes de tentar novamente. O assistente bloqueia repetições quando a limpeza não está confirmada.
 
-## Alterações locais
+O backup de jogos não inclui saves ou chaves e não gera imagens NSP/XCI instaláveis. Restauração de saves, FTP dedicado e HBLauncher ainda não estão disponíveis. O acesso ao console é temporário e depende do PC e do SmileBASIC em execução. Use seus próprios jogos e console.
 
-- Painel Windows com seleção de rede, comandos, progresso e registros.
-- Encerramento normal de RPC verificado por comando enviado ao processo.
-- Diretórios temporários e pipes compatíveis com Windows.
-- Repetições limitadas para substituir relatórios sob bloqueios transitórios do Windows.
-- Interrupção das tentativas automáticas após limpeza incerta, preservando o primeiro erro.
-- Backup com OunceCake e FTP binário, conferência de tamanhos, hashes locais e preservação de cópias parciais.
+Consulte [incidentes conhecidos](docs/INCIDENTES.md), [compatibilidade](docs/COMPATIBILIDADE.md), [roadmap](docs/ROADMAP.md) e o [índice da documentação](docs/README.md).
 
-HBLauncher não está incluído. O acesso é temporário e depende do PC e do SmileBASIC em execução.
+## Desenvolvimento
 
-## Testes e compilação
+```sh
+git clone --recurse-submodules https://github.com/davidkalil10/NS2ToolKit.git
+```
+
+O código-fonte requer Node.js 22+, Python 3.10+ e as dependências fixadas nos submódulos. Para preparar o compressor:
+
+```powershell
+python -m pip install --target .runtime/nup-python --only-binary=:all: --no-deps -r requirements-nup.txt
+```
+
+Testes:
 
 ```powershell
 node --test test.cjs painel.test.cjs painel-modules.test.cjs
@@ -108,13 +111,9 @@ python test-painel-nup.py
 powershell.exe -NoProfile -STA -ExecutionPolicy Bypass -File .\Painel-NS2.ps1 -SelfTest
 ```
 
-Para gerar o executável Windows Forms/.NET Framework usando o compilador do Windows PowerShell:
+Para compilar a interface, execute `Compilar-Painel.ps1`. Para produzir a distribuição com dependências incluídas, execute `Empacotar-Portatil.ps1`; veja o [guia da build portátil](docs/PORTATIL.md).
 
-```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Compilar-Painel.ps1
-```
-
-`SHA256SUMS` identifica os arquivos versionados; as três dependências em `tools/` são identificadas pelas revisões fixadas dos submódulos.
+`SHA256SUMS` identifica os arquivos versionados. A distribuição inclui seus próprios hashes em `PORTABLE-SHA256SUMS`. Jogos, saves e registros de sessões não fazem parte do repositório nem da release.
 
 ## Créditos, projetos de origem e dependências
 

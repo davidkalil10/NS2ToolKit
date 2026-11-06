@@ -205,11 +205,16 @@ async function main(args = process.argv.slice(2)) {
       console.log('Run folder: ' + directory);
     }});
     native = new NativeClient(connected.connection, connected.addresses);
+    const consoleAddress = connected.connection.socket.remoteAddress;
+    if (net.isIPv4(consoleAddress)) {
+      result.consoleAddress = consoleAddress;
+      console.log('Console IPv4: ' + consoleAddress);
+    }
     console.log('Connected. Checking the application...');
     result.bootstrap = await qualify(native);
     bridge = await serve(native);
     bridge.keepAwake(result.bootstrap.activity);
-    await save(path.join(directory, 'connection.json'), {port: bridge.port,
+    await save(path.join(directory, 'connection.json'), {port: bridge.port, consoleAddress: result.consoleAddress,
       addresses: {...connected.addresses, session: path.basename(directory), target: 'switch2'}});
     for (const name of ['shared', 'switch2'])
       await fs.cp(path.join(__dirname, 'engine', name), path.join(directory, name), {recursive: true});

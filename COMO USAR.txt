@@ -100,7 +100,7 @@ Instale a dependência privada e execute, na pasta do projeto:
   python -m pip install --target .runtime/nup-python --only-binary=:all: --no-deps -r requirements-nup.txt
   python painel-nup.py "PASTA_DO_BACKUP" --out "PASTA_DE_SAIDA"
 Cada geração cria uma pasta nova com o NUP e build-report.json.
-Os dois pacotes de teste funcionaram segundo o usuário no Eglantine
+Compatibilidade dos dois pacotes de teste validada no Eglantine
 0d86405bd1-nx2, build de 04/11/2026 (MSVC 19.44.35229.0).
 Pastas e NUPs usam Nome do jogo [ID]. Backups repetidos recebem (2) na pasta.
 Para backups antigos sem nome: acrescente --name "Nome do jogo" ao gerador.
@@ -125,3 +125,8 @@ desativar o firewall nem abrir portas no roteador.
 
 Este painel foi preparado para a configuração desta pasta. Os testes no PC
 não garantem sucesso em todas as tentativas: o exploit depende de temporização.
+
+PASTAS DOS SAVES
+Novos saves usam Nome do jogo [ID]. Repeticoes recebem (2), (3), sem sobrescrever.
+O manifesto preserva o usuario e a identidade do save.
+Novas sessoes detectam o IP do Switch; o campo manual atende sessoes antigas.

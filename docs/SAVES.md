@@ -1,6 +1,6 @@
 # Backup de saves — primeira implementação
 
-**Estado:** integrado e testado com sessões simuladas; validação no console pendente. Restauração ainda não está disponível.
+**Estado:** integrado, com backup validado no console em 6 de novembro de 2026 e testes automatizados de integridade e falhas. Restauração ainda não está disponível.
 
 ## Como usar
 
@@ -19,7 +19,7 @@ O destino padrão `saves-backups/` é excluído do Git. Para destinos personaliz
 - Somente leitura: não cria, substitui, remove ou faz commit de arquivos de save no console.
 - Espaço User (1), tipos Account (1) e Device (3). Outros tipos e espaços ficam fora desta primeira versão.
 - Abertura de um save por identidade, sem varrer combinações de usuários.
-- Cada tentativa cria uma pasta nova, com arquivos em `data/`, parciais em `.partial/` e identidade no manifesto.
+- Cada tentativa cria uma pasta **Nome do jogo [ID]**, com sufixos `(2)`, `(3)` em repetições, sem sobrescrever outro backup. Contém arquivos em `data/`, parciais em `.partial/` e identidade no manifesto.
 - Nomes incompatíveis com Windows são codificados; o manifesto preserva a relação entre caminho original e local.
 - O save do próprio aplicativo que hospeda o exploit pode estar ocupado e não abrir.
 
@@ -37,10 +37,11 @@ Referência: [ns2-savekit](https://github.com/dougchansan/ns2-savekit), revisão
 
 Não foram aplicados os patches de escrita, enumeração de contas ou aquisição do FS desse projeto. O usuário vem do inventário de saves. Os arquivos do mecanismo em `engine/` permanecem iguais aos do checkpoint funcional.
 
-## Validação pendente
+## Cobertura de validação
 
-- Conferir a identificação de um save conhecido na lista real.
-- Copiar um save pequeno e comparar estrutura e manifesto.
+O fluxo de backup foi concluído em console real em 6 de novembro de 2026. A identidade e os hashes permanecem no manifesto privado do backup. A validação não cobre restauração.
+
+Testes adicionais:
 - Validar separadamente Account e Device.
 - Confirmar limpeza e saúde da sessão após a leitura.
 - Só depois planejar restauração e seu teste de ida e volta.

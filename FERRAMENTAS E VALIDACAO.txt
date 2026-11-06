@@ -62,5 +62,10 @@ BUILD PORTATIL
 - O ZIP inclui DLLs, ferramentas, fontes e licencas, sem jogos/saves/registros.
 - Testar-Portatil.ps1 valida a janela real de NUP com PATH sem Node/Python.
 - Sucesso verificado e recusa de backup incompleto exercitados pela interface.
-- 47 testes de backend passaram (32 Node, 7 download, 8 NUP).
+- 49 testes de backend passaram (34 Node, 7 download, 8 NUP).
 - Ainda falta ensaio em outro Windows sem instalacoes previas.
+
+RELEASE 0.1.0 - 06/11/2026
+- Backup de saves validado em console real. Restauracao nao implementada.
+- Pastas de saves com nome do jogo + ID e sufixo para repeticoes.
+- IP do Switch capturado da conexao e reutilizado no backup de jogos.

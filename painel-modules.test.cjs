@@ -7,6 +7,35 @@ const crypto = require('node:crypto');
 const reader = require('./painel-save-reader.cjs');
 const {Progress, failureDetails, closeAttachment} = require('./painel-progress.cjs');
 const {requireHeldSession, lockSession, invalidateSession} = require('./painel-session.cjs');
+const {gameLabel, newDirectory} = require('./painel-names.cjs');
+const {sessionConsoleAddress} = require('./painel-session.cjs');
+
+test('friendly save directories preserve game identity and never overwrite another user backup', async t => {
+  const root = await temporary(t), title = '0100000000000000';
+  const label = gameLabel('Pokémon: Teste / Save', title);
+  assert.equal(label, 'Pokémon - Teste - Save [0100000000000000]');
+  const folders = await Promise.all([newDirectory(root, label), newDirectory(root, label)]);
+  assert.equal(new Set(folders).size, 2);
+  assert.ok(folders.some(folder => path.basename(folder) === label + ' (2)'));
+  assert.equal(gameLabel(title, title), 'Jogo [0100000000000000]');
+  assert.equal(gameLabel('CON', title), '_CON [0100000000000000]');
+  const entry = reader.parseEntry(record());
+  const result = await reader.copyArchive(fakeAttachment(), entry, root, {name: 'Meu jogo'});
+  assert.equal(path.basename(result.folder), 'Meu jogo [0100000000000000]');
+  assert.equal(result.manifest.name, 'Meu jogo');
+  assert.deepEqual(result.manifest.archive, entry);
+});
+
+test('console IPv4 comes from the session peer, with legacy fallback and no PC address guessing', async t => {
+  const run = await temporary(t);
+  await fs.writeFile(path.join(run, 'result.json'), JSON.stringify({consoleAddress: '192.168.18.139'}));
+  assert.equal(await sessionConsoleAddress(run), '192.168.18.139');
+  await fs.writeFile(path.join(run, 'result.json'), JSON.stringify({consoleAddress: '::1'}));
+  await fs.writeFile(path.join(run, 'connection.json'), JSON.stringify({consoleAddress: '192.168.18.140'}));
+  assert.equal(await sessionConsoleAddress(run), '192.168.18.140');
+  await fs.writeFile(path.join(run, 'connection.json'), JSON.stringify({port: 1234, host: '192.168.18.40'}));
+  await assert.rejects(sessionConsoleAddress(run), /manualmente/);
+});
 
 function record() {
   const bytes = Buffer.alloc(0x60);
@@ -132,11 +161,13 @@ test('Windows save names are encoded without traversal or case collisions', asyn
 test('save backup becomes complete only after attachment cleanup; inventory ID is selected rather than guessing users', async t => {
   const root = await temporary(t), run = path.join(root, 'run'); await fs.mkdir(run);
   await fs.writeFile(path.join(run, 'result.json'), JSON.stringify({verified: true, rpc: {state: 'listening'}}));
+  await fs.writeFile(path.join(run, 'painel-games.json'), JSON.stringify([{title: '0100000000000000', name: 'Jogo de teste'}]));
   const {main} = require('./painel-saves.cjs');
   const events = [];
   await main([run, 'backup', path.join(root, 'backups'), '123'], {attach: async () => fakeAttachment(), send: (kind, value) => events.push({kind, ...value})});
   assert.equal(events.at(-1).kind, 'complete');
   const folder = events.find(e => e.kind === 'destination').path;
+  assert.equal(path.basename(folder), 'Jogo de teste [0100000000000000]');
   const manifest = JSON.parse(await fs.readFile(path.join(folder, 'manifest.json')));
   assert.equal(manifest.complete, true); assert.equal(manifest.cleanupConfirmed, true);
   assert.equal(manifest.archive.id, '123');

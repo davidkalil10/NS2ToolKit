@@ -109,13 +109,13 @@ async function diskHash(file) {
   return hash.digest('hex');
 }
 
-async function copyArchive(a, entry, parent, {stop = () => false, send = () => {}} = {}) {
+async function copyArchive(a, entry, parent, {stop = () => false, send = () => {}, name} = {}) {
   assert(supported(entry), 'Este tipo de save não é suportado nesta versão.');
   checkStop(stop);
-  await fs.mkdir(parent, {recursive: true});
-  const folder = await fs.mkdtemp(path.join(path.resolve(parent), entry.title.toUpperCase() + '-' + new Date().toISOString().replace(/[:.]/g, '-') + '-'));
+  const {gameLabel, newDirectory} = require('./painel-names.cjs');
+  const folder = await newDirectory(parent, gameLabel(name, entry.title));
   const manifest = {format: 'ns2toolkit-save-v1', complete: false, dataVerified: false,
-    at: new Date().toISOString(), archive: entry, entries: [], directories: [],
+    at: new Date().toISOString(), name: name || null, archive: entry, entries: [], directories: [],
     verification: 'Console-verified chunks, local SHA-256 and local read-back'};
   await writeManifest(folder, manifest);
   send('destination', {path: folder});

@@ -37,9 +37,10 @@ namespace NS2Panel {
             FormBorderStyle = FormBorderStyle.FixedDialog; MaximizeBox = false;
             StartPosition = FormStartPosition.CenterParent; Font = new Font("Segoe UI", 10); BackColor = Color.FromArgb(245, 247, 251);
             AddLabel(savesMode ? "Backup dos saves • somente leitura" : "Backup dos seus jogos", 20, 15, 820, 35, 18, true);
-            AddLabel(savesMode ? "Em validação no console. Somente leitura; restauração ainda não disponível." : "Exporta os arquivos do jogo em .tar com OunceCake. Não inclui saves ou chaves.", 22, 58, 820, 25, 10, false);
-            AddLabel(savesMode ? "Liste os saves e confira o jogo e o identificador do usuário antes de copiar." : "IP do Switch 2 (veja em Configurações → Internet)", 22, 96, 820, 24, 10, false);
+            AddLabel(savesMode ? "Copia os saves em modo somente leitura. Restauração ainda não disponível." : "Exporta os arquivos do jogo em .tar com OunceCake. Não inclui saves ou chaves.", 22, 58, 820, 25, 10, false);
+            AddLabel(savesMode ? "Liste os saves e confira o jogo e o identificador do usuário antes de copiar." : "IP do Switch 2 • detectado pela sessão; edite apenas se necessário", 22, 96, 820, 24, 10, false);
             host.SetBounds(22, 123, 240, 28); host.Visible = !savesMode; Controls.Add(host);
+            if (!savesMode) host.Text = SessionAddress(run);
             list.Text = savesMode ? "Listar saves" : "Listar jogos"; list.SetBounds(savesMode ? 22 : 275, 121, 155, 32); list.Click += delegate { StartTask(true); }; Controls.Add(list);
             AddLabel(savesMode ? "Save para copiar (jogo e usuário)" : "Jogo para copiar", 22, 169, 500, 24, 10, true);
             games.SetBounds(22, 197, 820, 30); games.DropDownStyle = ComboBoxStyle.DropDownList; Controls.Add(games);
@@ -50,7 +51,7 @@ namespace NS2Panel {
             begin.Text = "Fazer backup"; begin.SetBounds(22, 317, 155, 35); begin.Enabled = false; begin.Click += delegate { StartTask(false); }; Controls.Add(begin);
             cancel.Text = "Cancelar operação"; cancel.SetBounds(187, 317, 176, 35); cancel.Enabled = false; cancel.Click += delegate { CancelTask(); }; Controls.Add(cancel);
             open.Text = "Abrir pasta"; open.SetBounds(373, 317, 140, 35); open.Click += delegate { OpenFolder(); }; Controls.Add(open);
-            status.Text = savesMode ? "Feche outros jogos. Clique em Listar saves para ler o inventário." : "Informe o IP do Switch e clique em Listar jogos."; status.SetBounds(22, 366, 820, 40); Controls.Add(status);
+            status.Text = savesMode ? "Feche outros jogos. Clique em Listar saves para ler o inventário." : "Clique em Listar jogos. Com o campo vazio, o endereço será obtido da sessão."; status.SetBounds(22, 366, 820, 40); Controls.Add(status);
             bar.SetBounds(22, 410, 820, 12); bar.Maximum = 1000; Controls.Add(bar);
             output.SetBounds(22, 436, 820, 151); output.Multiline = true; output.ReadOnly = true; output.ScrollBars = ScrollBars.Both; output.WordWrap = false;
             output.Font = new Font("Consolas", 9); Controls.Add(output);
@@ -68,10 +69,20 @@ namespace NS2Panel {
         private void AddLabel(string text, int x, int y, int width, int height, int size, bool bold) {
             Controls.Add(new Label { Text = text, Location = new Point(x, y), Size = new Size(width, height), Font = new Font("Segoe UI", size, bold ? FontStyle.Bold : FontStyle.Regular) });
         }
+        public static string SessionAddress(string run) {
+            foreach (string file in new[] { "result.json", "connection.json" }) {
+                string path = Path.Combine(run, file);
+                if (!File.Exists(path)) continue;
+                var value = new JavaScriptSerializer().Deserialize<Dictionary<string, object>>(File.ReadAllText(path));
+                object raw; IPAddress address;
+                if (value.TryGetValue("consoleAddress", out raw) && IPAddress.TryParse(Convert.ToString(raw), out address) && address.AddressFamily == AddressFamily.InterNetwork) return address.ToString();
+            }
+            return "";
+        }
         private void StartTask(bool onlyList) {
             if (RequiresRestart) { MessageBox.Show(this, "Esta sessão precisa ser encerrada. Reinicie o console antes de outra operação."); return; }
             IPAddress address = null;
-            if (!savesMode && (!IPAddress.TryParse(host.Text.Trim(), out address) || address.AddressFamily != AddressFamily.InterNetwork)) { MessageBox.Show(this, "Informe o endereço IPv4 do Switch, por exemplo 192.168.18.50. Ele é diferente do IP do PC."); return; }
+            if (!savesMode && host.Text.Trim().Length > 0 && (!IPAddress.TryParse(host.Text.Trim(), out address) || address.AddressFamily != AddressFamily.InterNetwork)) { MessageBox.Show(this, "Informe um IPv4 válido ou deixe o campo vazio para usar o endereço da sessão."); return; }
             var game = games.SelectedItem as GameChoice;
             if (!onlyList && game == null) return;
             try {
@@ -82,7 +93,7 @@ namespace NS2Panel {
                 if (savesMode && !File.Exists(Path.Combine(root, "tools", "ns2-savekit", "tools", "lib", "save-attr.cjs"))) throw new Exception("A dependência ns2-savekit está faltando. Atualize os submódulos do projeto.");
                 worker = new Runner(); worker.SetEnvironment("NS2_PANEL_PYTHON", python);
                 string arguments = savesMode ? Checks.QuoteArgument(session) + " " + (onlyList ? "list" : "backup") + " " + Checks.QuoteArgument(target) + (onlyList ? "" : " " + game.ArchiveId) :
-                    Checks.QuoteArgument(session) + " " + address + " " + Checks.QuoteArgument(target) + (onlyList ? "" : " " + game.Title + " " + Checks.QuoteArgument(game.Name));
+                    Checks.QuoteArgument(session) + " " + (address == null ? "auto" : address.ToString()) + " " + Checks.QuoteArgument(target) + (onlyList ? "" : " " + game.Title + " " + Checks.QuoteArgument(game.Name));
                 worker.Start(node, tool, arguments, root);
                 complete = failed = cancelling = listed = false; listing = onlyList; backupFolder = null;
                 if (onlyList) games.Items.Clear();

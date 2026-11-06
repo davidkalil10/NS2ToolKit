@@ -18,9 +18,11 @@ $node = Get-PinnedFile 'node.exe' 'https://nodejs.org/dist/v22.16.0/win-x64/node
 $nodeLicense = Get-PinnedFile 'NODE-LICENSE.txt' 'https://raw.githubusercontent.com/nodejs/node/v22.16.0/LICENSE' '1ae62e2015784ba438db7b04ebd33f3c4ff3efdb824c111c4ececd99945fd52d'
 $zstd = Join-Path $PSScriptRoot '.runtime\nup-python\zstandard'
 if (!(Test-Path -LiteralPath $zstd)) { throw 'Prepare a dependência de build: python -m pip install --target .runtime/nup-python --only-binary=:all: --no-deps -r requirements-nup.txt' }
+$version = (Get-Content -LiteralPath (Join-Path $PSScriptRoot 'VERSION') -Raw).Trim()
+if ($version -notmatch '^\d+\.\d+\.\d+$') { throw 'VERSION invalida.' }
 $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
 $dist = Join-Path $PSScriptRoot 'dist'
-$package = Join-Path $dist ("NS2ToolKit-portatil-win-x64-$stamp-" + [guid]::NewGuid().ToString('N').Substring(0,6))
+$package = Join-Path $dist ("NS2ToolKit-v$version-portatil-win-x64-$stamp-" + [guid]::NewGuid().ToString('N').Substring(0,6))
 New-Item -ItemType Directory -Path $package -Force | Out-Null
 $files = @(& git -C $PSScriptRoot ls-files --recurse-submodules)
 if ($LASTEXITCODE -ne 0) { throw 'Não foi possível ler os arquivos versionados.' }
@@ -53,7 +55,7 @@ $embedded = Join-Path $pythonDir 'python.exe'
 & $embedded -c "import zstandard, sys; assert zstandard.__version__ == '0.25.0'; assert sys.version_info[:3] == (3,13,4); zstandard.ZstdCompressor().compress(b'portable')"
 if ($LASTEXITCODE -ne 0) { throw 'Falha na validação do Python/compressor incluídos.' }
 @{
-    built = (Get-Date -Format o); architecture = 'win-x64'; sourceCommit = (& git -C $PSScriptRoot rev-parse HEAD)
+    version = $version; built = (Get-Date -Format o); architecture = 'win-x64'; sourceCommit = (& git -C $PSScriptRoot rev-parse HEAD)
     sourceWorkingTreeModified = [bool](& git -C $PSScriptRoot status --porcelain)
     node = '22.16.0'; python = '3.13.4'; zstandard = '0.25.0'
     pythonArchiveSha256 = (Get-FileHash -LiteralPath $python).Hash
