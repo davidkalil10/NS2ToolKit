@@ -57,7 +57,7 @@ O botão **Copiar** copia o comando para o PC. Execute `REMOVE` uma única vez p
 3. Escolha o jogo, selecione o destino e clique em **Fazer backup**.
 4. Aguarde a confirmação final, incluindo o encerramento dos recursos de transferência.
 
-Cada operação cria uma pasta **Nome do jogo [ID]** com arquivos TAR, manifesto e registros. Os tamanhos são conferidos e os hashes SHA-256 são calculados no PC. O módulo não compara hashes remotos. Operações incompletas preservam os arquivos parciais e não recebem confirmação de sucesso.
+Cada operação cria uma pasta **Nome do jogo [ID]** com arquivos TAR, manifesto e registros. Os tamanhos são conferidos e os hashes SHA-256 são calculados no PC. O módulo não compara hashes remotos. A pasta escolhida é lembrada nas próximas aberturas. Operações incompletas preservam os arquivos parciais e não recebem confirmação de sucesso.
 
 Sessões iniciadas com versões antigas podem não ter o IP registrado. Nesse caso, informe o IPv4 do Switch manualmente ou inicie uma sessão nova com a versão atual.
 
@@ -68,6 +68,8 @@ Sessões iniciadas com versões antigas podem não ter o IP registrado. Nesse ca
 3. Escolha o destino e clique em **Fazer backup**.
 
 As pastas usam **Nome do jogo [ID]**. Repetições recebem `(2)`, `(3)` e assim por diante, sem substituir backups anteriores. O manifesto preserva a identidade do save e do usuário.
+
+O destino dos saves é lembrado separadamente do destino dos jogos. As preferências ficam em `%LOCALAPPDATA%/NS2ToolKit/settings.json`.
 
 A leitura confere os blocos no console, calcula hashes locais, relê os arquivos no PC e verifica novamente a estrutura. O manifesto só indica conclusão após a limpeza dos recursos. **Restauração ainda não está disponível.** Consulte [escopo e verificação dos saves](docs/SAVES.md).
 
@@ -80,11 +82,11 @@ A geração funciona localmente no PC, sem conectar o Switch.
 3. Escolha a pasta de saída. O nome é opcional para backups antigos sem título no manifesto.
 4. Clique em **Gerar e verificar**. Ao concluir, use **Abrir pasta**.
 
-O pacote e sua pasta usam **Nome do jogo [ID]**. O relatório `build-report.json` registra os hashes e as verificações. Saídas anteriores e backups de origem são preservados. O adaptador aceita `base/program/0` e `updates/<versão>/program/0`; DLC e outros índices de programa são recusados. Consulte [formatos e uso pelo terminal](docs/NUP.md).
+O pacote e sua pasta usam **Nome do jogo [ID]**. O relatório `build-report.json` registra os hashes, as verificações e a presença de nome/ícone nos metadados. O adaptador usa os identificadores TLV da especificação v1 e incorpora imagens do próprio backup. NUPs gerados antes da 0.1.1 precisam ser gerados novamente para receber a correção; os TARs existentes podem ser reutilizados. Saídas anteriores e backups de origem são preservados. O adaptador aceita `base/program/0` e `updates/<versão>/program/0`; DLC e outros índices de programa são recusados. Consulte [formatos e uso pelo terminal](docs/NUP.md).
 
 ## Limitações e recuperação
 
-A aquisição do FS depende de temporização e pode falhar. Algumas combinações de conteúdo também apresentam falhas de preparação no OunceCake. Após uma falha que invalide a sessão, preserve os registros em `runs/`, encerre a conexão e reinicie o console antes de tentar novamente. O assistente bloqueia repetições quando a limpeza não está confirmada.
+A aquisição do FS depende de temporização e pode falhar. Algumas combinações de conteúdo também apresentam falhas de preparação no OunceCake. Após uma falha que invalide a sessão, preserve os registros em `runs/`, encerre a conexão e reinicie o console antes de tentar novamente. O assistente bloqueia repetições quando a limpeza não está confirmada. Uma recusa conhecida de conteúdo permite escolher outro jogo após confirmação da limpeza e verificação dos endpoints; timeouts e falhas desconhecidas ainda exigem uma sessão nova.
 
 O backup de jogos não inclui saves ou chaves e não gera imagens NSP/XCI instaláveis. Restauração de saves, FTP dedicado e HBLauncher ainda não estão disponíveis. O acesso ao console é temporário e depende do PC e do SmileBASIC em execução. Use seus próprios jogos e console.
 

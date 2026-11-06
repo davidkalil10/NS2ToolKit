@@ -308,6 +308,37 @@ namespace NS2Panel {
         }
     }
 
+    public static class PanelSettings {
+        private static string SettingsFile {
+            get { return Environment.GetEnvironmentVariable("NS2_PANEL_SETTINGS") ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "NS2ToolKit", "settings.json"); }
+        }
+        public static string Destination(string key, string fallback) {
+            try {
+                var values = new System.Web.Script.Serialization.JavaScriptSerializer().Deserialize<Dictionary<string, string>>(File.ReadAllText(SettingsFile));
+                string value;
+                if (values != null && values.TryGetValue(key, out value) && !String.IsNullOrWhiteSpace(value) && Path.IsPathRooted(value)) return value;
+            } catch (IOException) { } catch (UnauthorizedAccessException) { } catch (ArgumentException) { } catch (InvalidOperationException) { }
+            return fallback;
+        }
+        public static void SaveDestination(string key, string folder) {
+            string file = SettingsFile;
+            var json = new System.Web.Script.Serialization.JavaScriptSerializer();
+            var values = new Dictionary<string, string>();
+            if (File.Exists(file)) {
+                try { values = json.Deserialize<Dictionary<string, string>>(File.ReadAllText(file)) ?? values; }
+                catch (ArgumentException) { } catch (InvalidOperationException) { }
+            }
+            values[key] = Path.GetFullPath(folder);
+            Directory.CreateDirectory(Path.GetDirectoryName(file));
+            string pending = file + "." + Guid.NewGuid().ToString("N") + ".tmp";
+            try {
+                File.WriteAllText(pending, json.Serialize(values), new UTF8Encoding(false));
+                if (File.Exists(file)) File.Replace(pending, file, null);
+                else File.Move(pending, file);
+            } finally { if (File.Exists(pending)) File.Delete(pending); }
+        }
+    }
+
     public static class Checks {
         public static string QuoteArgument(string value) {
             var quoted = new StringBuilder("\"");

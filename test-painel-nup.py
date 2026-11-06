@@ -145,6 +145,35 @@ class BuildTests(unittest.TestCase):
         override = builder.generate(self.backup, self.root / 'outputs', name='Other Name')
         self.assertEqual(Path(override['output']).name, 'Other Name [0100000000000000].nup')
 
+    def test_name_and_icon_use_spec_ids_read_by_eglantine_and_preserve_control_files(self):
+        self.fixture()
+        nacp = bytearray(0x4000)
+        nacp[:14] = b'Synthetic Game'
+        nacp[0x200:0x209] = b'Publisher'
+        nacp[0x3060:0x3065] = b'1.2.3'
+        icon = b'\xff\xd8\xff\xe0synthetic icon bytes\xff\xd9'
+        self.archive('base/program/0/control.tar', [('control/control.nacp', bytes(nacp), tarfile.REGTYPE), ('control/icon_AmericanEnglish.dat', icon, tarfile.REGTYPE)])
+        self.manifest()
+        report = builder.generate(self.backup, self.root / 'outputs')
+        with builder.NupReader(report['output']) as reader:
+            package = reader.packages[0]
+            # Parse raw TLV numbers independently of the reference's constants.
+            with open(report['output'], 'rb') as stream:
+                stream.seek(package.meta_offset); block = stream.read(package.meta_size)
+            records, offset = {}, 0
+            while offset + 8 <= len(block):
+                kind, reserved, size = struct.unpack_from('<HHI', block, offset)
+                offset += 8; records[kind] = block[offset:offset + size]; offset += size
+            self.assertNotIn(0, records)
+            self.assertEqual(records[0x0005], b'Synthetic Game')
+            self.assertEqual(records[0x0003], icon)
+            self.assertEqual(records[0x0004], b'1.2.3')
+            self.assertEqual(records[0x0006], b'Publisher')
+            self.assertTrue(records[0x0001].startswith(b'ACI0'))
+            self.assertIn('data/control/control.nacp', builder.container_tree(reader, package.root_dir)[1])
+        self.assertTrue(report['metadata']['icon'])
+        self.assertTrue(report['source_trees_matched'])
+
 
 if __name__ == '__main__':
     unittest.main()

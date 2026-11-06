@@ -4,6 +4,7 @@ $savedPath = $env:PATH
 $savedHome = $env:PYTHONHOME
 $savedPythonPath = $env:PYTHONPATH
 $savedUtf8 = $env:PYTHONUTF8
+$savedSettings = $env:NS2_PANEL_SETTINGS
 $logDir = Join-Path $PSScriptRoot 'exports\logs'
 $logsBefore = @{}
 if (Test-Path -LiteralPath $logDir) { Get-ChildItem -LiteralPath $logDir -File | ForEach-Object { $logsBefore[$_.FullName] = $true } }
@@ -11,6 +12,7 @@ $tempRoot = [IO.Path]::GetFullPath([IO.Path]::GetTempPath())
 $work = Join-Path $tempRoot ('ns2-portable-test-' + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $work | Out-Null
 try {
+    $env:NS2_PANEL_SETTINGS = Join-Path $work 'settings.json'
     $env:PATH = "$env:SystemRoot\System32;$env:SystemRoot"
     $env:PYTHONHOME = $null; $env:PYTHONPATH = $null
     $env:PYTHONUTF8 = '1'
@@ -54,6 +56,42 @@ for section, entries in [('exefs', [('main.npdm', bytes(npdm))]), ('romfs', [('d
     $addressField = $backupWindow.GetType().GetField('host', [Reflection.BindingFlags]'NonPublic,Instance').GetValue($backupWindow)
     if ($addressField.Text -ne '192.168.18.139') { throw 'IP do console nao foi preenchido na interface.' }
     $backupWindow.Dispose()
+    # Preferences survive window recreation and keep games and saves separate.
+    $gameTarget = Join-Path $work 'jogos personalizados'
+    $saveTarget = Join-Path $work 'saves personalizados'
+    [NS2Panel.PanelSettings]::SaveDestination('games', $gameTarget)
+    [NS2Panel.PanelSettings]::SaveDestination('saves', $saveTarget)
+    foreach ($forSaves in @($false, $true)) {
+        $dialog = New-Object NS2Panel.BackupWindow($PSScriptRoot, $sessionFixture, $forSaves)
+        $field = $dialog.GetType().GetField('destination', [Reflection.BindingFlags]'NonPublic,Instance').GetValue($dialog)
+        $expected = if ($forSaves) { $saveTarget } else { $gameTarget }
+        if ($field.Text -ne $expected) { throw 'Pasta personalizada nao persistiu.' }
+        $dialog.Dispose()
+    }
+    # Exercise recoverable vs uncertain backend errors through the real UI.
+    foreach ($restart in @($false, $true)) {
+        $dialog = New-Object NS2Panel.BackupWindow($PSScriptRoot, $sessionFixture)
+        $dialogFlags = [Reflection.BindingFlags]'NonPublic,Instance'
+        $gameBox = $dialog.GetType().GetField('games', $dialogFlags).GetValue($dialog)
+        $choice = New-Object NS2Panel.GameChoice
+        $choice.Name = 'Teste'; $choice.Title = '0100000000000000'
+        $gameBox.Items.Add($choice) | Out-Null; $gameBox.SelectedIndex = 0
+        $stub = Join-Path $work 'failure.cjs'
+        $restartText = if ($restart) { 'true' } else { 'false' }
+        ('console.log(''PANEL:{"kind":"error","summary":"falha de teste","requiresRestart":' + $restartText + '}''); process.exitCode=1;') | Set-Content -LiteralPath $stub -Encoding ASCII
+        $runner = New-Object NS2Panel.Runner
+        $runner.Start([NS2Panel.Checks]::FindNode($PSScriptRoot), $stub, '', $PSScriptRoot)
+        $dialog.GetType().GetField('worker', $dialogFlags).SetValue($dialog, $runner)
+        $dialog.Show()
+        $deadline = [DateTime]::UtcNow.AddSeconds(10)
+        while ($dialog.GetType().GetField('worker', $dialogFlags).GetValue($dialog) -ne $null -and [DateTime]::UtcNow -lt $deadline) {
+            [System.Windows.Forms.Application]::DoEvents(); Start-Sleep -Milliseconds 50
+        }
+        if ($dialog.RequiresRestart -ne $restart) { throw 'Estado de recuperacao incorreto na interface.' }
+        $listButton = $dialog.GetType().GetField('list', $dialogFlags).GetValue($dialog)
+        if ($listButton.Enabled -eq $restart) { throw 'A interface bloqueou uma sessao recuperavel ou liberou uma sessao incerta.' }
+        $dialog.Close(); $dialog.Dispose()
+    }
     [System.Windows.Forms.Application]::EnableVisualStyles()
     $window = New-Object NS2Panel.NupWindow($PSScriptRoot)
     $flags = [Reflection.BindingFlags]'NonPublic,Instance'
@@ -86,7 +124,7 @@ for section, entries in [('exefs', [('main.npdm', bytes(npdm))]), ('romfs', [('d
     $window.Close(); $window.Dispose()
     Write-Output 'Portátil validado com PATH sem Node/Python: processos, GUI NUP, sucesso verificado e recusa de backup incompleto.'
 } finally {
-    $env:PATH = $savedPath; $env:PYTHONHOME = $savedHome; $env:PYTHONPATH = $savedPythonPath; $env:PYTHONUTF8 = $savedUtf8
+    $env:PATH = $savedPath; $env:PYTHONHOME = $savedHome; $env:PYTHONPATH = $savedPythonPath; $env:PYTHONUTF8 = $savedUtf8; $env:NS2_PANEL_SETTINGS = $savedSettings
     if (Test-Path -LiteralPath $logDir) {
         Get-ChildItem -LiteralPath $logDir -File -Filter 'nup-*.log' | Where-Object { !$logsBefore.ContainsKey($_.FullName) } | ForEach-Object { Remove-Item -LiteralPath $_.FullName }
         if (!(Get-ChildItem -LiteralPath $logDir -Force)) { Remove-Item -LiteralPath $logDir }

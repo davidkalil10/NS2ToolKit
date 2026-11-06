@@ -30,7 +30,7 @@ O snapshot de origem não continha uma licença de projeto no diretório raiz. E
 - Copyright (c) 2026 a55uka.
 - Revisão: `d40d9cfa50792ba8021d2967d994d1b1c25d62b0`.
 - Licença: [MIT, preservada no submódulo](tools/nup/LICENSE).
-- Uso: biblioteca de empacotamento e verificação, mantida sem modificações.
+- Uso: biblioteca de empacotamento e verificação, mantida sem modificações no submódulo. O adaptador local 0.1.1 corrige, no próprio processo, as constantes TLV exportadas dessa revisão para corresponder à SPEC v1 (1–10); detalhes em docs/NUP.md.
 
 ## Compressão
 

@@ -9,6 +9,71 @@ const {Progress, failureDetails, closeAttachment} = require('./painel-progress.c
 const {requireHeldSession, lockSession, invalidateSession} = require('./painel-session.cjs');
 const {gameLabel, newDirectory} = require('./painel-names.cjs');
 const {sessionConsoleAddress} = require('./painel-session.cjs');
+const {assessFailure} = require('./painel-recovery.cjs');
+
+test('the recovery probe checks both the RPC bridge and the retained endpoint session', async t => {
+  const http = require('node:http'), net = require('node:net');
+  const {verifyHeldHealth} = require('./painel-recovery.cjs');
+  const run = await temporary(t), seen = [];
+  await fs.mkdir(path.join(run, 'switch2'));
+  await fs.writeFile(path.join(run, 'result.json'), JSON.stringify({verified: true, rpc: {state: 'listening'}}));
+  let ready = true, session = path.basename(run);
+  const bridge = http.createServer((request, response) => response.end(JSON.stringify({ready})));
+  const memory = net.createServer(socket => socket.once('data', bytes => {
+    seen.push(JSON.parse(bytes)); socket.end(JSON.stringify({session}));
+  }));
+  const socketPath = process.platform === 'win32' ? '\\\\.\\pipe\\ns2-recovery-test-' + crypto.randomUUID() : path.join(run, 'memory.sock');
+  await new Promise(resolve => bridge.listen(0, '127.0.0.1', resolve));
+  await new Promise(resolve => memory.listen(socketPath, resolve));
+  try {
+    await fs.writeFile(path.join(run, 'connection.json'), JSON.stringify({port: bridge.address().port}));
+    await fs.writeFile(path.join(run, 'switch2/current-acquisition.json'), JSON.stringify({socketPath}));
+    assert.equal(await verifyHeldHealth(run), true);
+    assert.deepEqual(seen, [{command: 'root-native-info'}]);
+    session = 'another-session'; await assert.rejects(verifyHeldHealth(run), /outra sessão/);
+    ready = false; await assert.rejects(verifyHeldHealth(run), /não está pronta/);
+  } finally {
+    await new Promise(resolve => bridge.close(resolve)); await new Promise(resolve => memory.close(resolve));
+  }
+});
+
+test('only a known content refusal with clean resources and a healthy endpoint is reusable', async () => {
+  const refusal = Object.assign(Error('Content requires an original-content mount; standalone ES preparation does not apply'), {code: 'GAME_ORIGINAL_CONTENT_REQUIRED'});
+  assert.equal((await assessFailure(refusal, [], 'run', async () => true)).requiresRestart, false);
+  for (const [error, cleanup, probe] of [
+    [refusal, [Error('cleanup failed')], async () => true],
+    [Error('Console response timed out'), [], async () => true],
+    [new AggregateError([refusal, Error('restore failed')], refusal.message), [], async () => true],
+    [refusal, [], async () => {throw Error('not ready');}],
+    [refusal, [], async () => false],
+  ]) assert.equal((await assessFailure(error, cleanup, 'run', probe)).requiresRestart, true);
+});
+
+test('an unsupported game does not block a subsequent operation after verified cleanup', async t => {
+  const run = await temporary(t);
+  await fs.writeFile(path.join(run, 'result.json'), JSON.stringify({verified: true, rpc: {state: 'listening'}}));
+  const {main} = require('./painel-backup.cjs'), events = [];
+  const previousExit = process.exitCode, python = process.env.NS2_PANEL_PYTHON;
+  process.env.NS2_PANEL_PYTHON = process.execPath;
+  try {
+    await main([run, '192.168.18.139', run, '0100000000000000'], {
+      attach: async () => fakeAttachment(), probe: async () => true,
+      prepare: async () => {throw Object.assign(Error('Content requires an original-content mount; standalone ES preparation does not apply'), {code: 'GAME_ORIGINAL_CONTENT_REQUIRED'});},
+      send: (kind, value) => events.push({kind, ...value}),
+    });
+    assert.equal(events.at(-1).requiresRestart, false);
+    assert.equal(events.at(-1).cleanupConfirmed, true);
+    assert.equal(process.exitCode, 1); // Operation failed; the session survived.
+    process.exitCode = previousExit;
+    await requireHeldSession(run);
+    await main([run, '192.168.18.139', run], {attach: async () => fakeAttachment(), discover: async () => [], send: (kind, value) => events.push({kind, ...value})});
+    assert.equal(events.at(-1).kind, 'listed');
+    assert.equal((await fs.readdir(run)).includes('painel-operation.lock'), false);
+  } finally {
+    process.exitCode = previousExit;
+    if (python === undefined) delete process.env.NS2_PANEL_PYTHON; else process.env.NS2_PANEL_PYTHON = python;
+  }
+});
 
 test('friendly save directories preserve game identity and never overwrite another user backup', async t => {
   const root = await temporary(t), title = '0100000000000000';

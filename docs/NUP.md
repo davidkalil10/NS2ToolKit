@@ -51,3 +51,9 @@ Pastas e arquivos usam **Nome do jogo [ID]**. O nome vem do manifesto do backup,
 - Espaço insuficiente e interrupção têm tratamento no fluxo, mas ainda não passaram por ensaio de falha dedicado. Não tratá-los como validados.
 
 Gerar um pacote íntegro não demonstra que ele será executado por qualquer launcher, emulador ou console. Essa compatibilidade depende do consumidor e exige validação separada. Saves e registros privados não devem ser incluídos no pacote de jogo.
+
+## Metadados e compatibilidade com Eglantine (0.1.1)
+
+`painel_nup_metadata.py` aplica a numeração TLV 1–10 da SPEC v1 às constantes exportadas pela biblioteca fixada, cujo enum começa em zero. O ajuste é limitado ao processo do adaptador; não modifica o submódulo nem arquivos antigos. Além do nome padrão, são adicionados nomes localizados, imagens JPEG/PNG dos arquivos `icon_*.dat`, versão e publicadora quando válidos. O controle da atualização mais recente tem prioridade sobre a base.
+
+Os arquivos originais em `data/control/` continuam preservados. Testes conferem nome no TLV 5 e ícone no TLV 3, os mesmos tipos consultados pelo leitor da revisão Eglantine examinada. A identidade do programa não é alterada. Para atualizar um NUP antigo, gere outro a partir do backup completo existente e faça nova varredura da biblioteca no emulador. O pacote anterior permanece intacto.

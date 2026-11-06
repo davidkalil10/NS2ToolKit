@@ -27,6 +27,7 @@ namespace NS2Panel {
         private readonly JavaScriptSerializer json = new JavaScriptSerializer();
         private Runner worker;
         private bool complete, failed, cancelling, listing, listed;
+        private bool backendRequiresRestart = true;
         private string backupFolder;
         private string lastPhase;
         public bool RequiresRestart { get; private set; }
@@ -45,9 +46,10 @@ namespace NS2Panel {
             AddLabel(savesMode ? "Save para copiar (jogo e usuário)" : "Jogo para copiar", 22, 169, 500, 24, 10, true);
             games.SetBounds(22, 197, 820, 30); games.DropDownStyle = ComboBoxStyle.DropDownList; Controls.Add(games);
             AddLabel("Salvar no PC", 22, 243, 300, 24, 10, true);
-            destination.Text = Path.Combine(root, savesMode ? "saves-backups" : "backups"); destination.SetBounds(22, 270, 653, 28); Controls.Add(destination);
+            destination.Text = PanelSettings.Destination(savesMode ? "saves" : "games", Path.Combine(root, savesMode ? "saves-backups" : "backups")); destination.SetBounds(22, 270, 653, 28); Controls.Add(destination);
+            destination.Leave += delegate { PersistDestination(); };
             var browse = new Button { Text = "Escolher pasta", Location = new Point(685, 268), Size = new Size(157, 32) };
-            browse.Click += delegate { using (var picker = new FolderBrowserDialog()) { picker.Description = "Pasta para os backups dos jogos"; if (picker.ShowDialog(this) == DialogResult.OK) destination.Text = picker.SelectedPath; } }; Controls.Add(browse);
+            browse.Click += delegate { using (var picker = new FolderBrowserDialog()) { picker.Description = savesMode ? "Pasta para os backups de saves" : "Pasta para os backups dos jogos"; if (picker.ShowDialog(this) == DialogResult.OK) { destination.Text = picker.SelectedPath; PersistDestination(); } } }; Controls.Add(browse);
             begin.Text = "Fazer backup"; begin.SetBounds(22, 317, 155, 35); begin.Enabled = false; begin.Click += delegate { StartTask(false); }; Controls.Add(begin);
             cancel.Text = "Cancelar operação"; cancel.SetBounds(187, 317, 176, 35); cancel.Enabled = false; cancel.Click += delegate { CancelTask(); }; Controls.Add(cancel);
             open.Text = "Abrir pasta"; open.SetBounds(373, 317, 140, 35); open.Click += delegate { OpenFolder(); }; Controls.Add(open);
@@ -64,10 +66,16 @@ namespace NS2Panel {
                     return;
                 }
                 timer.Stop();
+                PersistDestination();
             };
         }
         private void AddLabel(string text, int x, int y, int width, int height, int size, bool bold) {
             Controls.Add(new Label { Text = text, Location = new Point(x, y), Size = new Size(width, height), Font = new Font("Segoe UI", size, bold ? FontStyle.Bold : FontStyle.Regular) });
+        }
+        private void PersistDestination() {
+            if (String.IsNullOrWhiteSpace(destination.Text)) return;
+            try { PanelSettings.SaveDestination(savesMode ? "saves" : "games", destination.Text); }
+            catch (Exception error) { status.Text = "Não foi possível lembrar esta pasta: " + error.Message; }
         }
         public static string SessionAddress(string run) {
             foreach (string file in new[] { "result.json", "connection.json" }) {
@@ -88,6 +96,7 @@ namespace NS2Panel {
             try {
                 string node = Checks.FindNode(root), python = onlyList || savesMode ? "" : Checks.FindPython(root);
                 string target = Path.GetFullPath(destination.Text);
+                PersistDestination();
                 string tool = Path.Combine(root, savesMode ? "painel-saves.cjs" : "painel-backup.cjs");
                 if (!File.Exists(Path.Combine(root, "tools", "OunceCake", "ouncecake.cjs"))) throw new Exception("A pasta tools\\OunceCake está faltando. Mantenha o programa completo nesta pasta.");
                 if (savesMode && !File.Exists(Path.Combine(root, "tools", "ns2-savekit", "tools", "lib", "save-attr.cjs"))) throw new Exception("A dependência ns2-savekit está faltando. Atualize os submódulos do projeto.");
@@ -96,6 +105,7 @@ namespace NS2Panel {
                     Checks.QuoteArgument(session) + " " + (address == null ? "auto" : address.ToString()) + " " + Checks.QuoteArgument(target) + (onlyList ? "" : " " + game.Title + " " + Checks.QuoteArgument(game.Name));
                 worker.Start(node, tool, arguments, root);
                 complete = failed = cancelling = listed = false; listing = onlyList; backupFolder = null;
+                backendRequiresRestart = true;
                 if (onlyList) games.Items.Clear();
                 list.Enabled = begin.Enabled = host.Enabled = destination.Enabled = games.Enabled = false; cancel.Enabled = true;
                 output.Clear(); bar.Value = 0; status.Text = onlyList ? "Lendo o inventário do console..." : "Preparando o backup...";
@@ -150,14 +160,14 @@ namespace NS2Panel {
                     else if (kind == "files_done") status.Text = "Arquivos copiados. Aguardando o encerramento dos recursos...";
                     else if (kind == "complete") complete = true;
                     else if (kind == "listed") listed = true;
-                    else if (kind == "error") { failed = true; status.Text = Convert.ToString(value.ContainsKey("summary") ? value["summary"] : value["message"]); }
+                    else if (kind == "error") { failed = true; backendRequiresRestart = !value.ContainsKey("requiresRestart") || Convert.ToBoolean(value["requiresRestart"]); status.Text = Convert.ToString(value.ContainsKey("summary") ? value["summary"] : value["message"]); }
                 } catch (Exception error) { failed = true; status.Text = "Resposta inválida: " + error.Message; }
             }
             if (!worker.Complete) return;
             bool success = worker.ExitCode == 0 && !failed && !cancelling && (listing ? listed : complete);
             bar.Style = ProgressBarStyle.Continuous;
             bar.Value = success && !listing ? 1000 : 0;
-            RequiresRestart = !success;
+            RequiresRestart = !success && (!failed || backendRequiresRestart);
             if (success) status.Text = listing ? (games.Items.Count == 0 ? "Nenhum item suportado foi encontrado neste inventário." : "Lista pronta. Escolha um item e clique em Fazer backup.") : "Backup concluído • tamanhos e hashes conferidos.";
             else if (!failed) status.Text = "Operação incompleta. Confira os registros; o backup não foi marcado como concluído.";
             try {
@@ -165,9 +175,9 @@ namespace NS2Panel {
                 File.WriteAllText(Path.Combine(folder, "painel-backup-" + DateTime.Now.ToString("yyyyMMdd-HHmmss-fff") + ".log"), worker.Transcript);
             } catch { }
             worker.Dispose(); worker = null;
-            list.Enabled = success; host.Enabled = destination.Enabled = games.Enabled = true; cancel.Enabled = false;
-            begin.Enabled = success && games.SelectedItem != null;
-            if (!success && !status.Text.Contains("reinicie")) status.Text += " Encerre a conexão e reinicie o console.";
+            list.Enabled = !RequiresRestart; host.Enabled = destination.Enabled = games.Enabled = true; cancel.Enabled = false;
+            begin.Enabled = !RequiresRestart && games.SelectedItem != null;
+            if (RequiresRestart && !status.Text.Contains("reinicie")) status.Text += " Encerre a conexão e reinicie o console.";
         }
         private void OpenFolder() {
             string folder = backupFolder ?? destination.Text;

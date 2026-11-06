@@ -26,6 +26,11 @@ from nup.access import iter_children
 from nup.discover import parse_npdm_program_id
 import nup
 from painel_names import game_label, new_directory
+from nup import format as nup_format
+from nup.access import app_meta
+from painel_nup_metadata import use_spec_metadata, control_metadata
+
+use_spec_metadata(nup_format)
 
 cancel_requested = threading.Event()
 
@@ -237,7 +242,8 @@ def generate(backup, output_parent, name=None):
                     emit('pack', done=done, total=total)
                     last = time.monotonic()
             emit('status', message='Gerando o pacote NUP...')
-            packages = pack(str(pending), str(stage), base_title_id=int(title, 16), names={None: name} if name else None, progress=progress)
+            metadata = control_metadata(stage, name)
+            packages = pack(str(pending), str(stage), base_title_id=int(title, 16), progress=progress, **metadata)
             emit('status', message='Verificando estrutura e conteúdo de todos os arquivos...')
             ok, problems = verify(str(pending), deep=True)
             if not ok:
@@ -245,6 +251,12 @@ def generate(backup, output_parent, name=None):
             check_cancelled()
             summaries = []
             with NupReader(str(pending)) as container:
+                meta = app_meta(container, container.packages[0])
+                expected_name = metadata['names'].get(None)
+                if expected_name and meta.get(0x0005) != expected_name.encode('utf-8'):
+                    raise ValueError('Nome do jogo não foi preservado nos metadados padrão do NUP.')
+                if metadata['icons'] and meta.get(0x0003) != Path(metadata['icons'][None]).read_bytes():
+                    raise ValueError('Ícone do jogo não foi preservado nos metadados padrão do NUP.')
                 if len(packages) != len(container.packages):
                     raise ValueError('Contagem de pacotes divergente.')
                 for source, package in zip(packages, container.packages):
@@ -260,6 +272,8 @@ def generate(backup, output_parent, name=None):
             pending.rename(final)
             report.update(complete=True, output=str(final), bytes=final.stat().st_size, sha256=output_hash,
                           deep_verified=True, source_trees_matched=True, packages=summaries, name=name)
+            report['metadata'] = dict(schema='SPEC-v1-TLV-1-based', title=metadata['names'].get(None),
+                                      icon=bool(metadata['icons']), publisher=metadata['publisher'], display_version=metadata['display_version'])
             report_path.write_text(json.dumps(report, indent=2, ensure_ascii=True), encoding='utf-8')
             emit('complete', path=str(final), bytes=report['bytes'], packages=summaries)
             return report

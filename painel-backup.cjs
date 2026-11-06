@@ -3,7 +3,8 @@ const path = require('node:path');
 const net = require('node:net');
 const {spawn} = require('node:child_process');
 const {runControlled} = require('./painel-runner.cjs');
-const {emit: send, Progress, failureDetails, closeAttachment} = require('./painel-progress.cjs');
+const {emit, Progress, failureDetails, closeAttachment} = require('./painel-progress.cjs');
+const {assessFailure, verifyHeldHealth} = require('./painel-recovery.cjs');
 const {requireHeldSession, lockSession, invalidateSession, sessionConsoleAddress} = require('./painel-session.cjs');
 const ounce = './tools/OunceCake/engine/';
 const {attachGame} = require(ounce + 'session.cjs');
@@ -11,7 +12,9 @@ const {discoverGames} = require(ounce + 'content.cjs');
 const {prepareGame} = require(ounce + 'mounts.cjs');
 const {deployFtp, readImage} = require(ounce + 'ftp.cjs');
 
-async function main([run, host, destination, title, suppliedName]) {
+async function main([run, host, destination, title, suppliedName], {
+  attach = attachGame, discover = discoverGames, prepare = prepareGame, probe = verifyHeldHealth, send = emit,
+} = {}) {
   if (!run || host !== 'auto' && !net.isIPv4(host)) throw Error('Informe a sessão e o endereço IPv4 do Switch 2.');
   run = await requireHeldSession(run);
   if (host === 'auto') host = await sessionConsoleAddress(run);
@@ -20,16 +23,16 @@ async function main([run, host, destination, title, suppliedName]) {
   const stop = () => {cancelled = true; downloader?.kill();};
   process.on('SIGINT', stop);
   process.on('SIGTERM', stop);
-  let failure, failureContext;
+  let failure, failureContext, recovery;
   const cleanupErrors = [];
-  const progress = new Progress(); progress.start();
+  const progress = new Progress(send); progress.start();
   try {
     progress.begin('connect', 'Validando a sessão do console');
     send('status', {message: 'Conectando à sessão verificada...'});
-    attachment = await attachGame(run);
+    attachment = await attach(run);
     if (!title) {
       progress.begin('discover', 'Consultando os jogos instalados');
-      const games = await discoverGames({...attachment, shouldStop: () => cancelled});
+      const games = await discover({...attachment, shouldStop: () => cancelled});
       await fs.writeFile(path.join(run, 'painel-games.json'), JSON.stringify(games.map(g => ({title: g.title, name: g.name || g.title}))));
       send('games', {games: games.map(g => ({title: g.title, name: g.name || g.title}))});
     } else {
@@ -43,7 +46,7 @@ async function main([run, host, destination, title, suppliedName]) {
       if (!python) throw Error('Python 3 não foi encontrado pelo painel.');
       send('status', {message: 'Preparando os arquivos do jogo. Isso pode demorar...'});
       progress.begin('prepare', 'Preparando o conteúdo do jogo');
-      const prepared = await progress.openings(() => prepareGame({attachment, title, shouldStop: () => cancelled, tar: true}));
+      const prepared = await progress.openings(() => prepare({attachment, title, shouldStop: () => cancelled, tar: true}));
       if (cancelled) throw Error('Backup cancelado.');
       progress.begin('ftp', 'Iniciando o servidor de leitura');
       server = await deployFtp({attachment, image: await readImage(), ...prepared, port: 2121});
@@ -69,16 +72,20 @@ async function main([run, host, destination, title, suppliedName]) {
     }
     process.off('SIGINT', stop); process.off('SIGTERM', stop);
     progress.close();
-    if (failure) await invalidateSession(run, failure.message);
+    if (failure) {
+      recovery = await assessFailure(failure, cleanupErrors, run, probe);
+      if (recovery.requiresRestart) await invalidateSession(run, failure.message);
+    }
     await unlock();
   }
   if (failure) {
-    send('error', failureDetails(failure, failureContext, cleanupErrors));
+    send('error', {...failureDetails(failure, failureContext, cleanupErrors), ...recovery});
     process.exitCode = 1; return;
   }
   send(title ? 'complete' : 'listed');
 }
 
+module.exports = {main};
 if (require.main === module) runControlled(main, process.argv.slice(2)).catch(error => {
-  send('error', failureDetails(error)); process.exitCode = 1;
+  emit('error', failureDetails(error)); process.exitCode = 1;
 });
