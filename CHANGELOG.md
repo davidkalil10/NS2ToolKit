@@ -1,5 +1,13 @@
 # Histórico de versões
 
+## 0.2.0 — 6 de novembro de 2026
+
+Atualização do assistente com melhorias de empacotamento e preparação para PR.
+
+- Otimização das ferramentas de backup de jogos e saves somente leitura.
+- Validação e empacotamento NUP aprimorados para emuladores.
+- Detecção e configuração automática do endereço IP do console.
+
 ## 0.1.0 — 6 de novembro de 2026
 
 Primeira release pública do NS2ToolKit para Windows x64.
