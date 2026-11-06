@@ -105,13 +105,18 @@ namespace NS2Panel {
             if (worker.Alive) worker.RequestCleanup();
             status.Text = "Cancelamento solicitado. Aguardando terminar a operação atual e limpar temporários...";
         }
+        private void ReadOutput() {
+            foreach (string line in worker.Drain()) { output.AppendText(line + Environment.NewLine); progress.Accept(line); }
+        }
         private void Poll(object sender, EventArgs args) {
             if (worker == null) return;
-            foreach (string line in worker.Drain()) { output.AppendText(line + Environment.NewLine); progress.Accept(line); }
+            ReadOutput();
             if (!cancelling && progress.Message != null) status.Text = progress.Message + " • " + (int)(DateTime.UtcNow - started).TotalSeconds + "s";
             if (progress.Total > 0) { bar.Style = ProgressBarStyle.Continuous; bar.Value = (int)Math.Min(1000, 1000.0 * progress.Packed / progress.Total); }
             else bar.Style = ProgressBarStyle.Marquee;
             if (!worker.Complete) return;
+            // Readers are finished: consume any final events queued after the first drain.
+            ReadOutput();
             bool success = progress.Successful(worker.ExitCode, cancelling);
             bar.Style = ProgressBarStyle.Continuous; bar.Value = success ? 1000 : 0;
             if (success) {

@@ -2,6 +2,7 @@
 
 ## 0.1.2 — experimental, em validação
 
+- Corrige a leitura das mensagens finais dos processos na interface, evitando falhas aparentes quando a confirmação chega junto do encerramento.
 - Inventário de base/atualizações/programas sem montagem e registros de chamadas durante a preparação.
 - Perfil completo preservado; perfil optativo sem manuais e com abertura direta dos programas secundários, ainda pendente de teste no console.
 - Escopo selecionado e omissões registrados no manifesto e no relatório NUP.

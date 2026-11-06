@@ -258,6 +258,7 @@ namespace NS2Panel {
                 else if (backupFailed) { status.Text = "Uma operação encontrou um erro • encerre a conexão e reinicie o console"; detail.Text = "Os registros foram preservados. Não inicie outra operação nesta sessão."; }
             }
             if (!runner.Complete) return;
+            foreach (string line in runner.Drain()) { output.AppendText(line + Environment.NewLine); progress.Accept(line); }
             if (!stopping) progress.Finish(runner.ExitCode);
             start.Enabled = true; stop.Enabled = false; addresses.Enabled = held.Enabled = prepared.Enabled = true; prepared.Checked = false;
             foreach (var button in copy) button.Enabled = false;

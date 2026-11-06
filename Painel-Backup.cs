@@ -128,8 +128,7 @@ namespace NS2Panel {
             cancelling = true; worker.RequestCleanup(); cancel.Enabled = false;
             status.Text = "Cancelando e aguardando a limpeza. Arquivos parciais serão preservados.";
         }
-        private void Poll(object sender, EventArgs args) {
-            if (worker == null) return;
+        private void ReadOutput() {
             foreach (string line in worker.Drain()) {
                 output.AppendText(line + Environment.NewLine);
                 if (!line.StartsWith("PANEL:")) continue;
@@ -174,7 +173,13 @@ namespace NS2Panel {
                     else if (kind == "error") { failed = true; backendRequiresRestart = !value.ContainsKey("requiresRestart") || Convert.ToBoolean(value["requiresRestart"]); status.Text = Convert.ToString(value.ContainsKey("summary") ? value["summary"] : value["message"]); }
                 } catch (Exception error) { failed = true; status.Text = "Resposta inválida: " + error.Message; }
             }
+        }
+        private void Poll(object sender, EventArgs args) {
+            if (worker == null) return;
+            ReadOutput();
             if (!worker.Complete) return;
+            // Readers are finished: consume any final events queued after the first drain.
+            ReadOutput();
             bool success = worker.ExitCode == 0 && !failed && !cancelling && (listing ? listed : complete);
             bar.Style = ProgressBarStyle.Continuous;
             bar.Value = success && !listing ? 1000 : 0;
