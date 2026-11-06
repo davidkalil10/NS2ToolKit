@@ -1,8 +1,12 @@
 /runs/
 /dumps/
 /backups/
+/saves-backups/
+/.runtime/
+/exports/
 __pycache__/
 *.part
+*.nup
 *.pending
 *.tmp
 /NS2-*.exe

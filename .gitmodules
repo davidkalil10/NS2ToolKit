@@ -1,3 +1,9 @@
 [submodule "tools/OunceCake"]
 	path = tools/OunceCake
 	url = https://github.com/misshexa66/OunceCake.git
+[submodule "tools/ns2-savekit"]
+	path = tools/ns2-savekit
+	url = https://github.com/dougchansan/ns2-savekit.git
+[submodule "tools/nup"]
+	path = tools/nup
+	url = https://github.com/a55uka/nup.git

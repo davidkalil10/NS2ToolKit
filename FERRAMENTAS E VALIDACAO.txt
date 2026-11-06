@@ -20,6 +20,7 @@ Não exporta saves, chaves, NAND completa ou uma imagem NSP/XCI instalável.
 VALIDAÇÃO LOCAL
 - Suite original: node --test test.cjs
 - Encerramento por stdin: node --test painel.test.cjs
+- Saves e diagnóstico: node --test painel-modules.test.cjs
 - Copiador: python test-painel-download.py
 - Interface e execução de processos simulada:
   powershell.exe -NoProfile -STA -ExecutionPolicy Bypass -File Painel-NS2.ps1 -SelfTest
@@ -33,3 +34,25 @@ com tamanhos conferidos, hashes locais e encerramento do OunceCake sem erro.
 O resumo sem dados do console fica em docs/CHECKPOINT-2026-11-05.md.
 Isso valida uma configuração e uma transferência, sem garantir todas as
 tentativas ou títulos. Testes simulados não substituem validação no hardware.
+
+NOVO MARCO (AINDA SEM VALIDACAO NO CONSOLE)
+- Fases/duração das operações e erros classificados no backup de jogos.
+- Backup de saves somente leitura, com identificação pelo inventário User.
+- Account e Device nesta versão; nenhum patch de escrita aplicado.
+- Manifesto, hashes, releitura local, preservação de parciais e limpeza.
+- Lock compartilhado entre módulos e bloqueio após operação incerta.
+- Dependência ns2-savekit: 700814ff37fa8f11f12e77b65dc8a33d421e8dd1 (MIT).
+O código engine/ do ns2jb não mudou em relação ao checkpoint validado.
+Restauração e FTP dedicado continuam para etapas posteriores.
+
+NUP
+- Adaptador local: painel-nup.py; testes: python test-painel-nup.py.
+- NUP: d40d9cfa50792ba8021d2967d994d1b1c25d62b0 (MIT); zstandard 0.25.0.
+- Dois backups locais foram empacotados, verificados integralmente e comparados
+  com as árvores de origem adaptadas. Originais preservados.
+- Relatório resumido sem dados privados: docs/VALIDACAO-NUP-2026-11-05.md.
+- O usuário confirmou os dois pacotes no Eglantine 0d86405bd1-nx2,
+  build de 04/11/2026 (MSVC 19.44.35229.0). Interface NUP ainda pendente.
+- Pastas e saídas usam Nome do jogo [ID], com tratamento de caracteres e
+  contador para repetições. Os dois pacotes existentes foram renomeados
+  sem mudar seus hashes.

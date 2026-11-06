@@ -94,6 +94,16 @@ class DownloadTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'colidem'):
             self.run_copy()
 
+    def test_game_name_is_saved_and_directories_are_readable_without_overwrite(self):
+        from painel_names import game_label
+        root = download.download('127.0.0.1', self.tmp.name, '0100000000000000', name='Pokémon: Test / Demo')
+        self.assertEqual(root.name, game_label('Pokémon: Test / Demo', '0100000000000000'))
+        self.assertNotIn(':', root.name)
+        manifest = json.loads((root / 'manifest.json').read_text())
+        self.assertEqual(manifest['name'], 'Pokémon: Test / Demo')
+        second = download.download('127.0.0.1', self.tmp.name, '0100000000000000', name='Pokémon: Test / Demo')
+        self.assertEqual(second.name, root.name + ' (2)')
+
 
 class FTPHandler(socketserver.StreamRequestHandler):
     def handle(self):

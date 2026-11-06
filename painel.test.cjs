@@ -49,3 +49,18 @@ test('acquisition stops after uncertain cleanup and preserves the first failure;
     assert.ok((await fs.readFile(path.join(engine, 'acquisition-attempt-1.log'), 'utf8')).includes('connected'));
   }
 });
+
+test('a cancel received during helper startup is delivered after its handler is installed', async () => {
+  const code = `const {runControlled}=require(${JSON.stringify(path.join(__dirname, 'painel-runner.cjs'))});
+    runControlled(async()=>{await new Promise(r=>setTimeout(r,150));
+      await new Promise(r=>process.once('SIGINT',r));console.log('CANCELLED');},[]);`;
+  const child = spawn(process.execPath, ['-e', code], {stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true});
+  let output = '';
+  child.stdout.on('data', part => {output += part;});
+  const timer = setTimeout(() => child.kill(), 5000);
+  child.stdin.write('stop\n');
+  try {
+    const code = await new Promise((resolve, reject) => {child.once('error', reject); child.once('close', resolve);});
+    assert.equal(code, 0); assert.ok(output.includes('CANCELLED'));
+  } finally {clearTimeout(timer);}
+});

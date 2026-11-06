@@ -1,7 +1,8 @@
 param(
     [switch]$SelfTest,
     [string]$PreviewPath,
-    [switch]$BackupPreview
+    [switch]$BackupPreview,
+    [switch]$SavesPreview
 )
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Windows.Forms
@@ -14,7 +15,9 @@ if ($SelfTest) {
     exit
 }
 [System.Windows.Forms.Application]::EnableVisualStyles()
-if ($BackupPreview) {
+if ($SavesPreview) {
+    $window = New-Object NS2Panel.BackupWindow($PSScriptRoot, $PSScriptRoot, $true)
+} elseif ($BackupPreview) {
     $window = New-Object NS2Panel.BackupWindow($PSScriptRoot, $PSScriptRoot)
 } else {
     $window = New-Object NS2Panel.MainWindow($PSScriptRoot)

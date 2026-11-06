@@ -14,11 +14,11 @@ Aumentar prazos indiscriminadamente e repetir uma chamada após tempo esgotado n
 
 ## D-003 — prioridade inicial: diagnóstico dos backups
 
-**Estado: proposta.** Antes de ampliar a cobertura de escrita no console, distinguir as falhas atuais de montagem, tempo de resposta e transferência. A prioridade dos novos módulos será confirmada com o usuário.
+**Estado: confirmada pelo usuário.** Diagnóstico de backups, depois backup de saves e então restauração. A instrumentação inicial foi implementada; falhas de montagem ainda precisam de investigação no console.
 
 ## D-004 — tratar saves como arquivos gerenciados, com identidade e transação
 
-**Estado: proposta; módulo ainda não implementado.** A seleção precisa identificar jogo, usuário e arquivo de save, não apenas um nome amigável de pasta.
+**Estado: leitura implementada, restauração proposta.** A seleção identifica jogo, usuário e arquivo pelo inventário de saves. A leitura ainda aguarda validação no console.
 
 O primeiro marco deve ser listar e copiar sem escrita no console. Restauração deve exigir backup anterior, plano concreto dos arquivos, verificação da origem e destino, confirmação de substituição e releitura do resultado. Arquivos excedentes e diferenças entre versões precisam de política explícita.
 
@@ -32,7 +32,7 @@ O FTP já usado internamente pelo OunceCake é de leitura. Um serviço com escri
 
 ## D-006 — uma operação por sessão em cada momento
 
-**Estado: requisito para os próximos módulos.** Backup, restauração, navegação que faz requisições e alteração de arquivos não devem disputar a mesma conexão. Encerrar a sessão principal deve aguardar o módulo ativo. Navegação e cancelamento precisam respeitar a serialização do mecanismo.
+**Estado: implementada para jogos e saves.** Um lock por sessão impede operações sobrepostas; uma marca local bloqueia reutilização após falha. As janelas modais impedem encerrar a sessão principal por trás delas. Ferramentas externas que não usam esse lock exigem coordenação manual.
 
 ## D-007 — dependências fixadas e integração revisada
 
@@ -41,3 +41,11 @@ O FTP já usado internamente pelo OunceCake é de leitura. Um serviço com escri
 ## D-008 — HBLauncher não implica suporte automático a NRO
 
 **Estado: premissa de compatibilidade.** A integração de um launcher será avaliada separadamente da adaptação de cada port. Nenhum binário de Switch 1 será anunciado como compatível apenas por usar a mesma família de arquitetura.
+
+## D-009 — leitura de saves sem patches amplos
+
+**Estado: adotada neste marco.** O módulo seleciona saves Account/Device pelo inventário User. Reutiliza a biblioteca de atributos do ns2-savekit e as APIs de leitura já presentes. Não aplica patches de escrita nem altera a aquisição do FS. As necessidades da restauração serão reavaliadas separadamente.
+
+## D-010 — empacotamento NUP separado da extração e da execução
+
+**Estado: adotada no adaptador CLI de P5.** O empacotador consome backups completos no PC, preserva os originais, verifica a saída e compara as árvores. Dois backups foram testados a pedido do usuário. Não usar empacotamento para ocultar arquivos ausentes. DLC e outros índices são recusados nesta versão. Integridade e compatibilidade no emulador são validações distintas.

@@ -1,5 +1,6 @@
 """Read-only FTP transfer from OunceCake. Only local files are written."""
 import ftplib
+import argparse
 import hashlib
 import ipaddress
 import json
@@ -8,8 +9,8 @@ from pathlib import Path
 import shutil
 import sys
 import time
-import uuid
 from urllib.parse import quote
+from painel_names import game_label, new_directory
 
 
 def emit(kind, **fields):
@@ -71,15 +72,14 @@ def save_manifest(root, manifest):
             time.sleep(.01 * (attempt + 1))
 
 
-def download(host, destination, title, port=2121):
+def download(host, destination, title, port=2121, name=None):
     ipaddress.IPv4Address(host)
     if len(title) != 16 or any(c not in '0123456789abcdefABCDEF' for c in title):
         raise ValueError('Identificador inválido.')
     parent = Path(destination).resolve()
     parent.mkdir(parents=True, exist_ok=True)
-    root = parent / (title.upper() + '-' + time.strftime('%Y%m%d-%H%M%S') + '-' + uuid.uuid4().hex[:6])
-    root.mkdir()  # Each attempt has a fresh directory; never overwrite a backup.
-    manifest = dict(complete=False, title=title, host=host, files=[], verification='FTP size and local SHA-256; no remote hash')
+    root = new_directory(parent, game_label(name, title))
+    manifest = dict(complete=False, title=title, name=name, host=host, files=[], verification='FTP size and local SHA-256; no remote hash')
     save_manifest(root, manifest)
     emit('destination', path=str(root))
     ftp = ftplib.FTP(timeout=60)
@@ -143,8 +143,14 @@ def download(host, destination, title, port=2121):
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('host')
+    parser.add_argument('destination')
+    parser.add_argument('title')
+    parser.add_argument('--name')
+    args = parser.parse_args()
     try:
-        download(*sys.argv[1:])
+        download(args.host, args.destination, args.title, name=args.name)
     except Exception as error:
         emit('error', message=str(error))
         sys.exit(1)

@@ -40,11 +40,11 @@ Mensagem: `Content requires an original-content mount; standalone ES preparation
 
 ## INC-004 — mensagem técnica repetida ou pouco legível no painel
 
-**Estado:** observado; melhoria de interface planejada.
+**Estado:** resumo em português, eventos com horários e duração implementados; teste no console pendente.
 
 O backend pode reunir a falha original e falhas de limpeza. O painel atualmente mostra essa mensagem agregada, podendo repetir o erro e ocupar várias linhas.
 
-**Melhoria proposta:** título curto em português, primeira causa em destaque, indicação de fase e duração, detalhes de limpeza separados e botão de registros. A barra de download deve distinguir preparação sem total conhecido de cópia com contagem de bytes.
+**Melhoria implementada:** resumo curto em português, eventos com fase/operação/duração e preservação da primeira causa separada dos erros posteriores. A barra fica indeterminada na preparação e usa bytes na transferência. Isso não corrige por si só as montagens dos incidentes 002 e 003.
 
 ## Registro de um novo incidente
 

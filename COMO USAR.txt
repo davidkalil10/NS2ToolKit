@@ -70,6 +70,42 @@ Não inclui saves, chaves ou uma imagem instalável NSP/XCI.
 Depois do backup, feche a janela de backup e use "Encerrar conexão".
 Espere a limpeza e reinicie o console ao terminar.
 
+BACKUP DE SAVES (NOVO, EM VALIDACAO NO CONSOLE)
+Após 4/4 com a conexão mantida aberta, clique em "Backup de saves".
+Clique em "Listar saves", confira jogo e identificador do usuário, escolha
+um destino no PC e clique em "Fazer backup". Não precisa informar o IP do Switch.
+A primeira versão copia saves por usuário e compartilhados do espaço User.
+Não há restauração, remoção ou escrita em saves do console neste módulo.
+O destino padrão é saves-backups, excluído do Git. Para outro destino, prefira
+uma pasta fora deste projeto. Não publique saves ou inventários pessoais.
+Os dados ficam em data/, parciais em .partial/ e o resultado em manifest.json.
+O manifesto só recebe complete:true após verificações e limpeza confirmadas.
+Instruções detalhadas: docs/SAVES.md.
+Dependência: tools/ns2-savekit (fixada por revisão, licença MIT preservada).
+
+GERAR NUP (ADAPTADOR DE LINHA DE COMANDO)
+Instruções: docs/NUP.md. O fluxo já foi validado com dois backups locais.
+Não precisa manter o Switch ligado para empacotar arquivos já recebidos.
+Base/programa 0 e atualizações/programa 0 são suportados neste marco.
+DLC e outros índices ainda são recusados. O botão no painel virá depois.
+Instale a dependência privada e execute, na pasta do projeto:
+  python -m pip install --target .runtime/nup-python --only-binary=:all: --no-deps -r requirements-nup.txt
+  python painel-nup.py "PASTA_DO_BACKUP" --out "PASTA_DE_SAIDA"
+Cada geração cria uma pasta nova com o NUP e build-report.json.
+Os dois pacotes de teste funcionaram segundo o usuário no Eglantine
+0d86405bd1-nx2, build de 04/11/2026 (MSVC 19.44.35229.0).
+Pastas e NUPs usam Nome do jogo [ID]. Backups repetidos recebem (2) na pasta.
+Para backups antigos sem nome: acrescente --name "Nome do jogo" ao gerador.
+
+DIAGNOSTICO DAS OPERACOES
+O painel agora mostra fase e duração da abertura anunciada pelo OunceCake.
+Durante preparação não existe um total de bytes conhecido: a barra é animada.
+Na cópia a barra passa a mostrar a contagem de bytes recebidos.
+Resumo do erro em português aparece na tela; a causa original e os erros de
+limpeza permanecem no registro. Não foi alterado o prazo de resposta nativa.
+Uma falha marca a sessão como indisponível para outras operações pelo painel.
+Feche a conexão e reinicie o console antes de tentar novamente.
+
 SE FALHAR
 Guarde os registros e reinicie completamente o console antes de tentar novamente.
 O programa agora interrompe as repetições automáticas se a limpeza não foi

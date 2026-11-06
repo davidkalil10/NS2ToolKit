@@ -46,4 +46,4 @@ O manifesto confirma que os arquivos anunciados foram recebidos com os tamanhos 
 - O [ns2-savekit](https://github.com/dougchansan/ns2-savekit) oferece uma base de leitura e escrita de saves, mas requer adaptação ao mecanismo utilizado aqui e validação por operação.
 - O servidor do OunceCake rejeita comandos de escrita. Adicionar um botão FTP não concede acesso de gravação ao armazenamento inteiro.
 
-Esses pontos orientam o [roadmap](ROADMAP.md); eles não anunciam funções já presentes no executável.
+Esses pontos orientam o [roadmap](ROADMAP.md). Desde então foi integrado o [primeiro módulo de leitura de saves](SAVES.md), ainda sem validação no console. Capacidades externas não devem ser confundidas com as funções explicitamente integradas e testadas aqui.

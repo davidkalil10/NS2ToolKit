@@ -8,7 +8,7 @@ Na configuração do autor, esta versão completou as quatro etapas do ns2jb, co
 
 Um backup real foi concluído: seis arquivos, 34.708.992 bytes recebidos, tamanhos conferidos, hashes SHA-256 locais registrados e encerramento dos recursos do OunceCake sem erro. Veja o [relatório resumido](docs/CHECKPOINT-2026-11-05.md).
 
-O [índice da documentação](docs/README.md) reúne aprendizados, incidentes, decisões, compatibilidade e roadmap. Há falhas conhecidas na preparação de alguns conteúdos, descritas no [registro de incidentes](docs/INCIDENTES.md); os novos módulos de saves, FTP dedicado e HBLauncher estão planejados, ainda não integrados.
+O [índice da documentação](docs/README.md) reúne aprendizados, incidentes, decisões, compatibilidade e roadmap. Há falhas conhecidas na preparação de conteúdos, descritas no [registro de incidentes](docs/INCIDENTES.md). A versão em desenvolvimento inclui backup de saves somente leitura, ainda em validação no console. Restauração, FTP dedicado e HBLauncher permanecem planejados.
 
 É um checkpoint funcional testado em um console. A aquisição do FS continua sensível à temporização e pode falhar. O backup cobre os arquivos anunciados pelo OunceCake, sem prometer cobertura de todo conteúdo instalado ou comparar hashes fornecidos pelo console. Registros da sessão e dados exportados não fazem parte do repositório.
 
@@ -18,7 +18,7 @@ O [índice da documentação](docs/README.md) reúne aprendizados, incidentes, d
 git clone --recurse-submodules https://github.com/davidkalil10/NS2ToolKit.git
 ```
 
-Se já clonou sem as dependências, execute `git submodule update --init --recursive`. O OunceCake é fixado por revisão em `tools/OunceCake`. O ZIP automático do GitHub não inclui o conteúdo de submódulos: use Git para obter o conjunto completo.
+Se já clonou sem as dependências, execute `git submodule update --init --recursive`. OunceCake, ns2-savekit e NUP são fixados por revisão em `tools/`. O ZIP automático do GitHub não inclui submódulos: use Git para obter o conjunto completo.
 
 ## Requisitos
 
@@ -66,6 +66,16 @@ Este fluxo não exporta saves ou chaves e não produz uma imagem NSP/XCI instal�
 
 Termine o backup antes de encerrar a conexão. Feche a janela de backup, use **Encerrar conexão**, aguarde a limpeza e reinicie o console ao terminar.
 
+## Backup de saves (novo módulo em validação)
+
+Após 4/4 com conexão mantida aberta, clique em **Backup de saves**, depois **Listar saves**, confira jogo e usuário, escolha o destino e clique em **Fazer backup**. Não precisa informar o IP do Switch. A versão atual copia saves Account/Device do espaço User e não oferece restauração. Consulte [escopo, manifesto e validação pendente](docs/SAVES.md).
+
+## Gerar NUP no PC (adaptador CLI)
+
+O [adaptador NUP](docs/NUP.md) foi testado com dois backups próprios, com verificação completa e comparação de árvores. O usuário confirmou funcionamento no Eglantine `0d86405bd1-nx2` (build de 04/11/2026). Consome base/programa 0 e atualizações/programa 0; DLC e outros índices ainda são recusados. O botão no painel permanece pendente.
+
+Novos backups guardam o nome do jogo no manifesto. Pastas e NUPs usam **Nome do jogo [ID]**, tratando caracteres inválidos do Windows e acrescentando `(2)` à pasta em caso de repetição, sem substituir arquivos anteriores. Para backups antigos, o gerador aceita `--name "Nome do jogo"`.
+
 ## Se a etapa 2 falhar
 
 Preserve a pasta da tentativa em `runs/` e reinicie o console antes de repetir. O supervisor local para após limpeza incerta; `switch2/acquisition-attempt-1.log` preserva a primeira causa da falha.
@@ -88,8 +98,9 @@ HBLauncher não está incluído. O acesso é temporário e depende do PC e do Sm
 ## Testes e compilação
 
 ```powershell
-node --test test.cjs painel.test.cjs
+node --test test.cjs painel.test.cjs painel-modules.test.cjs
 python test-painel-download.py
+python test-painel-nup.py
 powershell.exe -NoProfile -STA -ExecutionPolicy Bypass -File .\Painel-NS2.ps1 -SelfTest
 ```
 
@@ -99,14 +110,26 @@ Para gerar o executável Windows Forms/.NET Framework usando o compilador do Win
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Compilar-Painel.ps1
 ```
 
-`SHA256SUMS` identifica os arquivos versionados deste checkpoint; o OunceCake é identificado pela revisão do submódulo.
+`SHA256SUMS` identifica os arquivos versionados; as três dependências em `tools/` são identificadas pelas revisões fixadas dos submódulos.
 
-## Origem e créditos
+## Créditos, projetos de origem e dependências
 
-- [ns2jb, por pepsipu](https://pepsipu.com/blog/2026-10-switch2-jailbreak-ns2jb/): pesquisa e cadeia original.
-- [Fork de kurumuz](https://gitlab.com/kurumuz/ns2jb), base `81d5bb114c856109dadaf1077d927a9f297fe58d`: mecanismo e runner, com as alterações locais descritas acima. O [README de origem](docs/NS2JB-UPSTREAM.md) foi preservado.
-- [OunceCake, por misshexa66](https://github.com/misshexa66/OunceCake), revisão `43dd500a10f7fef62a2c6d60b9f67851d3371dc6`: descoberta, montagem e FTP; licença GPL-2.0 preservada no submódulo.
-- [ezBasic, por StonedModder](https://github.com/StonedModder/ezBasic): utilizado no preparo inicial do SmileBASIC, não distribuído aqui.
-- [IZ2S Platform](https://github.com/byizmysh/IZ2S-Platform): referência para a rotina experimental de recuperação.
+O NS2ToolKit integra e adapta o trabalho dos projetos abaixo. Os créditos pela pesquisa, mecanismo, formatos e bibliotecas originais pertencem aos respectivos autores e contribuidores.
 
-Este repositório não altera nem substitui os avisos e licenças de terceiros. Não é afiliado à Nintendo.
+| Projeto e autor | Como é utilizado |
+| --- | --- |
+| [ns2jb — pepsipu / Sammy Hajhamid](https://gitlab.com/pepsipu/ns2jb) | Pesquisa e cadeia original; [artigo técnico](https://pepsipu.com/blog/2026-10-switch2-jailbreak-ns2jb/) |
+| [ns2jb — fork de kurumuz](https://gitlab.com/kurumuz/ns2jb) | Base do mecanismo e runner, com adaptações Windows e recuperação locais. Revisão `81d5bb114c856109dadaf1077d927a9f297fe58d`; [README original preservado](docs/NS2JB-UPSTREAM.md) |
+| [OunceCake — misshexa66 / Hexa](https://github.com/misshexa66/OunceCake) | Descoberta, montagem e exportação FTP do conteúdo dos jogos. Revisão `43dd500a10f7fef62a2c6d60b9f67851d3371dc6`; [licença GPL-2.0](https://github.com/misshexa66/OunceCake/blob/43dd500a10f7fef62a2c6d60b9f67851d3371dc6/LICENSE) |
+| [ns2-savekit — dougchansan](https://github.com/dougchansan/ns2-savekit) | Referência do inventário e biblioteca de atributos usada no módulo de leitura de saves. Revisão `700814ff37fa8f11f12e77b65dc8a33d421e8dd1`; [licença MIT](https://github.com/dougchansan/ns2-savekit/blob/700814ff37fa8f11f12e77b65dc8a33d421e8dd1/LICENSE) |
+| [NUP — a55uka](https://github.com/a55uka/nup) | Formato e implementação de referência para empacotamento, leitura e verificação. Revisão `d40d9cfa50792ba8021d2967d994d1b1c25d62b0`; [licença MIT](https://github.com/a55uka/nup/blob/d40d9cfa50792ba8021d2967d994d1b1c25d62b0/LICENSE) |
+| [python-zstandard — indygreg e contribuidores](https://github.com/indygreg/python-zstandard) | Biblioteca Python 0.25.0 usada na compressão dos NUPs; licença BSD-3-Clause |
+| [Zstandard — Meta e contribuidores](https://github.com/meta/zstd) | Implementação da compressão utilizada pela dependência Python; seus avisos permanecem na distribuição da biblioteca |
+
+Referências utilizadas no preparo e na pesquisa, sem incorporar seu código ao NS2ToolKit:
+
+- [ezBasic — StonedModder](https://github.com/StonedModder/ezBasic): digitação inicial do bootstrap usando um Switch 1.
+- [IZ2S Platform — byizmysh](https://github.com/byizmysh/IZ2S-Platform): referência para a rotina experimental de recuperação.
+- [HBLauncher e SDK — ravensclawx](https://github.com/ravensclawx/HBLauncher) e [ftpd-sb](https://github.com/ravensclawx/ftpd-sb): pesquisa de compatibilidade para o roadmap; ainda não integrados.
+
+Veja também [os avisos e o escopo dos componentes de terceiros](THIRD_PARTY_NOTICES.md). Este repositório preserva as licenças e atribuições de cada componente; não aplica uma licença única aos projetos de origem. Não é afiliado à Nintendo.

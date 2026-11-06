@@ -1,6 +1,6 @@
 # Roadmap
 
-Atualizado em 5 de novembro de 2026. As prioridades abaixo são propostas; os módulos marcados como planejados não estão no executável atual.
+Atualizado em 5 de novembro de 2026. O usuário confirmou a ordem diagnóstico → backup de saves → restauração. Implementação e validação no console são estados separados.
 
 ## Referência já validada
 
@@ -12,11 +12,11 @@ Atualizado em 5 de novembro de 2026. As prioridades abaixo são propostas; os m�
 
 ## P0 — entender e apresentar melhor falhas de backup
 
-**Estado: diagnóstico inicial concluído; implementação pendente.** Ver [INC-002 e INC-003](INCIDENTES.md).
+**Estado: instrumentação implementada e testada localmente; validação das novas informações no console pendente.** Ver [INC-002 e INC-003](INCIDENTES.md). A correção dos caminhos de montagem ainda está pendente.
 
-- Registrar horários, duração e identificador de cada etapa de preparação.
-- Mostrar separadamente descoberta, montagem, indexação, FTP, transferência e limpeza.
-- Exibir o primeiro erro em português e manter os erros de limpeza como detalhes.
+- [x] Registrar horários, duração e as aberturas anunciadas pelo OunceCake.
+- [x] Diferenciar preparação sem total conhecido, transferência com contagem de bytes e limpeza. Detalhes internos de montagem/indexação dependem dos eventos do OunceCake.
+- [x] Exibir resumo do erro em português e preservar a primeira causa e os erros de limpeza nos registros.
 - Distinguir operação recusada, operação lenta e sessão invalidada.
 - Comparar o suporte da revisão fixada com alternativas para atualizações, múltiplos programas e conteúdo composto.
 - Não alterar limites ou mecanismo de montagem sem um caso reproduzível e teste dedicado.
@@ -25,13 +25,13 @@ Atualizado em 5 de novembro de 2026. As prioridades abaixo são propostas; os m�
 
 ## P1 — backup de saves
 
-**Estado: viabilidade pesquisada; integração não iniciada.** Base candidata: [ns2-savekit](https://github.com/dougchansan/ns2-savekit).
+**Estado: leitura implementada e testada localmente; validação no console pendente.** Veja [SAVES.md](SAVES.md). A biblioteca de atributos do ns2-savekit foi fixada por revisão, sem aplicar seus patches de escrita.
 
-- Fixar uma revisão e revisar somente as alterações de mecanismo necessárias.
-- Descobrir usuários e arquivos de saves sem confundir catálogo de jogos com inventário de saves.
-- Exibir identidade do jogo/usuário, selecionar destino e copiar para pasta nova.
-- Registrar manifesto, hashes e estado incompleto em interrupções.
-- Ignorar backups e identificadores pessoais no Git.
+- [x] Fixar a dependência e revisar os patches; este marco de leitura não precisa aplicá-los.
+- [x] Obter usuários e arquivos pelo inventário de saves, separado do catálogo de jogos.
+- [x] Exibir jogo/usuário, selecionar destino e criar pasta nova.
+- [x] Registrar manifesto, hashes, releitura local e cópias incompletas.
+- [x] Excluir o destino padrão do Git; cache e identidades ficam na pasta local da sessão.
 
 **Critérios de conclusão:** cópia no console sem escrita no save de origem; verificação dos arquivos; teste com mais de um arquivo de save e recusa de sessão inválida; compatibilidade Windows confirmada.
 
@@ -74,6 +74,22 @@ Primeiro marco: sessão FTP de leitura para conteúdo selecionado, com endereço
 
 **Critérios de conclusão:** exemplo mínimo validado no console e relatório de viabilidade do port escolhido. Uma demonstração de outro jogo não valida automaticamente esse port.
 
+## P5 — gerar NUP a partir de backups locais
+
+**Estado: adaptador CLI implementado, dois backups gerados/verificados e funcionamento informado pelo usuário no Eglantine `0d86405bd1-nx2`. Interface gráfica pendente.** Veja [o fluxo atual](NUP.md) e a [validação](VALIDACAO-NUP-2026-11-05.md).
+
+- [x] Exigir backup completo e conferir sua integridade.
+- [x] Adaptar base/atualizações do programa 0, preservando outras seções em data/.
+- [x] Conferir identidade e recusar DLC/outros índices sem descarte silencioso.
+- [x] Fixar dependências, preservar originais e criar uma pasta nova por geração.
+- [x] Verificar NUP integralmente e comparar sua árvore com a origem adaptada.
+- [x] Registrar conteúdo/hashes e o teste informado pelo usuário na build identificada do Eglantine.
+- [x] Nomear backups e saídas com Nome do jogo [ID], sem substituir pastas anteriores.
+- [ ] Integrar a geração NUP ao painel; retorno do primeiro teste no emulador já recebido.
+- [ ] Avaliar DLC/múltiplos programas com casos próprios de teste.
+
+**Critérios de conclusão:** teste sintético de ida e volta, entradas inválidas recusadas e um backup próprio empacotado/verificado, com os casos não suportados claramente informados.
+
 ## Ordem de execução
 
-Proposta inicial: P0 → P1 → P2. FTP de leitura pode ser antecipado após P0; HBLauncher depende da escolha do port e de um ambiente de compilação compatível. Registrar mudanças de prioridade em [Decisões](DECISOES.md).
+Ordem confirmada: P0 → P1 → P2, validando a leitura antes da restauração. Por solicitação posterior do usuário, o teste CLI de NUP com dois backups locais foi antecipado, sem operações no console. Interface NUP, FTP e HBLauncher continuam para etapas posteriores.

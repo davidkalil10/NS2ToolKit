@@ -47,7 +47,7 @@ namespace NS2Panel {
         public bool Alive { get { return process != null && !process.HasExited; } }
         public string Transcript { get { lock (gate) return transcript.ToString(); } }
         public void Start(string node, string script, string arguments, string root) {
-            var info = new ProcessStartInfo(node, "\"" + script + "\" " + arguments);
+            var info = new ProcessStartInfo(node, Checks.QuoteArgument(script) + " " + arguments);
             info.WorkingDirectory = root;
             info.UseShellExecute = false;
             info.CreateNoWindow = true;
@@ -110,6 +110,7 @@ namespace NS2Panel {
         private readonly CheckBox prepared = new CheckBox();
         private readonly Button start = new Button(), stop = new Button(), logs = new Button();
         private readonly Button backup = new Button();
+        private readonly Button saves = new Button();
         private readonly Label status = new Label(), detail = new Label();
         private readonly TextBox output = new TextBox();
         private readonly TextBox[] commands = new TextBox[4];
@@ -186,7 +187,9 @@ namespace NS2Panel {
                     if (dialog.RequiresRestart) backupFailed = true;
                 }
             }; footer.Controls.Add(backup);
-            footer.Controls.Add(new Label { Text = "Backup exige 4/4 e conexão mantida aberta. HBLauncher não incluído.", AutoSize = true, Font = new Font("Segoe UI", 9), Location = new Point(324, 15) });
+            saves.Text = "Backup de saves"; saves.SetBounds(322, 8, 150, 31); saves.Enabled = false;
+            saves.Click += delegate { using (var dialog = new BackupWindow(root, progress.Folder, true)) { dialog.ShowDialog(this); if (dialog.RequiresRestart) backupFailed = true; } }; footer.Controls.Add(saves);
+            footer.Controls.Add(new Label { Text = "Requer 4/4 e conexão mantida aberta.", AutoSize = true, Font = new Font("Segoe UI", 9), Location = new Point(484, 15) });
             layout.Controls.Add(footer);
             LoadAddresses();
             timer.Interval = 150; timer.Tick += Poll; timer.Start();
@@ -239,6 +242,7 @@ namespace NS2Panel {
             if (progress.StartCommand != null) commands[3].Text = progress.StartCommand;
             bar.Value = progress.Stage;
             backup.Enabled = progress.State == RunState.Held && !cleaning && !stopping && !backupFailed && runner.Alive;
+            saves.Enabled = backup.Enabled;
             stop.Text = progress.State == RunState.Held ? "Encerrar conexão" : "Interromper";
             bool waiting = progress.State == RunState.Waiting;
             foreach (var button in copy) button.Enabled = waiting;
@@ -248,13 +252,14 @@ namespace NS2Panel {
                 else if (progress.State == RunState.Held) { status.Text = "4/4 confirmado • conexão mantida aberta"; detail.Text = "Ferramentas compatíveis podem usar esta sessão. Deixe o PC e o SmileBASIC ligados."; }
                 else if (progress.State == RunState.Verified) status.Text = "Sucesso • execução no FS confirmada";
                 if (cleaning) { status.Text = "Encerrando a sessão e aguardando a limpeza..."; detail.Text = "Mantenha o SmileBASIC aberto até a confirmação. Não feche esta janela."; }
-                else if (backupFailed) { status.Text = "Backup encontrou um erro • encerre a conexão e reinicie o console"; detail.Text = "Os registros foram preservados. Não inicie outra operação nesta sessão."; }
+                else if (backupFailed) { status.Text = "Uma operação encontrou um erro • encerre a conexão e reinicie o console"; detail.Text = "Os registros foram preservados. Não inicie outra operação nesta sessão."; }
             }
             if (!runner.Complete) return;
             if (!stopping) progress.Finish(runner.ExitCode);
             start.Enabled = true; stop.Enabled = false; addresses.Enabled = held.Enabled = prepared.Enabled = true; prepared.Checked = false;
             foreach (var button in copy) button.Enabled = false;
             backup.Enabled = false;
+            saves.Enabled = false;
             if (stopping) { status.Text = "Tentativa interrompida • reinicie o console"; detail.Text = "A limpeza não foi confirmada. Reinicie completamente antes de tentar outra vez."; }
             else if (progress.State == RunState.Verified) { status.Text = "Sucesso • 4/4 verificado e limpeza concluída"; detail.Text = "A demonstração terminou e fechou a conexão. Reinicie o console para finalizar."; }
             else { status.Text = "Sessão encerrada • confira os registros e reinicie o console"; detail.Text = "RPC STOP no Switch não comprova sucesso. O resultado depende das verificações do PC."; }
@@ -301,6 +306,17 @@ namespace NS2Panel {
     }
 
     public static class Checks {
+        public static string QuoteArgument(string value) {
+            var quoted = new StringBuilder("\"");
+            int slashes = 0;
+            foreach (char character in value) {
+                if (character == '\\') { slashes++; continue; }
+                quoted.Append('\\', character == '"' ? slashes * 2 + 1 : slashes);
+                quoted.Append(character); slashes = 0;
+            }
+            quoted.Append('\\', slashes * 2); quoted.Append('"');
+            return quoted.ToString();
+        }
         public static string FindNode() {
             string programFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
             string installed = Path.Combine(programFiles, "nodejs", "node.exe");
@@ -333,9 +349,9 @@ namespace NS2Panel {
             p.Finish(1); Assert(p.State == RunState.Failed, "Failed cleanup must override held success");
             string mock = Path.Combine(Path.GetTempPath(), "ns2-panel-" + Guid.NewGuid().ToString("N") + ".cjs");
             try {
-                File.WriteAllText(mock, "console.log('Waiting for Switch 2 at 127.0.0.1:39380.');console.log('  V=START(39380,127,0,0,1)');console.error('stderr captured');setTimeout(()=>{console.log('4/4 Running the FS demo');console.log('FS execution verified. Original instructions restored and scratch cleaned up.');},100);", new UTF8Encoding(false));
+                File.WriteAllText(mock, "console.log('ARGS:'+JSON.stringify(process.argv.slice(2)));console.log('Waiting for Switch 2 at 127.0.0.1:39380.');console.log('  V=START(39380,127,0,0,1)');console.error('stderr captured');setTimeout(()=>{console.log('4/4 Running the FS demo');console.log('FS execution verified. Original instructions restored and scratch cleaned up.');},100);", new UTF8Encoding(false));
                 using (var runner = new Runner()) {
-                    runner.Start(node, mock, "", root);
+                    runner.Start(node, mock, QuoteArgument(@"D:\") + " " + QuoteArgument("folder with spaces"), root);
                     var deadline = DateTime.UtcNow.AddSeconds(10);
                     while (!runner.Complete && DateTime.UtcNow < deadline) Thread.Sleep(25);
                     Assert(runner.Complete, "Runner did not terminate");
@@ -343,6 +359,10 @@ namespace NS2Panel {
                     Assert(p.State == RunState.Verified, "Process output did not reach the progress parser");
                     Assert(p.StartCommand == "V=START(39380,127,0,0,1)", "START parsing failed");
                     Assert(runner.Transcript.Contains("stderr captured"), "Standard error was lost");
+                    string[] received = null;
+                    foreach (string line in runner.Transcript.Split('\n'))
+                        if (line.StartsWith("ARGS:")) received = new System.Web.Script.Serialization.JavaScriptSerializer().Deserialize<string[]>(line.Substring(5).Trim());
+                    Assert(received != null && received.Length == 2 && received[0] == @"D:\" && received[1] == "folder with spaces", "Windows path arguments were changed");
                 }
             } finally { File.Delete(mock); }
             Console.WriteLine("Painel: verificações de estado, processo, saída e comandos passaram. Nenhuma conexão com o console foi iniciada.");

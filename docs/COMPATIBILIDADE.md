@@ -6,9 +6,11 @@ Pesquisa de 5 de novembro de 2026. **Documentado por um projeto externo** não s
 | --- | --- |
 | ns2jb 4/4 e RPC mantido | Validado na configuração do checkpoint |
 | Backup de arquivos de jogos | Validado em alguns casos; falhas conhecidas de preparação de conteúdo |
-| Backup e restauração de saves | Ainda não integrados |
+| Backup de saves | Integrado somente leitura; testes locais passaram, validação no console pendente |
+| Restauração de saves | Ainda não integrada |
 | FTP para navegação externa | Ainda não exposto como módulo dedicado; FTP de leitura já é usado pelo backup |
 | HBLauncher | Ainda não integrado |
+| Empacotar backups em NUP | Dois backups verificados; funcionamento relatado no Eglantine 0d86405bd1-nx2; interface pendente |
 | Executar NRO de Switch 1 diretamente | Não é uma capacidade comprovada deste projeto ou do SDK pesquisado |
 | Acesso irrestrito de leitura/escrita ao microSD | Não demonstrado e não prometido |
 
@@ -28,7 +30,7 @@ O [ns2-savekit](https://github.com/dougchansan/ns2-savekit) documenta descoberta
 
 A [restauração descrita pelo projeto](https://github.com/dougchansan/ns2-savekit/blob/main/docs/RESTORE.md) faz pré-backup, prepara um manifesto, grava e relê para verificar. Há uma limitação relevante: arquivos ausentes no backup não são automaticamente removidos do destino. Uma restauração por substituição não deve ser apresentada como espelho exato sem política explícita.
 
-Nossa proposta é integrar primeiro leitura/backup, depois restauração com confirmação e validação por jogo/usuário. Nenhum save foi alterado por esta pesquisa.
+O [módulo de leitura](SAVES.md) já está integrado. Usa o inventário para selecionar o usuário e não aplica os patches de escrita. A restauração com confirmação permanece para a etapa seguinte. Nenhuma escrita em saves do console foi feita neste desenvolvimento.
 
 ## FTP e navegador de arquivos
 
