@@ -112,6 +112,7 @@ namespace NS2Panel {
         private readonly Button backup = new Button();
         private readonly Button saves = new Button();
         private readonly Button nup = new Button();
+        private readonly Button homebrew = new Button();
         private readonly Label status = new Label(), detail = new Label();
         private readonly TextBox output = new TextBox();
         private readonly TextBox[] commands = new TextBox[4];
@@ -125,8 +126,8 @@ namespace NS2Panel {
         public MainWindow(string folder) {
             root = folder;
             Text = "NS2 • Assistente de conexão" + (File.Exists(Path.Combine(root, "VERSION")) ? " • v" + File.ReadAllText(Path.Combine(root, "VERSION")).Trim() : "");
-            ClientSize = new Size(920, 710);
-            MinimumSize = new Size(936, 699);
+            ClientSize = new Size(980, 710);
+            MinimumSize = new Size(996, 699);
             StartPosition = FormStartPosition.CenterScreen;
             BackColor = Color.FromArgb(245, 247, 251);
             Font = new Font("Segoe UI", 10);
@@ -180,19 +181,21 @@ namespace NS2Panel {
             output.Dock = DockStyle.Fill; output.Font = new Font("Consolas", 9); output.BackColor = Color.FromArgb(23, 32, 49); output.ForeColor = Color.FromArgb(225, 233, 245);
             layout.Controls.Add(output);
             var footer = new Panel { Dock = DockStyle.Fill };
-            logs.Text = "Abrir registros"; logs.SetBounds(0, 8, 145, 31); logs.Click += delegate { OpenLogs(); }; footer.Controls.Add(logs);
-            backup.Text = "Backup dos jogos"; backup.SetBounds(155, 8, 157, 31); backup.Enabled = false;
+            logs.Text = "Abrir registros"; logs.SetBounds(0, 8, 130, 31); logs.Click += delegate { OpenLogs(); }; footer.Controls.Add(logs);
+            backup.Text = "Backup dos jogos"; backup.SetBounds(138, 8, 145, 31); backup.Enabled = false;
             backup.Click += delegate {
                 using (var dialog = new BackupWindow(root, progress.Folder)) {
                     dialog.ShowDialog(this);
                     if (dialog.RequiresRestart) backupFailed = true;
                 }
             }; footer.Controls.Add(backup);
-            saves.Text = "Backup de saves"; saves.SetBounds(322, 8, 150, 31); saves.Enabled = false;
+            saves.Text = "Backup de saves"; saves.SetBounds(291, 8, 145, 31); saves.Enabled = false;
             saves.Click += delegate { using (var dialog = new BackupWindow(root, progress.Folder, true)) { dialog.ShowDialog(this); if (dialog.RequiresRestart) backupFailed = true; } }; footer.Controls.Add(saves);
-            nup.Text = "Gerar NUP"; nup.SetBounds(482, 8, 125, 31);
+            nup.Text = "Gerar NUP"; nup.SetBounds(444, 8, 115, 31);
             nup.Click += delegate { using (var dialog = new NupWindow(root)) dialog.ShowDialog(this); }; footer.Controls.Add(nup);
-            footer.Controls.Add(new Label { Text = "NUP: operação local no PC.", AutoSize = true, Font = new Font("Segoe UI", 9), Location = new Point(617, 15) });
+            homebrew.Text = "Homebrew"; homebrew.SetBounds(567, 8, 120, 31);
+            homebrew.Click += delegate { using (var dialog = new HomebrewWindow(root, progress.Folder)) dialog.ShowDialog(this); }; footer.Controls.Add(homebrew);
+            footer.Controls.Add(new Label { Text = "NUP e Homebrew: ferramentas locais.", AutoSize = true, Font = new Font("Segoe UI", 9), Location = new Point(695, 15) });
             layout.Controls.Add(footer);
             LoadAddresses();
             timer.Interval = 150; timer.Tick += Poll; timer.Start();
@@ -368,6 +371,9 @@ namespace NS2Panel {
             Assert(nup.Successful(0, false) && !nup.Successful(1, false) && !nup.Successful(0, true), "NUP exit and cancellation checks failed");
             nup.Accept("PANEL:{\"kind\":\"error\",\"message\":\"invalid backup\"}");
             Assert(!nup.Successful(0, false), "NUP error must override completion");
+            var hb = new HomebrewProgress();
+            hb.Accept("PANEL:{\"kind\":\"status\",\"message\":\"ready\"}");
+            Assert(hb.Message == "ready", "Homebrew status failed");
             var p = new RunProgress(); p.Accept("4/4 Running the FS demo"); p.Finish(0);
             Assert(p.State == RunState.Failed, "Stage 4 alone must not report success");
             p = new RunProgress(); p.Accept("FS execution verified. Original instructions restored and scratch cleaned up."); p.Finish(0);

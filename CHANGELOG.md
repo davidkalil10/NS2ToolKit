@@ -7,6 +7,7 @@ Atualização do assistente com melhorias de empacotamento e preparação para P
 - Otimização das ferramentas de backup de jogos e saves somente leitura.
 - Validação e empacotamento NUP aprimorados para emuladores.
 - Detecção e configuração automática do endereço IP do console.
+- Lançador de Homebrews integrado: carregamento e execução de payloads nativos (.bin) via sessão RPC mantida (4/4).
 
 ## 0.1.0 — 6 de novembro de 2026
 
