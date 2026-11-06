@@ -222,6 +222,7 @@ def generate(backup, output_parent, name=None):
     job = new_directory(output_parent, label)
     report_path = job / 'build-report.json'
     report = dict(complete=False, title=title, source=str(backup), source_manifest_sha256=digest(backup / 'manifest.json'),
+                  source_scope=manifest.get('scope', dict(profile='legacy', omittedSections=[])),
                   nup_revision='d40d9cfa50792ba8021d2967d994d1b1c25d62b0', nup_version=nup.__version__,
                   input_files=[dict(path=item['path'], sha256=item['sha256']) for item in items])
     report_path.write_text(json.dumps(report, indent=2), encoding='utf-8')

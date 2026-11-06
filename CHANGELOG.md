@@ -1,5 +1,11 @@
 # Histórico de versões
 
+## 0.1.2 — experimental, em validação
+
+- Inventário de base/atualizações/programas sem montagem e registros de chamadas durante a preparação.
+- Perfil completo preservado; perfil optativo sem manuais e com abertura direta dos programas secundários, ainda pendente de teste no console.
+- Escopo selecionado e omissões registrados no manifesto e no relatório NUP.
+
 ## 0.1.1 — 6 de novembro de 2026
 
 - Preserva a sessão após recusa conhecida de conteúdo, quando a limpeza e a saúde dos endpoints são confirmadas. Timeouts e estados incertos continuam bloqueados.

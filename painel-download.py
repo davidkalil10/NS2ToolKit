@@ -72,7 +72,7 @@ def save_manifest(root, manifest):
             time.sleep(.01 * (attempt + 1))
 
 
-def download(host, destination, title, port=2121, name=None):
+def download(host, destination, title, port=2121, name=None, scope=None):
     ipaddress.IPv4Address(host)
     if len(title) != 16 or any(c not in '0123456789abcdefABCDEF' for c in title):
         raise ValueError('Identificador inválido.')
@@ -80,6 +80,7 @@ def download(host, destination, title, port=2121, name=None):
     parent.mkdir(parents=True, exist_ok=True)
     root = new_directory(parent, game_label(name, title))
     manifest = dict(complete=False, title=title, name=name, host=host, files=[], verification='FTP size and local SHA-256; no remote hash')
+    manifest['scope'] = scope or dict(profile='full', omittedSections=[])
     save_manifest(root, manifest)
     emit('destination', path=str(root))
     ftp = ftplib.FTP(timeout=60)
@@ -148,9 +149,13 @@ if __name__ == '__main__':
     parser.add_argument('destination')
     parser.add_argument('title')
     parser.add_argument('--name')
+    parser.add_argument('--scope', help='Relatório de seleção de conteúdo produzido pelo assistente')
     args = parser.parse_args()
     try:
-        download(args.host, args.destination, args.title, name=args.name)
+        scope = json.loads(Path(args.scope).read_text(encoding='utf-8')) if args.scope else None
+        if scope and (scope.get('profile') not in ('full', 'compatibility') or not isinstance(scope.get('omittedSections'), list)):
+            raise ValueError('Escopo de exportação inválido.')
+        download(args.host, args.destination, args.title, name=args.name, scope=scope)
     except Exception as error:
         emit('error', message=str(error))
         sys.exit(1)

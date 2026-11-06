@@ -10,7 +10,7 @@ class Progress {
     this.phase = phase; this.operation = operation; this.started = Date.now();
     this.tick();
   }
-  snapshot() {return {phase: this.phase, operation: this.operation, elapsedSeconds: Math.floor((Date.now() - this.started) / 1000)};}
+  snapshot() {return {phase: this.phase, operation: this.operation, nativeOperation: this.nativeOperation || '', elapsedSeconds: Math.floor((Date.now() - this.started) / 1000)};}
   tick() {this.send('phase', this.snapshot());}
   start() {this.timer = setInterval(() => this.tick(), 1000); this.timer.unref();}
   close() {clearInterval(this.timer);}

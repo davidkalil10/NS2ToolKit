@@ -92,6 +92,10 @@ O backup de jogos não inclui saves ou chaves e não gera imagens NSP/XCI instal
 
 Consulte [incidentes conhecidos](docs/INCIDENTES.md), [compatibilidade](docs/COMPATIBILIDADE.md), [roadmap](docs/ROADMAP.md) e o [índice da documentação](docs/README.md).
 
+## Perfis experimentais em desenvolvimento
+
+A branch `fix/game-backup-mounts` acrescenta inventário sem montagem, registros por chamada e um perfil que omite manuais e testa outra rota para programas secundários. Esses recursos ainda precisam de validação no console; veja [o roteiro](docs/TESTE-MONTAGENS.md). A exportação com manuais omitidos é identificada no manifesto.
+
 ## Desenvolvimento
 
 ```sh
@@ -107,7 +111,7 @@ python -m pip install --target .runtime/nup-python --only-binary=:all: --no-deps
 Testes:
 
 ```powershell
-node --test test.cjs painel.test.cjs painel-modules.test.cjs
+node --test test.cjs painel.test.cjs painel-modules.test.cjs painel-mounts.test.cjs
 python test-painel-download.py
 python test-painel-nup.py
 powershell.exe -NoProfile -STA -ExecutionPolicy Bypass -File .\Painel-NS2.ps1 -SelfTest

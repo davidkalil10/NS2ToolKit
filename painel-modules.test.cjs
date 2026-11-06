@@ -11,6 +11,23 @@ const {gameLabel, newDirectory} = require('./painel-names.cjs');
 const {sessionConsoleAddress} = require('./painel-session.cjs');
 const {assessFailure} = require('./painel-recovery.cjs');
 
+test('game inventory mode records all packages without preparing mounts or requiring Python', async t => {
+  const run = await temporary(t), events = [], a = fakeAttachment();
+  const title = '0100000000000000';
+  await fs.writeFile(path.join(run, 'result.json'), JSON.stringify({verified: true, rpc: {state: 'listening'}}));
+  const {main} = require('./painel-backup.cjs');
+  await main([run, '192.168.18.139', run, title, 'Teste', 'inventory'], {
+    attach: async () => a,
+    inventory: async () => ({title, base: [{contentTitle: title, version: 0, storage: 2, contents: [{contentType: 1, programIndex: 0}]}], updates: [], dlc: [], dataPatches: []}),
+    send: (kind, value) => events.push({kind, ...value}),
+  });
+  assert.equal(events.at(-1).kind, 'complete');
+  assert.equal(events.at(-1).profile, 'inventory');
+  assert.deepEqual(a.commands, []);
+  const plan = (await fs.readdir(run)).find(name => name.startsWith('game-plan-'));
+  assert.equal(JSON.parse(await fs.readFile(path.join(run, plan))).base[0].storage, 2);
+});
+
 test('the recovery probe checks both the RPC bridge and the retained endpoint session', async t => {
   const http = require('node:http'), net = require('node:net');
   const {verifyHeldHealth} = require('./painel-recovery.cjs');

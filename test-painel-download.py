@@ -76,6 +76,13 @@ class DownloadTests(unittest.TestCase):
         self.assertEqual((root / 'game' / 'romfs.tar.part').read_bytes(), b'ab')
         self.assertFalse((root / 'game' / 'romfs.tar').exists())
 
+    def test_selected_omissions_are_preserved_in_the_backup_manifest(self):
+        scope = dict(profile='compatibility', omittedSections=['/updates/262144/program/0/manual'])
+        root = download.download('127.0.0.1', self.tmp.name, '0100000000000000', scope=scope)
+        manifest = json.loads((root / 'manifest.json').read_text())
+        self.assertTrue(manifest['complete'])
+        self.assertEqual(manifest['scope'], scope)
+
     def test_remote_traversal_is_refused_before_downloading(self):
         self.fake.unsafe = True
         with self.assertRaisesRegex(ValueError, 'inválido'):

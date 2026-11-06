@@ -43,3 +43,7 @@ ezBasic foi utilizado no preparo inicial do console. IZ2S Platform, HBLauncher/S
 ## Runtimes da distribuição portátil
 
 A distribuição portátil inclui Node.js 22.16.0 (OpenJS Foundation e contribuidores; licença MIT e avisos de componentes em `runtime/node/LICENSE.txt`) e CPython 3.13.4 (Python Software Foundation e contribuidores; licenças em `runtime/python/LICENSE.txt`). O pacote oficial Python inclui suas extensões e bibliotecas de runtime. python-zstandard 0.25.0 é incluído com sua licença em `runtime/python/zstandard-0.25.0.dist-info/licenses/LICENSE`. Fontes e avisos das ferramentas permanecem em `tools/`. As dependências são preparadas pelo script de [build portátil](docs/PORTATIL.md); seus binários não entram no Git.
+
+## Adaptação experimental de montagem
+
+`compat/ouncecake/` contém cópias derivadas de mounts/program da revisão OunceCake fixada, com licença GPL-2.0 preservada no diretório. O perfil completo mantém o submódulo original. A rota optativa para programas secundários foi informada pela revisão `04317dc` do [fork pulchrasmash](https://gitlab.com/pulchrasmash/ouncecake), sugerido na discussão upstream; não foi importado o fork completo. Veja [o escopo do experimento](docs/TESTE-MONTAGENS.md).

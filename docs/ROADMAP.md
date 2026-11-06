@@ -96,3 +96,7 @@ Primeiro marco: sessão FTP de leitura para conteúdo selecionado, com endereço
 ## Ordem de execução
 
 Ordem confirmada: P0 → P1 → P2, validando a leitura antes da restauração. Por solicitação posterior do usuário, o teste CLI de NUP com dois backups locais foi antecipado, sem operações no console. A interface NUP foi adicionada a pedido do usuário; FTP e HBLauncher continuam para etapas posteriores.
+
+## Experimento atual — Z-A e Split Fiction
+
+Perfis separados, inventário sem montagem e registros por chamada estão implementados na branch `fix/game-backup-mounts`. Testes locais passaram; a validação de montagem no console e a correção do dump integral continuam pendentes. [Roteiro e limitações](TESTE-MONTAGENS.md).

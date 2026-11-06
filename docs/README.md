@@ -27,3 +27,5 @@ Este diretório registra evidências, decisões e trabalho planejado. Uma funç�
 As fontes externas foram consultadas em **5 de novembro de 2026**. Elas podem evoluir e devem ser conferidas novamente antes da integração.
 
 - [Distribuição portátil e geração de NUP pela interface](PORTATIL.md).
+
+- [Perfis experimentais de montagem e roteiro de teste](TESTE-MONTAGENS.md).

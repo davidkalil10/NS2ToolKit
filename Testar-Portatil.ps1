@@ -56,6 +56,17 @@ for section, entries in [('exefs', [('main.npdm', bytes(npdm))]), ('romfs', [('d
     $addressField = $backupWindow.GetType().GetField('host', [Reflection.BindingFlags]'NonPublic,Instance').GetValue($backupWindow)
     if ($addressField.Text -ne '192.168.18.139') { throw 'IP do console nao foi preenchido na interface.' }
     $backupWindow.Dispose()
+    $profileWindow = New-Object NS2Panel.BackupWindow($PSScriptRoot, $sessionFixture)
+    $profileFlags = [Reflection.BindingFlags]'NonPublic,Instance'
+    $profiles = $profileWindow.GetType().GetField('profile', $profileFlags).GetValue($profileWindow)
+    if ($profiles.SelectedIndex -ne 0 -or $profiles.Items.Count -ne 3) { throw 'Perfil completo nao e o padrao.' }
+    $profiles.SelectedIndex = 1
+    $profileStatus = $profileWindow.GetType().GetField('status', $profileFlags).GetValue($profileWindow)
+    if (!$profileStatus.Text.Contains('omite manuais')) { throw 'A omissao de manuais nao ficou explicita.' }
+    $profiles.SelectedIndex = 2
+    $profileBegin = $profileWindow.GetType().GetField('begin', $profileFlags).GetValue($profileWindow)
+    if ($profileBegin.Text -ne 'Coletar diagnóstico') { throw 'Acao de diagnostico nao foi apresentada.' }
+    $profileWindow.Dispose()
     # Preferences survive window recreation and keep games and saves separate.
     $gameTarget = Join-Path $work 'jogos personalizados'
     $saveTarget = Join-Path $work 'saves personalizados'

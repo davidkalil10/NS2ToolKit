@@ -20,6 +20,7 @@ namespace NS2Panel {
         private readonly bool savesMode;
         private readonly TextBox host = new TextBox(), destination = new TextBox(), output = new TextBox();
         private readonly ComboBox games = new ComboBox();
+        private readonly ComboBox profile = new ComboBox();
         private readonly Button list = new Button(), begin = new Button(), cancel = new Button(), open = new Button();
         private readonly Label status = new Label();
         private readonly ProgressBar bar = new ProgressBar();
@@ -53,6 +54,16 @@ namespace NS2Panel {
             begin.Text = "Fazer backup"; begin.SetBounds(22, 317, 155, 35); begin.Enabled = false; begin.Click += delegate { StartTask(false); }; Controls.Add(begin);
             cancel.Text = "Cancelar operação"; cancel.SetBounds(187, 317, 176, 35); cancel.Enabled = false; cancel.Click += delegate { CancelTask(); }; Controls.Add(cancel);
             open.Text = "Abrir pasta"; open.SetBounds(373, 317, 140, 35); open.Click += delegate { OpenFolder(); }; Controls.Add(open);
+            var profileLabel = new Label { Text = "Perfil de exportação", Location = new Point(530, 302), Size = new Size(312, 24), Visible = !savesMode };
+            Controls.Add(profileLabel);
+            profile.DropDownStyle = ComboBoxStyle.DropDownList; profile.SetBounds(530, 326, 312, 30); profile.Visible = !savesMode;
+            profile.Items.AddRange(new object[] { "Completo (padrão)", "Compatibilidade: sem manuais", "Diagnóstico: apenas inventário" }); profile.SelectedIndex = 0;
+            profile.SelectedIndexChanged += delegate {
+                if (worker != null) return;
+                begin.Text = profile.SelectedIndex == 2 ? "Coletar diagnóstico" : "Fazer backup";
+                status.Text = profile.SelectedIndex == 1 ? "Experimental: omite manuais e testa abertura direta dos programas secundários. A omissão fica no manifesto." :
+                    profile.SelectedIndex == 2 ? "Lê o inventário sem montar os arquivos do jogo. O relatório fica na pasta da sessão." : "Perfil completo: preserva a preparação usada na versão estável.";
+            }; Controls.Add(profile);
             status.Text = savesMode ? "Feche outros jogos. Clique em Listar saves para ler o inventário." : "Clique em Listar jogos. Com o campo vazio, o endereço será obtido da sessão."; status.SetBounds(22, 366, 820, 40); Controls.Add(status);
             bar.SetBounds(22, 410, 820, 12); bar.Maximum = 1000; Controls.Add(bar);
             output.SetBounds(22, 436, 820, 151); output.Multiline = true; output.ReadOnly = true; output.ScrollBars = ScrollBars.Both; output.WordWrap = false;
@@ -102,12 +113,12 @@ namespace NS2Panel {
                 if (savesMode && !File.Exists(Path.Combine(root, "tools", "ns2-savekit", "tools", "lib", "save-attr.cjs"))) throw new Exception("A dependência ns2-savekit está faltando. Atualize os submódulos do projeto.");
                 worker = new Runner(); worker.SetEnvironment("NS2_PANEL_PYTHON", python);
                 string arguments = savesMode ? Checks.QuoteArgument(session) + " " + (onlyList ? "list" : "backup") + " " + Checks.QuoteArgument(target) + (onlyList ? "" : " " + game.ArchiveId) :
-                    Checks.QuoteArgument(session) + " " + (address == null ? "auto" : address.ToString()) + " " + Checks.QuoteArgument(target) + (onlyList ? "" : " " + game.Title + " " + Checks.QuoteArgument(game.Name));
+                    Checks.QuoteArgument(session) + " " + (address == null ? "auto" : address.ToString()) + " " + Checks.QuoteArgument(target) + (onlyList ? "" : " " + game.Title + " " + Checks.QuoteArgument(game.Name) + " " + (profile.SelectedIndex == 1 ? "compatibility" : profile.SelectedIndex == 2 ? "inventory" : "full"));
                 worker.Start(node, tool, arguments, root);
                 complete = failed = cancelling = listed = false; listing = onlyList; backupFolder = null;
                 backendRequiresRestart = true;
                 if (onlyList) games.Items.Clear();
-                list.Enabled = begin.Enabled = host.Enabled = destination.Enabled = games.Enabled = false; cancel.Enabled = true;
+                list.Enabled = begin.Enabled = host.Enabled = destination.Enabled = games.Enabled = profile.Enabled = false; cancel.Enabled = true;
                 output.Clear(); bar.Value = 0; status.Text = onlyList ? "Lendo o inventário do console..." : "Preparando o backup...";
                 bar.Style = ProgressBarStyle.Marquee; lastPhase = "initial";
             } catch (Exception error) { if (worker != null) worker.Dispose(); worker = null; MessageBox.Show(this, error.Message, "Backup"); }
@@ -168,14 +179,16 @@ namespace NS2Panel {
             bar.Style = ProgressBarStyle.Continuous;
             bar.Value = success && !listing ? 1000 : 0;
             RequiresRestart = !success && (!failed || backendRequiresRestart);
-            if (success) status.Text = listing ? (games.Items.Count == 0 ? "Nenhum item suportado foi encontrado neste inventário." : "Lista pronta. Escolha um item e clique em Fazer backup.") : "Backup concluído • tamanhos e hashes conferidos.";
+            if (success) status.Text = listing ? (games.Items.Count == 0 ? "Nenhum item suportado foi encontrado neste inventário." : "Lista pronta. Escolha um item e clique em Fazer backup.") :
+                !savesMode && profile.SelectedIndex == 2 ? "Diagnóstico concluído. Use Abrir pasta para consultar o inventário." :
+                !savesMode && profile.SelectedIndex == 1 ? "Exportação do perfil concluída • sem manuais. Confira o escopo no manifesto." : "Backup concluído • tamanhos e hashes conferidos.";
             else if (!failed) status.Text = "Operação incompleta. Confira os registros; o backup não foi marcado como concluído.";
             try {
                 string folder = backupFolder ?? session;
                 File.WriteAllText(Path.Combine(folder, "painel-backup-" + DateTime.Now.ToString("yyyyMMdd-HHmmss-fff") + ".log"), worker.Transcript);
             } catch { }
             worker.Dispose(); worker = null;
-            list.Enabled = !RequiresRestart; host.Enabled = destination.Enabled = games.Enabled = true; cancel.Enabled = false;
+            list.Enabled = !RequiresRestart; host.Enabled = destination.Enabled = games.Enabled = profile.Enabled = true; cancel.Enabled = false;
             begin.Enabled = !RequiresRestart && games.SelectedItem != null;
             if (RequiresRestart && !status.Text.Contains("reinicie")) status.Text += " Encerre a conexão e reinicie o console.";
         }

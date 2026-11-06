@@ -11,10 +11,13 @@ const {attachGame} = require(ounce + 'session.cjs');
 const {discoverGames} = require(ounce + 'content.cjs');
 const {prepareGame} = require(ounce + 'mounts.cjs');
 const {deployFtp, readImage} = require(ounce + 'ftp.cjs');
+const {prepareGame: prepareCompatibility} = require('./compat/ouncecake/mounts.cjs');
+const {inventoryGame, summarizeInventory, tracePreparation} = require('./painel-game-diagnostics.cjs');
 
-async function main([run, host, destination, title, suppliedName], {
-  attach = attachGame, discover = discoverGames, prepare = prepareGame, probe = verifyHeldHealth, send = emit,
+async function main([run, host, destination, title, suppliedName, profile = 'full'], {
+  attach = attachGame, discover = discoverGames, prepare, inventory = inventoryGame, probe = verifyHeldHealth, send = emit,
 } = {}) {
+  if (!['full', 'compatibility', 'inventory'].includes(profile)) throw Error('Perfil de exportação inválido.');
   if (!run || host !== 'auto' && !net.isIPv4(host)) throw Error('Informe a sessão e o endereço IPv4 do Switch 2.');
   run = await requireHeldSession(run);
   if (host === 'auto') host = await sessionConsoleAddress(run);
@@ -23,7 +26,7 @@ async function main([run, host, destination, title, suppliedName], {
   const stop = () => {cancelled = true; downloader?.kill();};
   process.on('SIGINT', stop);
   process.on('SIGTERM', stop);
-  let failure, failureContext, recovery;
+  let failure, failureContext, recovery, selection = {profile, omittedSections: []};
   const cleanupErrors = [];
   const progress = new Progress(send); progress.start();
   try {
@@ -42,26 +45,43 @@ async function main([run, host, destination, title, suppliedName], {
         const cache = await fs.readFile(path.join(run, 'painel-games.json'), 'utf8').then(JSON.parse).catch(error => {if (error.code === 'ENOENT') return []; throw error;});
         gameName = cache.find(game => game.title.toLowerCase() === title.toLowerCase())?.name;
       }
-      const python = process.env.NS2_PANEL_PYTHON;
-      if (!python) throw Error('Python 3 não foi encontrado pelo painel.');
-      send('status', {message: 'Preparando os arquivos do jogo. Isso pode demorar...'});
-      progress.begin('prepare', 'Preparando o conteúdo do jogo');
-      const prepared = await progress.openings(() => prepare({attachment, title, shouldStop: () => cancelled, tar: true}));
-      if (cancelled) throw Error('Backup cancelado.');
-      progress.begin('ftp', 'Iniciando o servidor de leitura');
-      server = await deployFtp({attachment, image: await readImage(), ...prepared, port: 2121});
-      if (cancelled) throw Error('Backup cancelado.');
-      send('status', {message: 'Copiando do Switch 2 para o PC...'});
-      progress.begin('transfer', 'Transferindo os arquivos para o PC');
-      await new Promise((resolve, reject) => {
-        downloader = spawn(python, ['-u', path.join(__dirname, 'painel-download.py'), host, destination, title, ...(gameName ? ['--name', gameName] : [])],
-          {stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true});
-        downloader.stdout.pipe(process.stdout, {end: false});
-        downloader.stderr.pipe(process.stderr, {end: false});
-        downloader.once('error', reject);
-        downloader.once('close', code => code === 0 && !cancelled ? resolve() : reject(Error(cancelled ?
-          'Backup cancelado. Arquivos parciais foram preservados.' : 'A cópia não terminou. Confira os registros e o manifesto do backup.')));
-      });
+      send('selection', {title, name: gameName, profile});
+      const diagnosticFile = path.join(run, 'game-plan-' + title + '-' + Date.now() + '.json');
+      progress.begin('inventory', 'Identificando base, atualizações e programas do jogo');
+      // Unit-test overrides may supply the preparation directly, as before.
+      const catalog = prepare ? null : await inventory(attachment, title, () => cancelled);
+      if (catalog) await fs.writeFile(diagnosticFile, JSON.stringify({profile, ...summarizeInventory(catalog)}, null, 2));
+      if (profile === 'inventory') {
+        send('destination', {path: run});
+        send('status', {message: 'Inventário salvo: ' + diagnosticFile});
+      } else {
+        const python = process.env.NS2_PANEL_PYTHON;
+        if (!python) throw Error('Python 3 não foi encontrado pelo painel.');
+        send('status', {message: 'Preparando os arquivos do jogo. Isso pode demorar...'});
+        progress.begin('prepare', 'Preparando o conteúdo do jogo');
+        const mount = prepare || (profile === 'compatibility' ? prepareCompatibility : prepareGame);
+        const prepared = await progress.openings(() => tracePreparation(attachment, progress, send, traced =>
+          mount({attachment: traced, title, shouldStop: () => cancelled, tar: true, profile})));
+        selection = prepared.selection || selection;
+        const scopeFile = path.join(run, 'game-scope-' + title + '-' + Date.now() + '.json');
+        await fs.writeFile(scopeFile, JSON.stringify(selection, null, 2));
+        send('scope', selection);
+        if (cancelled) throw Error('Backup cancelado.');
+        progress.begin('ftp', 'Iniciando o servidor de leitura');
+        server = await deployFtp({attachment, image: await readImage(), ...prepared, port: 2121});
+        if (cancelled) throw Error('Backup cancelado.');
+        send('status', {message: 'Copiando do Switch 2 para o PC...'});
+        progress.begin('transfer', 'Transferindo os arquivos para o PC');
+        await new Promise((resolve, reject) => {
+          downloader = spawn(python, ['-u', path.join(__dirname, 'painel-download.py'), host, destination, title, '--scope', scopeFile, ...(gameName ? ['--name', gameName] : [])],
+            {stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true});
+          downloader.stdout.pipe(process.stdout, {end: false});
+          downloader.stderr.pipe(process.stderr, {end: false});
+          downloader.once('error', reject);
+          downloader.once('close', code => code === 0 && !cancelled ? resolve() : reject(Error(cancelled ?
+            'Backup cancelado. Arquivos parciais foram preservados.' : 'A cópia não terminou. Confira os registros e o manifesto do backup.')));
+        });
+      }
     }
   } catch (error) {failure = error; failureContext = progress.snapshot();}
   finally {
@@ -82,7 +102,7 @@ async function main([run, host, destination, title, suppliedName], {
     send('error', {...failureDetails(failure, failureContext, cleanupErrors), ...recovery});
     process.exitCode = 1; return;
   }
-  send(title ? 'complete' : 'listed');
+  send(title ? 'complete' : 'listed', {profile, selection});
 }
 
 module.exports = {main};

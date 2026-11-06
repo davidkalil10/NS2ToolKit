@@ -137,11 +137,13 @@ class BuildTests(unittest.TestCase):
         file = self.backup / 'manifest.json'
         manifest = json.loads(file.read_text())
         manifest['name'] = 'My Test Game'
+        manifest['scope'] = dict(profile='compatibility', omittedSections=['/base/program/0/manual'])
         file.write_text(json.dumps(manifest))
         report = builder.generate(self.backup, self.root / 'outputs')
         result = Path(report['output'])
         self.assertEqual(result.parent.name, 'My Test Game [0100000000000000]')
         self.assertEqual(result.name, 'My Test Game [0100000000000000].nup')
+        self.assertEqual(report['source_scope'], manifest['scope'])
         override = builder.generate(self.backup, self.root / 'outputs', name='Other Name')
         self.assertEqual(Path(override['output']).name, 'Other Name [0100000000000000].nup')
 
