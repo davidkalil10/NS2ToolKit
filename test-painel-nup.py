@@ -77,6 +77,26 @@ class BuildTests(unittest.TestCase):
             builder.generate(self.backup, self.root / 'outputs')
         self.assertFalse((self.root / 'outputs').exists())
 
+    def test_cancel_during_pack_preserves_sources_and_incomplete_report(self):
+        self.fixture()
+        original = builder.pack
+        def cancelled_pack(*args, **kwargs):
+            builder.cancel_requested.set()
+            return original(*args, **kwargs)
+        try:
+            with patch.object(builder, 'pack', cancelled_pack):
+                with self.assertRaises(InterruptedError):
+                    builder.generate(self.backup, self.root / 'outputs')
+        finally:
+            builder.cancel_requested.clear()
+        reports = list((self.root / 'outputs').glob('*/build-report.json'))
+        self.assertEqual(len(reports), 1)
+        self.assertFalse(json.loads(reports[0].read_text())['complete'])
+        self.assertFalse(list((self.root / 'outputs').glob('**/*.nup')))
+        self.assertFalse(list((self.root / 'outputs').glob('.nup-work-*')))
+        for item in self.files:
+            self.assertEqual(builder.digest(self.backup / item['path']), item['sha256'])
+
     def test_changed_input_is_refused(self):
         self.fixture()
         target = self.backup / self.files[0]['path']

@@ -20,9 +20,13 @@ git clone --recurse-submodules https://github.com/davidkalil10/NS2ToolKit.git
 
 Se já clonou sem as dependências, execute `git submodule update --init --recursive`. OunceCake, ns2-savekit e NUP são fixados por revisão em `tools/`. O ZIP automático do GitHub não inclui submódulos: use Git para obter o conjunto completo.
 
+## Versão portátil
+
+A build portátil inclui Node, Python, compressão e suas DLLs: extraia o ZIP inteiro e abra **NS2 Assistente.exe**. Não é necessário instalar essas dependências no PC de uso. Requer Windows 10/11 x64 com .NET Framework 4.x. Veja [distribuição e build portátil](docs/PORTATIL.md). O código-fonte e o ZIP automático do GitHub continuam exigindo preparação das dependências.
+
 ## Requisitos
 
-- Windows, Node.js 22 ou superior e Python 3.9 ou superior para o backup.
+- Windows. Usando o código-fonte: Node.js 22 ou superior e Python 3.10 ou superior. A build portátil inclui ambos.
 - Switch 2 com sistema 23.0.1 e SmileBASIC completo 4.4.9.
 - SmileBASIC na memória interna, com mais de 20 MiB livres no save.
 - PC e Switch por Ethernet, na mesma rede local.
@@ -70,9 +74,9 @@ Termine o backup antes de encerrar a conexão. Feche a janela de backup, use **E
 
 Após 4/4 com conexão mantida aberta, clique em **Backup de saves**, depois **Listar saves**, confira jogo e usuário, escolha o destino e clique em **Fazer backup**. Não precisa informar o IP do Switch. A versão atual copia saves Account/Device do espaço User e não oferece restauração. Consulte [escopo, manifesto e validação pendente](docs/SAVES.md).
 
-## Gerar NUP no PC (adaptador CLI)
+## Gerar NUP no assistente
 
-O [adaptador NUP](docs/NUP.md) foi testado com dois backups próprios, com verificação completa e comparação de árvores. O usuário confirmou funcionamento no Eglantine `0d86405bd1-nx2` (build de 04/11/2026). Consome base/programa 0 e atualizações/programa 0; DLC e outros índices ainda são recusados. O botão no painel permanece pendente.
+O [adaptador NUP](docs/NUP.md) foi testado com dois backups próprios, com verificação completa e comparação de árvores. O usuário confirmou funcionamento no Eglantine `0d86405bd1-nx2` (build de 04/11/2026). Consome base/programa 0 e atualizações/programa 0; DLC e outros índices ainda são recusados. Clique em **Gerar NUP**, escolha a pasta do backup completo (com `manifest.json`), escolha o destino e clique em **Gerar e verificar**. Ao concluir, use **Abrir pasta**. Não requer conexão com o console; a opção pelo terminal continua disponível.
 
 Novos backups guardam o nome do jogo no manifesto. Pastas e NUPs usam **Nome do jogo [ID]**, tratando caracteres inválidos do Windows e acrescentando `(2)` à pasta em caso de repetição, sem substituir arquivos anteriores. Para backups antigos, o gerador aceita `--name "Nome do jogo"`.
 

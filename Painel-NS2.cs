@@ -111,6 +111,7 @@ namespace NS2Panel {
         private readonly Button start = new Button(), stop = new Button(), logs = new Button();
         private readonly Button backup = new Button();
         private readonly Button saves = new Button();
+        private readonly Button nup = new Button();
         private readonly Label status = new Label(), detail = new Label();
         private readonly TextBox output = new TextBox();
         private readonly TextBox[] commands = new TextBox[4];
@@ -189,7 +190,9 @@ namespace NS2Panel {
             }; footer.Controls.Add(backup);
             saves.Text = "Backup de saves"; saves.SetBounds(322, 8, 150, 31); saves.Enabled = false;
             saves.Click += delegate { using (var dialog = new BackupWindow(root, progress.Folder, true)) { dialog.ShowDialog(this); if (dialog.RequiresRestart) backupFailed = true; } }; footer.Controls.Add(saves);
-            footer.Controls.Add(new Label { Text = "Requer 4/4 e conexão mantida aberta.", AutoSize = true, Font = new Font("Segoe UI", 9), Location = new Point(484, 15) });
+            nup.Text = "Gerar NUP"; nup.SetBounds(482, 8, 125, 31);
+            nup.Click += delegate { using (var dialog = new NupWindow(root)) dialog.ShowDialog(this); }; footer.Controls.Add(nup);
+            footer.Controls.Add(new Label { Text = "NUP: operação local no PC.", AutoSize = true, Font = new Font("Segoe UI", 9), Location = new Point(617, 15) });
             layout.Controls.Add(footer);
             LoadAddresses();
             timer.Interval = 150; timer.Tick += Poll; timer.Start();
@@ -219,7 +222,7 @@ namespace NS2Panel {
             var choice = addresses.SelectedItem as AddressChoice;
             if (choice == null) { MessageBox.Show(this, "Conecte o PC à rede cabeada e abra o painel novamente."); return; }
             try {
-                string node = Checks.FindNode();
+                string node = Checks.FindNode(root);
                 Checks.CheckNode(node, root);
                 if (runner != null) runner.Dispose();
                 runner = new Runner(); progress = new RunProgress(); stopping = false; cleaning = false; backupFailed = false;
@@ -317,7 +320,9 @@ namespace NS2Panel {
             quoted.Append('\\', slashes * 2); quoted.Append('"');
             return quoted.ToString();
         }
-        public static string FindNode() {
+        public static string FindNode(string root) {
+            string portable = Path.Combine(root, "runtime", "node", "node.exe");
+            if (File.Exists(portable)) return portable;
             string programFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
             string installed = Path.Combine(programFiles, "nodejs", "node.exe");
             if (File.Exists(installed)) return installed;
@@ -325,6 +330,23 @@ namespace NS2Panel {
                 try { string candidate = Path.Combine(folder.Trim('"'), "node.exe"); if (File.Exists(candidate)) return candidate; } catch { }
             }
             throw new Exception("Node.js 22 ou superior não foi encontrado. Instale-o antes de iniciar.");
+        }
+        public static string FindPython(string root) {
+            string portable = Path.Combine(root, "runtime", "python", "python.exe");
+            if (File.Exists(portable)) return portable;
+            foreach (string name in new[] { "python.exe", "py.exe" })
+                foreach (string folder in (Environment.GetEnvironmentVariable("PATH") ?? "").Split(Path.PathSeparator)) {
+                    try {
+                        string candidate = Path.Combine(folder.Trim('"'), name);
+                        if (!File.Exists(candidate)) continue;
+                        using (var p = Process.Start(new ProcessStartInfo(candidate, "-c \"import sys; assert sys.version_info >= (3,10); print('NS2-PYTHON-OK')\"") {
+                            UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true, RedirectStandardError = true })) {
+                            if (p.WaitForExit(4000) && p.ExitCode == 0 && p.StandardOutput.ReadToEnd().Contains("NS2-PYTHON-OK")) return candidate;
+                            if (!p.HasExited) p.Kill();
+                        }
+                    } catch { }
+                }
+            throw new Exception("Python não encontrado. Use o pacote portátil completo ou instale Python 3.10 ou superior.");
         }
         public static void CheckNode(string node, string folder) {
             var info = new ProcessStartInfo(node, "--version") { WorkingDirectory = folder, UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true };
@@ -339,7 +361,13 @@ namespace NS2Panel {
         }
         private static void Assert(bool condition, string message) { if (!condition) throw new Exception(message); }
         public static void Run(string root) {
-            string node = FindNode(); CheckNode(node, root);
+            string node = FindNode(root); CheckNode(node, root);
+            var nup = new NupProgress(); nup.Accept("PANEL:{\"kind\":\"pack\",\"done\":2,\"total\":3}");
+            Assert(nup.Packed == 2 && nup.Total == 3 && !nup.Successful(0, false), "NUP packing is not completion");
+            nup.Accept("PANEL:{\"kind\":\"complete\",\"path\":\"verified.nup\"}");
+            Assert(nup.Successful(0, false) && !nup.Successful(1, false) && !nup.Successful(0, true), "NUP exit and cancellation checks failed");
+            nup.Accept("PANEL:{\"kind\":\"error\",\"message\":\"invalid backup\"}");
+            Assert(!nup.Successful(0, false), "NUP error must override completion");
             var p = new RunProgress(); p.Accept("4/4 Running the FS demo"); p.Finish(0);
             Assert(p.State == RunState.Failed, "Stage 4 alone must not report success");
             p = new RunProgress(); p.Accept("FS execution verified. Original instructions restored and scratch cleaned up."); p.Finish(0);

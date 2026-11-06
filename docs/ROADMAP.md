@@ -76,7 +76,7 @@ Primeiro marco: sessão FTP de leitura para conteúdo selecionado, com endereço
 
 ## P5 — gerar NUP a partir de backups locais
 
-**Estado: adaptador CLI implementado, dois backups gerados/verificados e funcionamento informado pelo usuário no Eglantine `0d86405bd1-nx2`. Interface gráfica pendente.** Veja [o fluxo atual](NUP.md) e a [validação](VALIDACAO-NUP-2026-11-05.md).
+**Estado: adaptador CLI implementado, dois backups gerados/verificados e funcionamento informado pelo usuário no Eglantine `0d86405bd1-nx2`. Interface gráfica integrada e testada com dados sintéticos.** Veja [o fluxo atual](NUP.md) e a [validação](VALIDACAO-NUP-2026-11-05.md).
 
 - [x] Exigir backup completo e conferir sua integridade.
 - [x] Adaptar base/atualizações do programa 0, preservando outras seções em data/.
@@ -85,11 +85,13 @@ Primeiro marco: sessão FTP de leitura para conteúdo selecionado, com endereço
 - [x] Verificar NUP integralmente e comparar sua árvore com a origem adaptada.
 - [x] Registrar conteúdo/hashes e o teste informado pelo usuário na build identificada do Eglantine.
 - [x] Nomear backups e saídas com Nome do jogo [ID], sem substituir pastas anteriores.
-- [ ] Integrar a geração NUP ao painel; retorno do primeiro teste no emulador já recebido.
+- [x] Integrar a geração NUP ao painel; retorno do primeiro teste no emulador já recebido.
+- [x] Gerar ZIP portátil com Node, Python, DLLs e compressor incluídos; teste com PATH isolado.
+- [ ] Validar o pacote em outro Windows sem instalações prévias de Node/Python.
 - [ ] Avaliar DLC/múltiplos programas com casos próprios de teste.
 
 **Critérios de conclusão:** teste sintético de ida e volta, entradas inválidas recusadas e um backup próprio empacotado/verificado, com os casos não suportados claramente informados.
 
 ## Ordem de execução
 
-Ordem confirmada: P0 → P1 → P2, validando a leitura antes da restauração. Por solicitação posterior do usuário, o teste CLI de NUP com dois backups locais foi antecipado, sem operações no console. Interface NUP, FTP e HBLauncher continuam para etapas posteriores.
+Ordem confirmada: P0 → P1 → P2, validando a leitura antes da restauração. Por solicitação posterior do usuário, o teste CLI de NUP com dois backups locais foi antecipado, sem operações no console. A interface NUP foi adicionada a pedido do usuário; FTP e HBLauncher continuam para etapas posteriores.

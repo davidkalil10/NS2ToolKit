@@ -1,6 +1,6 @@
 # Empacotamento NUP — adaptador local
 
-**Estado: adaptador CLI testado com dados sintéticos e dois backups próprios. O usuário confirmou funcionamento dos dois no Eglantine `0d86405bd1-nx2`. Botão no painel pendente.** Referência: [a55uka/nup](https://github.com/a55uka/nup), revisão fixada `d40d9cfa50792ba8021d2967d994d1b1c25d62b0`.
+**Estado: adaptador CLI testado com dados sintéticos e dois backups próprios. O usuário confirmou funcionamento dos dois no Eglantine `0d86405bd1-nx2`. Integrado ao assistente pelo botão Gerar NUP.** Referência: [a55uka/nup](https://github.com/a55uka/nup), revisão fixada `d40d9cfa50792ba8021d2967d994d1b1c25d62b0`.
 
 ## O que o projeto oferece
 
@@ -14,7 +14,11 @@ Nosso backup pode produzir `base/program/0/exefs.tar` e `base/program/0/romfs.ta
 
 O adaptador converte os TARs de `base/program/0` e `updates/<versão>/program/0`. ExeFS/RomFS vão para as árvores canônicas; outras seções são preservadas sob `data/`. DLC e índices diferentes de zero são recusados, sem descarte silencioso.
 
-## Executar no PC
+## Executar no assistente
+
+Clique em **Gerar NUP** na janela principal, selecione a pasta de um backup completo com `manifest.json`, escolha o destino e clique em **Gerar e verificar**. O campo de nome é opcional para backups antigos. A janela mostra as fases, permite solicitar cancelamento e abre a pasta final. Não exige uma sessão ativa do Switch. A [build portátil](PORTATIL.md) inclui as dependências.
+
+## Executar no PC pelo terminal
 
 ```powershell
 git submodule update --init --recursive
@@ -41,7 +45,7 @@ Pastas e arquivos usam **Nome do jogo [ID]**. O nome vem do manifesto do backup,
 
 ## Validação
 
-- Passaram sete testes: base/atualização, backup incompleto, hash alterado, programa não suportado, TAR com travessia/link, nomes opcionais inválidos e nomes de pasta/arquivo vindos do manifesto.
+- Passaram oito testes, incluindo cancelamento durante a geração: base/atualização, backup incompleto, hash alterado, programa não suportado, TAR com travessia/link, nomes opcionais inválidos e nomes de pasta/arquivo vindos do manifesto.
 - A verificação NUP recalcula os hashes; uma comparação adicional confere caminhos, diretórios, tamanhos e hashes com as árvores preparadas.
 - Dois backups próprios foram gerados/verificados: veja [o registro resumido](VALIDACAO-NUP-2026-11-05.md).
 - Espaço insuficiente e interrupção têm tratamento no fluxo, mas ainda não passaram por ensaio de falha dedicado. Não tratá-los como validados.

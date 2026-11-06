@@ -1,8 +1,9 @@
-ASSISTENTE NS2 PARA WINDOWS
+﻿ASSISTENTE NS2 PARA WINDOWS
 
 Abra "NS2 Assistente.exe" com dois cliques, ou use "Abrir NS2.cmd".
 Mantenha os arquivos nesta pasta; mover apenas o executável não funciona.
-O painel usa o Node.js instalado no PC e o projeto ns2jb desta pasta.
+Na build portatil, Node, Python e DLLs ja estao incluidos. Extraia o ZIP inteiro.
+Usando somente o codigo-fonte, prepare as dependencias conforme README.md.
 
 ANTES DE CADA TENTATIVA
 1. PC e Switch 2 conectados por cabo de rede.
@@ -48,7 +49,7 @@ Termine transferências e operações de outras ferramentas antes de interromper
 BACKUP DOS SEUS JOGOS PARA O PC
 O OunceCake está incluído em tools\OunceCake, com sua licença GPLv2.
 Origem: https://github.com/misshexa66/OunceCake
-O download usa Python 3.9 ou superior, que já está instalado neste PC.
+O download usa o Python incluido na build portatil. No codigo-fonte, requer Python 3.10+.
 1. Antes de iniciar, marque "Manter conexão aberta após 4/4".
 2. Execute a sequência no Switch e aguarde "4/4 confirmado" no painel.
 3. Clique em "Backup dos jogos".
@@ -83,7 +84,14 @@ O manifesto só recebe complete:true após verificações e limpeza confirmadas.
 Instruções detalhadas: docs/SAVES.md.
 Dependência: tools/ns2-savekit (fixada por revisão, licença MIT preservada).
 
-GERAR NUP (ADAPTADOR DE LINHA DE COMANDO)
+GERAR NUP PELO ASSISTENTE
+Clique em Gerar NUP na janela principal (nao precisa conectar o Switch).
+Escolha a pasta do backup completo que contem manifest.json e os TARs.
+Escolha a pasta de saida e, opcionalmente, o nome para um backup antigo.
+Clique em Gerar e verificar. Ao concluir, clique em Abrir pasta.
+Cancelar aguarda a operacao atual para limpar os temporarios.
+
+GERAR NUP PELO TERMINAL (ALTERNATIVA)
 Instruções: docs/NUP.md. O fluxo já foi validado com dois backups locais.
 Não precisa manter o Switch ligado para empacotar arquivos já recebidos.
 Base/programa 0 e atualizações/programa 0 são suportados neste marco.

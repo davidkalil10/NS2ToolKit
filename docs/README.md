@@ -11,7 +11,7 @@ Este diretório registra evidências, decisões e trabalho planejado. Uma funç�
 | [Roadmap](ROADMAP.md) | Ordem sugerida das melhorias e critérios de conclusão |
 | [Compatibilidade](COMPATIBILIDADE.md) | Limites de homebrew, saves e acesso a arquivos |
 | [Backup de saves](SAVES.md) | Uso, escopo e validação pendente do novo módulo de leitura |
-| [Empacotamento NUP](NUP.md) | Adaptador CLI, uso e limites dos layouts suportados |
+| [Empacotamento NUP](NUP.md) | Interface e adaptador CLI, uso e limites dos layouts suportados |
 | [Validação NUP](VALIDACAO-NUP-2026-11-05.md) | Resultados dos dois backups próprios gerados/verificados |
 | [README do ns2jb de origem](NS2JB-UPSTREAM.md) | Instruções preservadas da base utilizada |
 
@@ -25,3 +25,5 @@ Este diretório registra evidências, decisões e trabalho planejado. Uma funç�
 - Preservar as tags de checkpoints; melhorias posteriores recebem novos commits e novas validações.
 
 As fontes externas foram consultadas em **5 de novembro de 2026**. Elas podem evoluir e devem ser conferidas novamente antes da integração.
+
+- [Distribuição portátil e geração de NUP pela interface](PORTATIL.md).

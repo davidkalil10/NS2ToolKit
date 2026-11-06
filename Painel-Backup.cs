@@ -68,22 +68,6 @@ namespace NS2Panel {
         private void AddLabel(string text, int x, int y, int width, int height, int size, bool bold) {
             Controls.Add(new Label { Text = text, Location = new Point(x, y), Size = new Size(width, height), Font = new Font("Segoe UI", size, bold ? FontStyle.Bold : FontStyle.Regular) });
         }
-        private static string FindPython() {
-            foreach (string name in new[] {"python.exe", "py.exe"})
-                foreach (string entry in (Environment.GetEnvironmentVariable("PATH") ?? "").Split(Path.PathSeparator)) {
-                    string candidate;
-                    try {candidate = Path.Combine(entry.Trim('"'), name);} catch {continue;}
-                    if (!File.Exists(candidate)) continue;
-                    try {
-                        using (var process = Process.Start(new ProcessStartInfo(candidate, "-c \"import sys; assert sys.version_info >= (3,9); print('NS2-PYTHON-OK')\"") {
-                            UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true, RedirectStandardError = true })) {
-                            if (process.WaitForExit(4000) && process.ExitCode == 0 && process.StandardOutput.ReadToEnd().Contains("NS2-PYTHON-OK")) return candidate;
-                            if (!process.HasExited) process.Kill();
-                        }
-                    } catch { }
-                }
-            throw new Exception("O backup precisa de Python 3.9 ou superior instalado no PC. A conexão ns2jb não foi alterada.");
-        }
         private void StartTask(bool onlyList) {
             if (RequiresRestart) { MessageBox.Show(this, "Esta sessão precisa ser encerrada. Reinicie o console antes de outra operação."); return; }
             IPAddress address = null;
@@ -91,7 +75,7 @@ namespace NS2Panel {
             var game = games.SelectedItem as GameChoice;
             if (!onlyList && game == null) return;
             try {
-                string node = Checks.FindNode(), python = onlyList || savesMode ? "" : FindPython();
+                string node = Checks.FindNode(root), python = onlyList || savesMode ? "" : Checks.FindPython(root);
                 string target = Path.GetFullPath(destination.Text);
                 string tool = Path.Combine(root, savesMode ? "painel-saves.cjs" : "painel-backup.cjs");
                 if (!File.Exists(Path.Combine(root, "tools", "OunceCake", "ouncecake.cjs"))) throw new Exception("A pasta tools\\OunceCake está faltando. Mantenha o programa completo nesta pasta.");

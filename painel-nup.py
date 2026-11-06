@@ -14,6 +14,7 @@ import sys
 import tarfile
 import tempfile
 import time
+import threading
 
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT / '.runtime' / 'nup-python'))
@@ -26,6 +27,20 @@ from nup.discover import parse_npdm_program_id
 import nup
 from painel_names import game_label, new_directory
 
+cancel_requested = threading.Event()
+
+
+def check_cancelled():
+    if cancel_requested.is_set():
+        raise InterruptedError('Geração cancelada pelo usuário.')
+
+
+def panel_commands():
+    for command in sys.stdin:
+        if command.strip() == 'stop':
+            cancel_requested.set()
+            return
+
 
 def emit(kind, **fields):
     print('PANEL:' + json.dumps(dict(kind=kind, at=time.strftime('%Y-%m-%dT%H:%M:%S'), **fields), ensure_ascii=True), flush=True)
@@ -35,6 +50,7 @@ def digest(file):
     value = hashlib.sha256()
     with Path(file).open('rb') as stream:
         for block in iter(lambda: stream.read(1024 * 1024), b''):
+            check_cancelled()
             value.update(block)
     return value.hexdigest()
 
@@ -106,6 +122,7 @@ def extract_inputs(items, stage):
     seen, planned = set(), []
     total = 0
     for item in items:
+        check_cancelled()
         with tarfile.open(item['file'], 'r:') as archive:
             members = safe_members(archive, item['section'], item['package'], seen)
             total += sum(m.size for m, unused in members if m.isfile())
@@ -117,6 +134,7 @@ def extract_inputs(items, stage):
         package = stage / Path(*PurePosixPath(item['package']).parts)
         with tarfile.open(item['file'], 'r:') as archive:
             for member, local in members:
+                check_cancelled()
                 target = package / Path(*local.parts)
                 if not target.resolve().is_relative_to(stage.resolve()):
                     raise ValueError('Extração fora da área temporária.')
@@ -128,7 +146,9 @@ def extract_inputs(items, stage):
                     if source is None:
                         raise ValueError('Arquivo TAR sem dados.')
                     with source, target.open('xb') as output:
-                        shutil.copyfileobj(source, output, 1024 * 1024)
+                        for block in iter(lambda: source.read(1024 * 1024), b''):
+                            check_cancelled()
+                            output.write(block)
                     if target.stat().st_size != member.size:
                         raise ValueError('Extração incompleta.')
         current = item['file'].stat()
@@ -139,6 +159,7 @@ def extract_inputs(items, stage):
 def disk_tree(folder):
     directories, files = set(), {}
     for file in Path(folder).rglob('*'):
+        check_cancelled()
         relative = file.relative_to(folder).as_posix()
         if file.is_symlink():
             raise ValueError('Link inesperado na árvore preparada.')
@@ -211,6 +232,7 @@ def generate(backup, output_parent, name=None):
             last = 0
             def progress(done, total, unused):
                 nonlocal last
+                check_cancelled()
                 if time.monotonic() - last > .5 or done == total:
                     emit('pack', done=done, total=total)
                     last = time.monotonic()
@@ -220,6 +242,7 @@ def generate(backup, output_parent, name=None):
             ok, problems = verify(str(pending), deep=True)
             if not ok:
                 raise ValueError('Verificação NUP falhou: ' + '; '.join(problems[:10]))
+            check_cancelled()
             summaries = []
             with NupReader(str(pending)) as container:
                 if len(packages) != len(container.packages):
@@ -232,8 +255,10 @@ def generate(backup, output_parent, name=None):
                     summaries.append(dict(kind=package.kind_name, title=f'{package.title_id:016X}', version=package.version,
                                           files=len(copied[1]), directories=len(copied[0])))
             final = job / (label + '.nup')
+            output_hash = digest(pending)
+            check_cancelled()
             pending.rename(final)
-            report.update(complete=True, output=str(final), bytes=final.stat().st_size, sha256=digest(final),
+            report.update(complete=True, output=str(final), bytes=final.stat().st_size, sha256=output_hash,
                           deep_verified=True, source_trees_matched=True, packages=summaries, name=name)
             report_path.write_text(json.dumps(report, indent=2, ensure_ascii=True), encoding='utf-8')
             emit('complete', path=str(final), bytes=report['bytes'], packages=summaries)
@@ -249,7 +274,10 @@ if __name__ == '__main__':
     parser.add_argument('backup')
     parser.add_argument('--out', default=str(ROOT / 'exports/nup'))
     parser.add_argument('--name', help='Nome para backups antigos sem nome no manifesto')
+    parser.add_argument('--panel', action='store_true', help=argparse.SUPPRESS)
     args = parser.parse_args()
+    if args.panel:
+        threading.Thread(target=panel_commands, daemon=True).start()
     try:
         generate(args.backup, args.out, name=args.name)
     except (Exception, SystemExit) as error:

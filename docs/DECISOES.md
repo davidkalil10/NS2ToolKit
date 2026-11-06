@@ -49,3 +49,7 @@ O FTP já usado internamente pelo OunceCake é de leitura. Um serviço com escri
 ## D-010 — empacotamento NUP separado da extração e da execução
 
 **Estado: adotada no adaptador CLI de P5.** O empacotador consome backups completos no PC, preserva os originais, verifica a saída e compara as árvores. Dois backups foram testados a pedido do usuário. Não usar empacotamento para ocultar arquivos ausentes. DLC e outros índices são recusados nesta versão. Integridade e compatibilidade no emulador são validações distintas.
+
+## D-011 — distribuir uma pasta portátil com runtimes isolados
+
+**Estado: implementada a pedido do usuário.** Incluir Node, Python embutido, compressão e DLLs no ZIP Windows x64. Priorizar caminhos locais sem instalar dependências no sistema. Manter fontes/licenças e hashes de distribuição. O teste automatizado remove Node/Python do PATH e gera um NUP pela janela real; validação em outro Windows continua pendente.

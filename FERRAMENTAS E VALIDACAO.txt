@@ -1,4 +1,4 @@
-PAINEL LOCAL
+﻿PAINEL LOCAL
 O painel inicia o ns2jb já usado nesta pasta, apresenta os comandos do
 SmileBASIC e lê a saída do processo. Não controla o console automaticamente.
 Inclui transporte por stdin para solicitar o encerramento normal de uma
@@ -52,7 +52,15 @@ NUP
   com as árvores de origem adaptadas. Originais preservados.
 - Relatório resumido sem dados privados: docs/VALIDACAO-NUP-2026-11-05.md.
 - O usuário confirmou os dois pacotes no Eglantine 0d86405bd1-nx2,
-  build de 04/11/2026 (MSVC 19.44.35229.0). Interface NUP ainda pendente.
+  build de 04/11/2026 (MSVC 19.44.35229.0). Interface NUP integrada e validada com amostra sintetica.
 - Pastas e saídas usam Nome do jogo [ID], com tratamento de caracteres e
   contador para repetições. Os dois pacotes existentes foram renomeados
   sem mudar seus hashes.
+
+BUILD PORTATIL
+- Empacotar-Portatil.ps1 inclui Node 22.16.0, Python 3.13.4 e zstandard 0.25.0.
+- O ZIP inclui DLLs, ferramentas, fontes e licencas, sem jogos/saves/registros.
+- Testar-Portatil.ps1 valida a janela real de NUP com PATH sem Node/Python.
+- Sucesso verificado e recusa de backup incompleto exercitados pela interface.
+- 47 testes de backend passaram (32 Node, 7 download, 8 NUP).
+- Ainda falta ensaio em outro Windows sem instalacoes previas.

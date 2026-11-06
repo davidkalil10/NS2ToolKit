@@ -4,6 +4,8 @@
 /saves-backups/
 /.runtime/
 /exports/
+/dist/
+/runtime/
 __pycache__/
 *.part
 *.nup

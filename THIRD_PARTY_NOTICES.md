@@ -34,8 +34,12 @@ O snapshot de origem não continha uma licença de projeto no diretório raiz. E
 
 ## Compressão
 
-[python-zstandard](https://github.com/indygreg/python-zstandard), por Gregory Szorc e contribuidores, é uma dependência opcional instalada separadamente em versão fixada (`0.25.0`), sob BSD-3-Clause. Ela utiliza [Zstandard](https://github.com/meta/zstd). As licenças, copyrights e avisos presentes no pacote instalado devem ser preservados ao redistribuir essa dependência. A pasta privada `.runtime/` não é publicada neste repositório.
+[python-zstandard](https://github.com/indygreg/python-zstandard), por Gregory Szorc e contribuidores, é uma dependência preparada separadamente no desenvolvimento e incluída na build portátil em versão fixada (`0.25.0`), sob BSD-3-Clause. Ela utiliza [Zstandard](https://github.com/meta/zstd). As licenças, copyrights e avisos presentes no pacote instalado devem ser preservados ao redistribuir essa dependência. A pasta privada `.runtime/` não é publicada neste repositório.
 
 ## Referências sem código incorporado
 
 ezBasic foi utilizado no preparo inicial do console. IZ2S Platform, HBLauncher/SDK e ftpd-sb foram consultados para recuperação e estudo de funcionalidades. Seus repositórios são vinculados no README; essas referências não anunciam integração nem transferem autoria ao NS2ToolKit.
+
+## Runtimes da distribuição portátil
+
+A distribuição portátil inclui Node.js 22.16.0 (OpenJS Foundation e contribuidores; licença MIT e avisos de componentes em `runtime/node/LICENSE.txt`) e CPython 3.13.4 (Python Software Foundation e contribuidores; licenças em `runtime/python/LICENSE.txt`). O pacote oficial Python inclui suas extensões e bibliotecas de runtime. python-zstandard 0.25.0 é incluído com sua licença em `runtime/python/zstandard-0.25.0.dist-info/licenses/LICENSE`. Fontes e avisos das ferramentas permanecem em `tools/`. As dependências são preparadas pelo script de [build portátil](docs/PORTATIL.md); seus binários não entram no Git.

@@ -10,7 +10,7 @@ Pesquisa de 5 de novembro de 2026. **Documentado por um projeto externo** não s
 | Restauração de saves | Ainda não integrada |
 | FTP para navegação externa | Ainda não exposto como módulo dedicado; FTP de leitura já é usado pelo backup |
 | HBLauncher | Ainda não integrado |
-| Empacotar backups em NUP | Dois backups verificados; funcionamento relatado no Eglantine 0d86405bd1-nx2; interface pendente |
+| Empacotar backups em NUP | Dois backups verificados; funcionamento relatado no Eglantine 0d86405bd1-nx2; interface integrada e testada com dados sintéticos |
 | Executar NRO de Switch 1 diretamente | Não é uma capacidade comprovada deste projeto ou do SDK pesquisado |
 | Acesso irrestrito de leitura/escrita ao microSD | Não demonstrado e não prometido |
 
