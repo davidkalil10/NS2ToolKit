@@ -23,18 +23,34 @@ async function verifyHeldHealth(run) {
   return true;
 }
 
+function refusalKind(error) {
+  let kind = null, depth = 0;
+  const seen = new Set();
+  for (let current = error; current; current = current.cause) {
+    if (++depth > 8 || seen.has(current) || current instanceof AggregateError || current.cleanupErrors?.length ||
+        /timed out|timeout|disconnected/i.test(String(current.message))) return null;
+    seen.add(current);
+    if (current.code === 'GAME_ORIGINAL_CONTENT_REQUIRED' ||
+        current.message === 'Content requires an original-content mount; standalone ES preparation does not apply') kind ||= 'unsupported_content';
+    const native = current.nativeResult;
+    if (current.nativeOperation === 'Open selected game CodeFS' && Number.isInteger(native?.raw) &&
+        native.raw > 0 && (native.raw & 0x3fffff) === 0x408 && native.canonical === 0x408) kind = 'content_not_found';
+  }
+  return kind;
+}
+
 async function assessFailure(error, cleanupErrors, run, probe = verifyHeldHealth) {
-  const knownRefusal = !(error instanceof AggregateError) &&
-    (error.code === 'GAME_ORIGINAL_CONTENT_REQUIRED' ||
-     error.message === 'Content requires an original-content mount; standalone ES preparation does not apply');
-  if (!knownRefusal || cleanupErrors.length || error.cleanupErrors?.length) return {requiresRestart: true, sessionReusable: false};
+  const category = refusalKind(error);
+  if (!category || cleanupErrors.length) return {requiresRestart: true, sessionReusable: false};
   try {
     if (await probe(run) !== true) throw Error('A saúde da sessão não foi confirmada.');
-    return {requiresRestart: false, sessionReusable: true,
-      summary: 'Este conteúdo exige uma montagem ainda não suportada. A sessão foi verificada; você pode escolher outro jogo.'};
+    return {category, requiresRestart: false, sessionReusable: true,
+      summary: category === 'content_not_found' ?
+        'O sistema não encontrou o conteúdo selecionado para abrir. A sessão foi verificada; você pode escolher outro jogo.' :
+        'Este conteúdo exige uma montagem ainda não suportada. A sessão foi verificada; você pode escolher outro jogo.'};
   } catch (healthError) {
     return {requiresRestart: true, sessionReusable: false, sessionCheckError: healthError.message};
   }
 }
 
-module.exports = {verifyHeldHealth, assessFailure};
+module.exports = {verifyHeldHealth, assessFailure, refusalKind};

@@ -66,6 +66,21 @@ test('only a known content refusal with clean resources and a healthy endpoint i
   ]) assert.equal((await assessFailure(error, cleanup, 'run', probe)).requiresRestart, true);
 });
 
+test('the observed CodeFS 0x408 response is recoverable through its cause, but not through message matching alone', async () => {
+  const native = Object.assign(Error('Open selected game CodeFS: result 0xd7400408'), {
+    nativeOperation: 'Open selected game CodeFS', nativeResult: {raw: 0xd7400408, canonical: 0x408},
+  });
+  const wrapped = Error('Could not prepare /updates/393216/program/1/exefs', {cause: native});
+  const result = await assessFailure(wrapped, [], 'run', async () => true);
+  assert.equal(result.requiresRestart, false);
+  assert.equal(result.category, 'content_not_found');
+  assert.equal((await assessFailure(Error(native.message), [], 'run', async () => true)).requiresRestart, true);
+  assert.equal((await assessFailure(wrapped, [Error('cleanup failed')], 'run', async () => true)).requiresRestart, true);
+  assert.equal((await assessFailure(wrapped, [], 'run', async () => false)).requiresRestart, true);
+  const unknown = Object.assign(Error('unknown result'), {nativeOperation: native.nativeOperation, nativeResult: {raw: 0x1234, canonical: 0x1234}});
+  assert.equal((await assessFailure(unknown, [], 'run', async () => true)).requiresRestart, true);
+});
+
 test('an unsupported game does not block a subsequent operation after verified cleanup', async t => {
   const run = await temporary(t);
   await fs.writeFile(path.join(run, 'result.json'), JSON.stringify({verified: true, rpc: {state: 'listening'}}));
@@ -73,9 +88,16 @@ test('an unsupported game does not block a subsequent operation after verified c
   const previousExit = process.exitCode, python = process.env.NS2_PANEL_PYTHON;
   process.env.NS2_PANEL_PYTHON = process.execPath;
   try {
+    const codefs = Object.assign(Error('Open selected game CodeFS: result 0xd7400408'), {
+      nativeOperation: 'Open selected game CodeFS', nativeResult: {raw: 0xd7400408, canonical: 0x408},
+    });
+    for (const failure of [
+      Object.assign(Error('Content requires an original-content mount; standalone ES preparation does not apply'), {code: 'GAME_ORIGINAL_CONTENT_REQUIRED'}),
+      Error('Could not prepare /updates/393216/program/1/exefs', {cause: codefs}),
+    ]) {
     await main([run, '192.168.18.139', run, '0100000000000000'], {
       attach: async () => fakeAttachment(), probe: async () => true,
-      prepare: async () => {throw Object.assign(Error('Content requires an original-content mount; standalone ES preparation does not apply'), {code: 'GAME_ORIGINAL_CONTENT_REQUIRED'});},
+      prepare: async () => {throw failure;},
       send: (kind, value) => events.push({kind, ...value}),
     });
     assert.equal(events.at(-1).requiresRestart, false);
@@ -86,6 +108,7 @@ test('an unsupported game does not block a subsequent operation after verified c
     await main([run, '192.168.18.139', run], {attach: async () => fakeAttachment(), discover: async () => [], send: (kind, value) => events.push({kind, ...value})});
     assert.equal(events.at(-1).kind, 'listed');
     assert.equal((await fs.readdir(run)).includes('painel-operation.lock'), false);
+    }
   } finally {
     process.exitCode = previousExit;
     if (python === undefined) delete process.env.NS2_PANEL_PYTHON; else process.env.NS2_PANEL_PYTHON = python;

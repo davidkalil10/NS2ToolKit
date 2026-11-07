@@ -1,4 +1,4 @@
-# Perfis experimentais de exportação — 0.1.2
+# Perfis experimentais de exportação — 0.1.3
 
 **Estado: testes locais concluídos; validação no console pendente.** A main e a release 0.1.1 permanecem preservadas. Os tempos de espera e o mecanismo de aquisição do FS não foram alterados.
 
@@ -34,4 +34,12 @@ Uma exportação concluída neste perfil significa que todos os arquivos anuncia
 
 As cópias derivadas de mounts/program ficam em `compat/ouncecake/`, com fonte e licença GPL-2.0 preservadas. O perfil completo continua usando o submódulo original. `painel-game-diagnostics.cjs` registra inventário e chamadas na preparação, sem enviar parâmetros binários, endereços ou conteúdo dos arquivos aos registros.
 
-Passaram 59 testes de backend: 42 Node, 8 de download e 9 de NUP. A cobertura inclui rota padrão versus direta, preservação dos dois IDs de atualização com versões diferentes, omissões no manifesto, inventário sem montagem e restauração dos wrappers após erro. A distribuição ainda passa pela validação da interface e runtimes incluídos. Esses testes não demonstram sucesso de montagem no console.
+Passaram 62 testes de backend: 45 Node, 8 de download e 9 de NUP. A cobertura inclui rota padrão versus direta, preservação dos dois IDs de atualização com versões diferentes, omissões no manifesto, inventário sem montagem e restauração dos wrappers após erro. A distribuição ainda passa pela validação da interface e runtimes incluídos. Esses testes não demonstram sucesso de montagem no console.
+
+## Resultado do teste de Z-A e revisão 0.1.3
+
+No teste de 06/11/2026, o perfil 0.1.2 abriu a RomFS do programa secundário da atualização 393216. A chamada seguinte de CodeFS respondeu em 8 ms com resultado bruto `0xd7400408` (canônico `0x408`), e a limpeza foi confirmada. O wrapper descartava a causa tipada, e a política de continuidade não classificava esse resultado; por isso o assistente invalidou a sessão mesmo sem timeout.
+
+A revisão 0.1.3 conserva a causa e reconhece essa resposta específica de CodeFS após verificar a limpeza e os endpoints. Mensagem de texto semelhante sem resultado nativo tipado não basta para liberar uma sessão. Falhas agregadas, timeout e erro de restauração continuam bloqueando.
+
+Para abrir CodeFS secundário, o adaptador agora registra temporariamente o caminho selecionado no resolvedor do loader e restaura a seleção anterior no encerramento. Nesse caminho não altera o mapa de índices de programa do FS. Os testes verificam restauração tanto em sucesso quanto na resposta 0x408. Ainda não há confirmação de dump completo do Z-A no console.

@@ -616,6 +616,7 @@ async function prepareGame({ attachment: a, title, shouldStop = () => false, tar
     if (!mounted)
       throw new Error(
         'Could not prepare ' + prefix + '/' + section + ': ' + (lastError?.message || 'No installed content'),
+        {cause: lastError},
       );
 
     const entries =

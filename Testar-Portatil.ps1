@@ -88,8 +88,21 @@ for section, entries in [('exefs', [('main.npdm', bytes(npdm))]), ('romfs', [('d
         $choice.Name = 'Teste'; $choice.Title = '0100000000000000'
         $gameBox.Items.Add($choice) | Out-Null; $gameBox.SelectedIndex = 0
         $stub = Join-Path $work 'failure.cjs'
-        $restartText = if ($restart) { 'true' } else { 'false' }
-        ('console.log(''PANEL:{"kind":"error","summary":"falha de teste","requiresRestart":' + $restartText + '}''); process.exitCode=1;') | Set-Content -LiteralPath $stub -Encoding ASCII
+        $probeReady = if ($restart) { 'false' } else { 'true' }
+        $recoveryPath = (New-Object System.Web.Script.Serialization.JavaScriptSerializer).Serialize((Join-Path $PSScriptRoot 'painel-recovery.cjs'))
+        $stubSource = @'
+const {assessFailure} = require(__RECOVERY__);
+(async () => {
+    const native = Object.assign(Error('Open selected game CodeFS: result 0xd7400408'), {
+        nativeOperation: 'Open selected game CodeFS', nativeResult: {raw: 0xd7400408, canonical: 0x408}
+    });
+    const error = Error('Could not prepare /updates/393216/program/1/exefs', {cause: native});
+    const result = await assessFailure(error, [], '.', async () => __READY__);
+    console.log('PANEL:' + JSON.stringify({kind:'error', message:error.message, ...result}));
+    process.exitCode = 1;
+})().catch(error => {console.error(error); process.exitCode=2;});
+'@
+        $stubSource.Replace('__RECOVERY__', $recoveryPath).Replace('__READY__', $probeReady) | Set-Content -LiteralPath $stub -Encoding UTF8
         $runner = New-Object NS2Panel.Runner
         $runner.Start([NS2Panel.Checks]::FindNode($PSScriptRoot), $stub, '', $PSScriptRoot)
         $dialog.GetType().GetField('worker', $dialogFlags).SetValue($dialog, $runner)

@@ -1,5 +1,11 @@
 # Histórico de versões
 
+## 0.1.3 — experimental, em validação
+
+- Conserva a causa nativa das recusas de montagem e permite continuar após CodeFS 0x408 somente com limpeza e saúde da sessão confirmadas.
+- Registra temporariamente o arquivo selecionado para abrir CodeFS secundário e restaura a seleção anterior, sem usar a alteração do mapa de programas do FS nesse caminho.
+- Reproduz em testes a recusa observada no Z-A, a preservação da sessão e a restauração da seleção em sucesso e erro.
+
 ## 0.1.2 — experimental, em validação
 
 - Corrige a leitura das mensagens finais dos processos na interface, evitando falhas aparentes quando a confirmação chega junto do encerramento.

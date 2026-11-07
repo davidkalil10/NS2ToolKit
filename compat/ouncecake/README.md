@@ -7,3 +7,5 @@ O perfil `full` preserva os caminhos da revisão de origem. O perfil optativo `c
 A omissão dos manuais é uma seleção explícita de escopo, não uma correção da montagem completa. A abertura direta de programas secundários ainda precisa de validação por título no console; recusas e timeouts continuam sendo erros. Não há fallback automático depois de uma requisição incerta.
 
 As outras dependências continuam importadas do submódulo fixado. Não foram alterados o exploit, os tempos de espera ou o código de manipulação do contexto nativo. Consulte docs/TESTE-MONTAGENS.md para o roteiro.
+
+Na revisão experimental 0.1.3, a abertura de CodeFS secundário registra e restaura o caminho no resolvedor do loader, mantendo desativada a alteração do mapa de índices do FS nesse caminho. A rota de RomFS secundária continua direta.

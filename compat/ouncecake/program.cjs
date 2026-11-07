@@ -309,7 +309,7 @@ async function writeLocation(a, resolver, programId, title, location, command = 
     pathRequest(command, input, a.s.base + 0x4000, 0x300)), label);
 }
 
-async function selectPatch({ attachment: a, title, source, originalSource, operation }) {
+async function selectPatch({ attachment: a, title, source, originalSource, operation, mapProgramIndex = true }) {
   const runtimeProgramId = source.runtimeProgramId;
   const resolvers = new Map();
   let registered;
@@ -353,7 +353,7 @@ async function selectPatch({ attachment: a, title, source, originalSource, opera
     const mount = () =>
       operation({ runtimeProgramId, original, patch, originalContent: originalSource });
     const result =
-      runtimeProgramId === title
+      runtimeProgramId === title || !mapProgramIndex
         ? await mount()
         : await withProgramIndexMap({
             attachment: a,
@@ -443,17 +443,22 @@ function createProgramMounts(attachment) {
     });
 
     if (reply.result) {
-      throw resultError('Open selected game CodeFS', reply.result);
+      const error = resultError('Open selected game CodeFS', reply.result);
+      error.nativeOperation = 'Open selected game CodeFS';
+      throw error;
     }
 
     return domain.oneHandle(reply);
   };
 
-  const openCode = (args) => !args.direct && (args.source.programIndex || args.source.selection === 'dlc') ? selectPatch({
+  const openCode = (args) => args.source.programIndex || args.source.selection === 'dlc' ? selectPatch({
     attachment,
     title: args.source.applicationTitle,
     source: args.source,
     originalSource: args.source,
+    // CodeFS needs the selected archive registered with the loader even when
+    // secondary RomFS uses a direct mount. Do not alter the FS program map here.
+    mapProgramIndex: !args.direct,
     operation: () => withUpdateLicenses({
       attachment,
       title: args.source.applicationTitle,

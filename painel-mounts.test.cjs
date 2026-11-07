@@ -3,6 +3,52 @@ const assert = require('node:assert/strict');
 const {createGameFiles, prepareGame} = require('./compat/ouncecake/mounts.cjs');
 const {Progress} = require('./painel-progress.cjs');
 const {tracePreparation, summarizeInventory} = require('./painel-game-diagnostics.cjs');
+const fs = require('node:fs/promises'), path = require('node:path'), os = require('node:os');
+const {createProgramMounts} = require('./compat/ouncecake/program.cjs');
+
+test('secondary CodeFS registers the chosen archive and restores the previous loader selection without the FS index-map path', async t => {
+  const run = await fs.mkdtemp(path.join(os.tmpdir(), 'ns2-codefs-test-'));
+  t.after(() => fs.rm(run, {recursive: true, force: true}));
+  await fs.mkdir(path.join(run, 'switch2/ro'), {recursive: true});
+  await fs.writeFile(path.join(run, 'switch2/ro/test-loader-root-copy.json'), JSON.stringify({copy: {handle: 9}}));
+  for (const previous of [null, '@previous:/program.nca']) for (const result of [0, 0xd7400408]) {
+    const writes = new Map(), calls = [];
+    let selected = previous;
+    const source = {selection: 'update', applicationTitle: '0100000000000000', runtimeProgramId: '0400000000000000',
+      programIndex: 1, storage: 5, attributes: 0, contentPath: '@sd:/selected.nca'};
+    const a = {run, live: {session: 'test'}, current: {}, root: 1, service: async () => 2, filesystem: {},
+      s: {base: 4096, handles: new Set(), async write(address, bytes) {writes.set(address, Buffer.from(bytes));},
+        async readOwned(address, size) {const b = Buffer.alloc(size);b.write(selected || '');return b;},
+        async close() {}, async ipc(label) {
+          calls.push(label);
+          if (label === 'Open registered patch resolver') return {result: 0, handle: 10};
+          if (label === 'Open selected game CodeFS') {
+            assert.equal(selected, source.contentPath);
+            return {result, handle: 12};
+          }
+          if (label === 'Remove owned patch location') {selected = null;return {result: 0};}
+          throw Error('Unexpected native call: ' + label);
+        }},
+      domain: {wire: {control: () => Buffer.alloc(0)}, oneHandle: reply => reply.handle,
+        async send(s, label) {
+          calls.push(label);
+          if (label === 'Resolve selected update location') return {result: selected ? 0 : 0x408, data: Buffer.alloc(16)};
+          if (label === 'Register owned patch location' || label === 'Restore previous program location') {
+            selected = writes.get(s.base + 0x4000).toString().split('\0')[0]; return {result: 0};
+          }
+          if (label === 'Clone held loader root for game CodeFS') return {result: 0, handle: 11};
+          throw Error('Unexpected domain call: ' + label);
+        }},
+    };
+    const open = () => createProgramMounts(a).openCode({title: source.runtimeProgramId, storage: 5, attributes: 0, source, direct: true});
+    if (result) await assert.rejects(open(), error => error.nativeResult.canonical === 0x408 && error.nativeOperation === 'Open selected game CodeFS');
+    else assert.equal(await open(), 12);
+    assert.equal(selected, previous);
+    assert.ok(calls.includes('Register owned patch location'));
+    assert.ok(calls.includes(previous ? 'Restore previous program location' : 'Remove owned patch location'));
+    assert.equal(calls.some(label => label.includes('program mapping')), false);
+  }
+});
 
 test('secondary update programs use the opt-in direct route; the default still composes them', async () => {
   for (const experimentalProgram1 of [false, true]) {
@@ -62,6 +108,23 @@ test('compatibility omits only manuals and retains both upgrade identities even 
     assert.equal(prepared.selection.mountedSections.includes('/base/program/0/manual'), profile === 'full');
     assert.ok(prepared.index.length > 0);
   }
+});
+
+test('a refused secondary CodeFS keeps its typed native cause through the mount context wrapper', async () => {
+  const {a, title, dependencies} = catalogFixture();
+  const open = dependencies.files.open;
+  const native = Object.assign(Error('Open selected game CodeFS: result 0xd7400408'), {
+    nativeOperation: 'Open selected game CodeFS', nativeResult: {raw: 0xd7400408, canonical: 0x408},
+  });
+  dependencies.files.open = async options => {
+    if (options.update && options.section === 'exefs') throw native;
+    return open(options);
+  };
+  await assert.rejects(prepareGame({attachment: a, title, profile: 'compatibility'}, dependencies), error => {
+    assert.match(error.message, /Could not prepare.*exefs/);
+    assert.equal(error.cause, native);
+    return true;
+  });
 });
 
 test('preparation tracing preserves the original error and restores the original IPC method', async () => {
