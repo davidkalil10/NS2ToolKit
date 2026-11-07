@@ -63,3 +63,15 @@ Os arquivos originais em `data/control/` continuam preservados. Testes conferem 
 O backup de compatibilidade concluído contém 13 TARs, incluindo DLC em `dlc/0400ca40208c9001/0/base/program/0/`. Na distribuição 0.1.3, a validação alternava checagem de layout e hash por arquivo: a RomFS grande era lida antes de encontrar a entrada DLC, e a interface permanecia sem contagem de bytes. As duas tentativas examinadas terminaram por cancelamento; esses registros não demonstram travamento nem permitem afirmar que a leitura estava progredindo normalmente.
 
 A revisão 0.1.4 verifica todos os layouts antes dos hashes e informa bytes e percentual na conferência das entradas, extração, verificação NUP, comparação da origem e hash final. Adapta o DLC de versão zero desse backup para `dlc/<ID>/0/`, preservando seu ID e conteúdo. O escopo sem manuais continua registrado no relatório. O suporte não abrange outros programas nem atualizações de DLC; execução no emulador deve ser validada separadamente.
+
+### Resultado da geração local em 07/11/2026
+
+O NUP de Split Fiction foi gerado com 71.590.487.701 bytes e SHA-256 `349af14668d0d675008014976c82d692acde746352d05924a414d741732d69be`. O processo terminou com código zero; o relatório confirmou verificação integral e comparação das árvores com a origem. A área temporária foi removida e os TARs foram preservados.
+
+| Pacote | ID | Versão | Arquivos |
+| --- | --- | --- | --- |
+| Base | `0400CA40208C8000` | 0 | 38 |
+| Atualização | `0400CA40208C8000` | 262144 | 17.148 |
+| DLC | `0400CA40208C9001` | 0 | 2 |
+
+Nome, ícone, publicadora Electronic Arts e versão de exibição 1.3.0 foram preservados. O relatório mantém a omissão do manual da atualização. A geração e a integridade estão validadas no PC; a execução desse NUP no Eglantine continua pendente.
