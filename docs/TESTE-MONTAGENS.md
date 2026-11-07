@@ -1,6 +1,6 @@
 # Perfis experimentais de exportação — 0.1.3
 
-**Estado: testes locais concluídos; validação no console pendente.** A main e a release 0.1.1 permanecem preservadas. Os tempos de espera e o mecanismo de aquisição do FS não foram alterados.
+**Estado: Split Fiction exportado sem manuais em console real; Z-A continua falhando na CodeFS secundária. Continuidade da sessão validada após essa recusa.** A main e a release 0.1.1 permanecem preservadas. Os tempos de espera e o mecanismo de aquisição do FS não foram alterados.
 
 ## Origem dos dois casos
 
@@ -43,3 +43,11 @@ No teste de 06/11/2026, o perfil 0.1.2 abriu a RomFS do programa secundário da 
 A revisão 0.1.3 conserva a causa e reconhece essa resposta específica de CodeFS após verificar a limpeza e os endpoints. Mensagem de texto semelhante sem resultado nativo tipado não basta para liberar uma sessão. Falhas agregadas, timeout e erro de restauração continuam bloqueando.
 
 Para abrir CodeFS secundário, o adaptador agora registra temporariamente o caminho selecionado no resolvedor do loader e restaura a seleção anterior no encerramento. Nesse caminho não altera o mapa de índices de programa do FS. Os testes verificam restauração tanto em sucesso quanto na resposta 0x408. Ainda não há confirmação de dump completo do Z-A no console.
+
+## Validação no console em 06/11/2026 — 0.1.3, revisão 0523d49
+
+- **Z-A:** a abertura de `/updates/393216/program/1/exefs` voltou a responder `0xfb800408` (canônico `0x408`). A limpeza terminou, a verificação da sessão passou e o evento final registrou `requiresRestart: false` e `sessionReusable: true`. A revisão não resolveu a montagem de CodeFS desse programa.
+- **Continuidade:** depois dessa falha, na mesma conexão, foi possível coletar o inventário do Split Fiction e concluir sua exportação. Assim, a recuperação desse caso deixou de depender apenas de testes simulados.
+- **Split Fiction:** manifesto com `complete: true`, 13 arquivos TAR e 74.187.570.176 bytes recebidos, correspondentes ao total anunciado. A única seção omitida foi `/updates/262144/program/0/manual`. O resultado valida a exportação no perfil de compatibilidade, não a montagem do manual nem a geração/execução de NUP desse jogo.
+
+Consultas adicionais somente de leitura confirmaram que o programa secundário do Z-A usa o identificador `0400f43008c44001` tanto na atualização 393216 do SD quanto na atualização 65536 do cartucho. A consulta ao resolvedor de caminhos por armazenamento retornou `0x408` para esse identificador em ambos; o programa base `0100f43008c44000` foi resolvido no cartucho. Isso aponta para investigar a resolução do caminho usado pelo loader, mas não comprova que registrar outro caminho baste para corrigir a CodeFS. Não foram feitos novos redirecionamentos ou tentativas de montagem nessas consultas.

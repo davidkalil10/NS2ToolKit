@@ -12,7 +12,7 @@ A [especificação consultada](https://github.com/a55uka/nup/blob/meow/SPEC.md) 
 
 Nosso backup pode produzir `base/program/0/exefs.tar` e `base/program/0/romfs.tar`, além de outras versões e programas. O empacotador documenta árvores extraídas como `base/exefs/` e `base/romfs/`.
 
-O adaptador converte os TARs de `base/program/0` e `updates/<versão>/program/0`. ExeFS/RomFS vão para as árvores canônicas; outras seções são preservadas sob `data/`. DLC e índices diferentes de zero são recusados, sem descarte silencioso.
+O adaptador converte os TARs de `base/program/0`, `updates/<versão>/program/0` e `dlc/<ID>/0/base/program/0`. ExeFS/RomFS vão para as árvores canônicas; outras seções são preservadas sob `data/`. Cada DLC recebe um pacote `addon` com seu próprio ID, incluindo seções de metadados e diretórios vazios. DLC de versão diferente de zero, atualizações de DLC e índices de programa diferentes de zero continuam recusados, sem descarte silencioso nem perda de versão.
 
 ## Executar no assistente
 
@@ -33,8 +33,8 @@ Pastas e arquivos usam **Nome do jogo [ID]**. O nome vem do manifesto do backup,
 ## Fluxo implementado para os layouts suportados
 
 1. Selecionar um backup local e exigir manifesto completo.
-2. Conferir novamente tamanhos e hashes dos arquivos de entrada.
-3. Conferir o layout e recusar conteúdos ainda não suportados pelo adaptador.
+2. Conferir o layout e os tamanhos de todas as entradas, recusando conteúdos ainda não suportados antes de ler os arquivos grandes.
+3. Conferir novamente os hashes dos arquivos de entrada, com bytes e percentual no acompanhamento.
 4. Extrair TARs para área temporária isolada, recusando caminhos absolutos, travessia de diretórios e links. Preservar os arquivos originais.
 5. Adaptar somente layouts cuja correspondência tenha sido comprovada. Recusar casos ambíguos ou não suportados com um relatório claro.
 6. Executar a ferramenta de referência numa revisão fixada, produzindo um arquivo temporário sem substituir uma saída anterior.
@@ -45,8 +45,8 @@ Pastas e arquivos usam **Nome do jogo [ID]**. O nome vem do manifesto do backup,
 
 ## Validação
 
-- Passaram oito testes, incluindo cancelamento durante a geração: base/atualização, backup incompleto, hash alterado, programa não suportado, TAR com travessia/link, nomes opcionais inválidos e nomes de pasta/arquivo vindos do manifesto.
-- A verificação NUP recalcula os hashes; uma comparação adicional confere caminhos, diretórios, tamanhos e hashes com as árvores preparadas.
+- Passaram 17 testes, incluindo base/atualização e dois DLCs, identidades de DLC, recusa antecipada dos layouts ainda não suportados, cancelamento, progresso, integridade, metadados e extração segura.
+- A verificação NUP confere a estrutura com a biblioteca fixada e recalcula tamanho e SHA-256 de cada arquivo em blocos de até 1 MiB, tanto para extents raw quanto zstd. Não carrega arquivos inteiros na memória. Testes cobrem corrupção dos dois codecs e impedem a chamada de leitura integral. Uma comparação adicional confere caminhos, diretórios, tamanhos e hashes com as árvores preparadas.
 - Dois backups próprios foram gerados/verificados: veja [o registro resumido](VALIDACAO-NUP-2026-11-05.md).
 - Espaço insuficiente e interrupção têm tratamento no fluxo, mas ainda não passaram por ensaio de falha dedicado. Não tratá-los como validados.
 
@@ -57,3 +57,9 @@ Gerar um pacote íntegro não demonstra que ele será executado por qualquer lau
 `painel_nup_metadata.py` aplica a numeração TLV 1–10 da SPEC v1 às constantes exportadas pela biblioteca fixada, cujo enum começa em zero. O ajuste é limitado ao processo do adaptador; não modifica o submódulo nem arquivos antigos. Além do nome padrão, são adicionados nomes localizados, imagens JPEG/PNG dos arquivos `icon_*.dat`, versão e publicadora quando válidos. O controle da atualização mais recente tem prioridade sobre a base.
 
 Os arquivos originais em `data/control/` continuam preservados. Testes conferem nome no TLV 5 e ícone no TLV 3, os mesmos tipos consultados pelo leitor da revisão Eglantine examinada. A identidade do programa não é alterada. Para atualizar um NUP antigo, gere outro a partir do backup completo existente e faça nova varredura da biblioteca no emulador. O pacote anterior permanece intacto.
+
+## Split Fiction: conferência longa e DLC (07/11/2026)
+
+O backup de compatibilidade concluído contém 13 TARs, incluindo DLC em `dlc/0400ca40208c9001/0/base/program/0/`. Na distribuição 0.1.3, a validação alternava checagem de layout e hash por arquivo: a RomFS grande era lida antes de encontrar a entrada DLC, e a interface permanecia sem contagem de bytes. As duas tentativas examinadas terminaram por cancelamento; esses registros não demonstram travamento nem permitem afirmar que a leitura estava progredindo normalmente.
+
+A revisão 0.1.4 verifica todos os layouts antes dos hashes e informa bytes e percentual na conferência das entradas, extração, verificação NUP, comparação da origem e hash final. Adapta o DLC de versão zero desse backup para `dlc/<ID>/0/`, preservando seu ID e conteúdo. O escopo sem manuais continua registrado no relatório. O suporte não abrange outros programas nem atualizações de DLC; execução no emulador deve ser validada separadamente.

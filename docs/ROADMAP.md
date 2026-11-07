@@ -12,7 +12,7 @@ Atualizado em 6 de novembro de 2026. Prioridade: diagnóstico → backup de save
 
 ## P0 — entender e apresentar melhor falhas de backup
 
-**Estado: instrumentação implementada e testada localmente; validação das novas informações no console pendente.** Ver [INC-002 e INC-003](INCIDENTES.md). A correção dos caminhos de montagem ainda está pendente.
+**Estado: instrumentação e continuidade após recusa CodeFS validadas no console. Split Fiction exportado no perfil sem manuais; Z-A ainda falha na CodeFS do programa secundário.** Ver [resultados da versão experimental](TESTE-MONTAGENS.md) e [incidentes](INCIDENTES.md). A montagem completa dos conteúdos afetados continua pendente.
 
 - [x] Registrar horários, duração e as aberturas anunciadas pelo OunceCake.
 - [x] Diferenciar preparação sem total conhecido, transferência com contagem de bytes e limpeza. Detalhes internos de montagem/indexação dependem dos eventos do OunceCake.
@@ -89,7 +89,8 @@ Primeiro marco: sessão FTP de leitura para conteúdo selecionado, com endereço
 - [x] Integrar a geração NUP ao painel; retorno do primeiro teste no emulador já recebido.
 - [x] Gerar ZIP portátil com Node, Python, DLLs e compressor incluídos; teste com PATH isolado.
 - [ ] Validar o pacote em outro Windows sem instalações prévias de Node/Python.
-- [ ] Avaliar DLC/múltiplos programas com casos próprios de teste.
+- [x] Adaptar DLC base de versão zero com testes de múltiplos addons, identidade e preservação das árvores.
+- [ ] Validar NUP com DLC no emulador; avaliar atualizações de DLC, outras versões e múltiplos programas.
 
 **Critérios de conclusão:** teste sintético de ida e volta, entradas inválidas recusadas e um backup próprio empacotado/verificado, com os casos não suportados claramente informados.
 

@@ -112,6 +112,107 @@ class BuildTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'Layout ainda não suportado'):
             builder.generate(self.backup, self.root / 'outputs')
 
+    def test_patched_dlc_at_end_is_refused_before_hashing_any_input(self):
+        self.fixture()
+        self.archive('dlc/0100000000001001/0/updates/65536/program/0/romfs.tar', [('romfs/dlc', b'test', tarfile.REGTYPE)])
+        self.manifest()
+        with patch.object(builder, 'digest', side_effect=AssertionError('must preflight before hashing')):
+            with self.assertRaisesRegex(ValueError, 'Atualizações de DLC'):
+                builder.generate(self.backup, self.root / 'outputs')
+        self.assertFalse((self.root / 'outputs').exists())
+
+    def test_base_update_and_two_addons_preserve_identities_and_trees(self):
+        self.fixture()
+        for title in ['0100000000001001', '0100000000001002']:
+            self.archive(f'dlc/{title}/0/base/program/0/romfs.tar', [('romfs/own-data', title.encode(), tarfile.REGTYPE)])
+            self.archive(f'dlc/{title}/0/base/program/0/meta.tar', [('meta/info', b'metadata', tarfile.REGTYPE)])
+        self.manifest()
+        report = builder.generate(self.backup, self.root / 'outputs')
+        self.assertTrue(report['deep_verified'])
+        self.assertTrue(report['source_trees_matched'])
+        self.assertEqual([(p['kind'], p['title']) for p in report['packages']],
+                         [('base', '0100000000000000'), ('update', '0100000000000000'),
+                          ('addon', '0100000000001001'), ('addon', '0100000000001002')])
+        with builder.NupReader(report['output']) as reader:
+            for addon in reader.packages[2:]:
+                files = builder.container_tree(reader, addon.root_dir)[1]
+                self.assertIn('romfs/own-data', files)
+                self.assertIn('data/meta/info', files)
+                self.assertNotIn('base/program/0/romfs/own-data', files)
+
+    def test_nonzero_dlc_versions_are_refused_without_losing_version(self):
+        self.archive('dlc/0100000000001001/65536/base/program/0/romfs.tar', [('romfs/dlc', b'test', tarfile.REGTYPE)])
+        self.manifest()
+        with self.assertRaisesRegex(ValueError, 'Layout ainda não suportado'):
+            builder.generate(self.backup, self.root / 'outputs')
+
+    def test_addon_npdm_must_match_its_own_identity(self):
+        self.fixture()
+        npdm = bytearray(64)
+        npdm[:4] = b'ACI0'
+        struct.pack_into('<Q', npdm, 16, 0x0100000000000000)
+        self.archive('dlc/0100000000001001/0/base/program/0/exefs.tar', [('exefs/main.npdm', bytes(npdm), tarfile.REGTYPE)])
+        self.manifest()
+        with self.assertRaisesRegex(ValueError, 'identidade do programa'):
+            builder.generate(self.backup, self.root / 'outputs')
+        self.assertFalse(list((self.root / 'outputs').glob('**/*.nup')))
+
+    def test_streamed_raw_verify_and_cancellation(self):
+        self.fixture()
+        pack_module = __import__('importlib').import_module('nup.pack')
+        with patch.object(pack_module, 'have_zstd', return_value=False):
+            report = builder.generate(self.backup, self.root / 'outputs')
+        self.assertEqual(builder.verify_streamed(report['output']), (True, []))
+        with builder.NupReader(report['output']) as reader:
+            offset = next(row[3] for row in reader.files if row[1])
+        with open(report['output'], 'r+b') as stream:
+            stream.seek(offset)
+            original = stream.read(1)
+            stream.seek(offset)
+            stream.write(bytes([original[0] ^ 255]))
+        self.assertFalse(builder.verify_streamed(report['output'])[0])
+        try:
+            builder.cancel_requested.set()
+            with self.assertRaises(InterruptedError):
+                builder.verify_streamed(report['output'])
+        finally:
+            builder.cancel_requested.clear()
+
+    def test_streamed_verify_avoids_whole_file_reads_and_detects_corruption(self):
+        self.fixture()
+        self.archive('base/program/0/manual.tar', [('manual/large', b'x' * (3 * 1024 * 1024), tarfile.REGTYPE)])
+        self.manifest()
+        report = builder.generate(self.backup, self.root / 'outputs')
+        with patch.object(builder.NupReader, 'read_file', side_effect=AssertionError('whole-file read forbidden')):
+            self.assertEqual(builder.verify_streamed(report['output']), (True, []))
+        with builder.NupReader(report['output']) as reader:
+            offset = next(row[3] for row in reader.files if row[0] == b'large')
+        with open(report['output'], 'r+b') as stream:
+            stream.seek(offset)
+            first = stream.read(1)
+            stream.seek(offset)
+            stream.write(bytes([first[0] ^ 255]))
+        ok, problems = builder.verify_streamed(report['output'])
+        self.assertFalse(ok)
+        self.assertTrue(problems)
+
+    def test_input_hash_progress_reports_total_bytes(self):
+        self.fixture()
+        builder.plan_inputs(self.backup)
+        messages = [call.kwargs.get('message', '') for call in builder.emit.call_args_list]
+        total = sum(item['bytes'] for item in self.files)
+        self.assertTrue(any(f'{total:,} / {total:,} bytes (100.0%)' in message for message in messages))
+
+    def test_digest_can_be_cancelled_from_progress(self):
+        self.fixture()
+        target = self.root / 'large.bin'
+        target.write_bytes(b'x' * (2 * 1024 * 1024))
+        try:
+            with self.assertRaises(InterruptedError):
+                builder.digest(target, progress=lambda done: builder.cancel_requested.set())
+        finally:
+            builder.cancel_requested.clear()
+
     def test_tar_traversal_and_links_are_refused(self):
         for members in [[('../escape', b'bad', tarfile.REGTYPE)], [('romfs/link', b'../../escape', tarfile.SYMTYPE)]]:
             with self.subTest(members=members):

@@ -1,10 +1,17 @@
 # Histórico de versões
 
+## 0.1.4 — experimental, em validação
+
+- Converte DLC base de versão zero em pacotes NUP addon, preservando IDs, arquivos e metadados. Outros programas e atualizações de DLC continuam recusados.
+- Verifica todos os layouts antes dos hashes e mostra bytes/percentual durante a conferência, extração, verificação, comparação da origem e hash final.
+- Verifica conteúdo raw/zstd em blocos, evitando carregar arquivos grandes inteiros na memória. Inclui testes de integridade, identidades de DLC, cancelamento e recusa antecipada.
+
 ## 0.1.3 — experimental, em validação
 
 - Conserva a causa nativa das recusas de montagem e permite continuar após CodeFS 0x408 somente com limpeza e saúde da sessão confirmadas.
 - Registra temporariamente o arquivo selecionado para abrir CodeFS secundário e restaura a seleção anterior, sem usar a alteração do mapa de programas do FS nesse caminho.
 - Reproduz em testes a recusa observada no Z-A, a preservação da sessão e a restauração da seleção em sucesso e erro.
+- Validação em console: após a recusa de CodeFS no Z-A, a mesma sessão permitiu diagnóstico e exportação do Split Fiction sem manuais (13 TARs, 74,2 GB). A montagem secundária do Z-A continua pendente.
 
 ## 0.1.2 — experimental, em validação
 

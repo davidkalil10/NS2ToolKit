@@ -82,7 +82,7 @@ A geração funciona localmente no PC, sem conectar o Switch.
 3. Escolha a pasta de saída. O nome é opcional para backups antigos sem título no manifesto.
 4. Clique em **Gerar e verificar**. Ao concluir, use **Abrir pasta**.
 
-O pacote e sua pasta usam **Nome do jogo [ID]**. O relatório `build-report.json` registra os hashes, as verificações e a presença de nome/ícone nos metadados. O adaptador usa os identificadores TLV da especificação v1 e incorpora imagens do próprio backup. NUPs gerados antes da 0.1.1 precisam ser gerados novamente para receber a correção; os TARs existentes podem ser reutilizados. Saídas anteriores e backups de origem são preservados. O adaptador aceita `base/program/0` e `updates/<versão>/program/0`; DLC e outros índices de programa são recusados. Consulte [formatos e uso pelo terminal](docs/NUP.md).
+O pacote e sua pasta usam **Nome do jogo [ID]**. O relatório `build-report.json` registra os hashes, as verificações e a presença de nome/ícone nos metadados. O adaptador usa os identificadores TLV da especificação v1 e incorpora imagens do próprio backup. NUPs gerados antes da 0.1.1 precisam ser gerados novamente para receber a correção; os TARs existentes podem ser reutilizados. Saídas anteriores e backups de origem são preservados. O adaptador aceita `base/program/0`, `updates/<versão>/program/0` e DLC base em `dlc/<ID>/0/base/program/0`; outros índices de programa, versões e atualizações de DLC são recusados. Consulte [formatos e uso pelo terminal](docs/NUP.md).
 
 ## Limitações e recuperação
 
