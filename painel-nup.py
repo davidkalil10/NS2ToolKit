@@ -5,6 +5,7 @@ and unpatched version-zero DLC/program/0, refusing other layouts rather than omi
 """
 from __future__ import annotations
 import argparse
+from contextlib import contextmanager
 import hashlib
 import io
 import json
@@ -34,6 +35,7 @@ from painel_nup_metadata import use_spec_metadata, control_metadata
 use_spec_metadata(nup_format)
 
 cancel_requested = threading.Event()
+emit_lock = threading.Lock()
 
 
 def check_cancelled():
@@ -49,7 +51,27 @@ def panel_commands():
 
 
 def emit(kind, **fields):
-    print('PANEL:' + json.dumps(dict(kind=kind, at=time.strftime('%Y-%m-%dT%H:%M:%S'), **fields), ensure_ascii=True), flush=True)
+    with emit_lock:
+        print('PANEL:' + json.dumps(dict(kind=kind, at=time.strftime('%Y-%m-%dT%H:%M:%S'), **fields), ensure_ascii=True), flush=True)
+
+
+@contextmanager
+def pack_activity(file):
+    stopped = threading.Event()
+    def watch():
+        while not stopped.wait(2):
+            try:
+                size = file.stat().st_size
+            except FileNotFoundError:
+                continue
+            emit('activity', message=f'Compactando NUP: {size:,} bytes gravados (tamanho final ainda desconhecido)')
+    watcher = threading.Thread(target=watch, daemon=True)
+    watcher.start()
+    try:
+        yield
+    finally:
+        stopped.set()
+        watcher.join()
 
 
 def digest(file, progress=None):
@@ -354,7 +376,8 @@ def generate(backup, output_parent, name=None):
                     last = time.monotonic()
             emit('status', message='Gerando o pacote NUP...')
             metadata = control_metadata(stage, name)
-            packages = pack(str(pending), str(stage), base_title_id=int(title, 16), progress=progress, **metadata)
+            with pack_activity(pending):
+                packages = pack(str(pending), str(stage), base_title_id=int(title, 16), progress=progress, **metadata)
             emit('status', message='Verificando estrutura e conteúdo de todos os arquivos...')
             ok, problems = verify_streamed(pending)
             if not ok:

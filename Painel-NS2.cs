@@ -396,6 +396,8 @@ namespace NS2Panel {
             string node = FindNode(root); CheckNode(node, root);
             var nup = new NupProgress(); nup.Accept("PANEL:{\"kind\":\"pack\",\"done\":2,\"total\":3}");
             Assert(nup.Packed == 2 && nup.Total == 3 && !nup.Successful(0, false), "NUP packing is not completion");
+            nup.Accept("PANEL:{\"kind\":\"activity\",\"message\":\"Compactando NUP: 123 bytes gravados\"}");
+            Assert(nup.Packed == 2 && nup.Total == 3 && nup.Message.Contains("123 bytes"), "NUP activity preserves file progress");
             nup.Accept("PANEL:{\"kind\":\"complete\",\"path\":\"verified.nup\"}");
             Assert(nup.Successful(0, false) && !nup.Successful(1, false) && !nup.Successful(0, true), "NUP exit and cancellation checks failed");
             nup.Accept("PANEL:{\"kind\":\"error\",\"message\":\"invalid backup\"}");

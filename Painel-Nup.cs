@@ -17,6 +17,7 @@ namespace NS2Panel {
                 var value = new JavaScriptSerializer().Deserialize<Dictionary<string, object>>(line.Substring(6));
                 string kind = Convert.ToString(value["kind"]);
                 if (kind == "status") { Message = Convert.ToString(value["message"]); Total = 0; }
+                else if (kind == "activity") { Message = Convert.ToString(value["message"]); }
                 else if (kind == "pack") { Packed = Convert.ToInt32(value["done"]); Total = Convert.ToInt32(value["total"]); Message = "Compactando arquivos: " + Packed + " / " + Total; }
                 else if (kind == "complete") { Result = Convert.ToString(value["path"]); Complete = !String.IsNullOrEmpty(Result); }
                 else if (kind == "error") { Failed = true; Message = Convert.ToString(value["message"]); }
