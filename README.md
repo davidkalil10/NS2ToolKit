@@ -13,6 +13,7 @@ O pacote inclui Node, Python, compressão e as DLLs necessárias. Não é precis
 - Conexão ns2jb com acompanhamento das quatro etapas e opção de manter a sessão RPC aberta.
 - Backup dos arquivos de jogos com OunceCake, transferência FTP de leitura e detecção automática do IP do console.
 - Backup de saves Account/Device em modo somente leitura, com identificação do jogo e usuário.
+- Na build de teste 0.1.5, restauração de arquivos existentes com pré-backup, confirmação e verificação após commit; validação no console pendente. A release pública 0.1.4 mantém apenas o backup.
 - Geração de NUP pela interface, com conferência dos backups de entrada e verificação integral do pacote.
 - Pastas com **Nome do jogo [ID]**, registros de execução e preservação de operações incompletas.
 
@@ -71,7 +72,7 @@ As pastas usam **Nome do jogo [ID]**. Repetições recebem `(2)`, `(3)` e assim 
 
 O destino dos saves é lembrado separadamente do destino dos jogos. As preferências ficam em `%LOCALAPPDATA%/NS2ToolKit/settings.json`.
 
-A leitura confere os blocos no console, calcula hashes locais, relê os arquivos no PC e verifica novamente a estrutura. O manifesto só indica conclusão após a limpeza dos recursos. **Restauração ainda não está disponível.** Consulte [escopo e verificação dos saves](docs/SAVES.md).
+A leitura confere os blocos no console, calcula hashes locais, relê os arquivos no PC e verifica novamente a estrutura. O manifesto só indica conclusão após a limpeza dos recursos. A build de teste 0.1.5 adiciona **Restaurar save**, com pré-backup automático e confirmação antes da escrita; validação no console pendente. Consulte [escopo e verificação dos saves](docs/SAVES.md).
 
 ## Gerar NUP
 
@@ -88,7 +89,7 @@ O pacote e sua pasta usam **Nome do jogo [ID]**. O relatório `build-report.json
 
 A aquisição do FS depende de temporização e pode falhar. Algumas combinações de conteúdo também apresentam falhas de preparação no OunceCake. Após uma falha que invalide a sessão, preserve os registros em `runs/`, encerre a conexão e reinicie o console antes de tentar novamente. O assistente bloqueia repetições quando a limpeza não está confirmada. Uma recusa conhecida de conteúdo permite escolher outro jogo após confirmação da limpeza e verificação dos endpoints; timeouts e falhas desconhecidas ainda exigem uma sessão nova.
 
-O backup de jogos não inclui saves ou chaves e não gera imagens NSP/XCI instaláveis. Restauração de saves, FTP dedicado e HBLauncher ainda não estão disponíveis. O acesso ao console é temporário e depende do PC e do SmileBASIC em execução. Use seus próprios jogos e console.
+O backup de jogos não inclui saves ou chaves e não gera imagens NSP/XCI instaláveis. FTP dedicado e HBLauncher ainda não estão disponíveis. A restauração experimental não cria nem apaga arquivos e exige o mesmo jogo/usuário e arquivos do mesmo tamanho. O acesso ao console é temporário e depende do PC e do SmileBASIC em execução. Use seus próprios jogos e console.
 
 Consulte [incidentes conhecidos](docs/INCIDENTES.md), [compatibilidade](docs/COMPATIBILIDADE.md), [roadmap](docs/ROADMAP.md) e o [índice da documentação](docs/README.md).
 

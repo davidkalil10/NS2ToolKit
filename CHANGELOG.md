@@ -1,5 +1,12 @@
 # Histórico de versões
 
+## 0.1.5 — build de teste, restauração no console ainda não validada
+
+- Adiciona restauração de arquivos de save existentes, do mesmo tamanho, com seleção da pasta e do jogo/usuário lido do console.
+- Prepara automaticamente os arquivos editados e faz pré-backup antes da confirmação de escrita; preserva o manifesto de origem.
+- Confere identidade, estado atual e hashes, faz um único commit e verifica os arquivos por releitura antes de declarar sucesso.
+- Não altera aquisição do FS, não cria nem apaga arquivos no console e não repete escritas incertas.
+
 ## 0.1.4 — 7 de novembro de 2026
 
 - Converte DLC base de versão zero em pacotes NUP addon, preservando IDs, arquivos e metadados. Outros programas e atualizações de DLC continuam recusados.

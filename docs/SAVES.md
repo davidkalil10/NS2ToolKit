@@ -1,6 +1,6 @@
-# Backup de saves — primeira implementação
+# Backup e restauração de saves
 
-**Estado:** integrado, com backup validado no console em 6 de novembro de 2026 e testes automatizados de integridade e falhas. Restauração ainda não está disponível.
+**Estado:** backup validado no console em 6 de novembro de 2026. Restauração adicionada na build de teste 0.1.5, com testes locais; escrita no console ainda pendente de validação. A release pública 0.1.4 oferece apenas backup.
 
 ## Como usar
 
@@ -37,6 +37,35 @@ Referência: [ns2-savekit](https://github.com/dougchansan/ns2-savekit), revisão
 
 Não foram aplicados os patches de escrita, enumeração de contas ou aquisição do FS desse projeto. O usuário vem do inventário de saves. Os arquivos do mecanismo em `engine/` permanecem iguais aos do checkpoint funcional.
 
+O adaptador experimental de restauração usa os comandos já disponíveis para abrir arquivos existentes em leitura/escrita, enviar blocos, flush e commit. Não cria arquivos nem depende dos patches de criação/descritores adicionais do ns2-savekit. O mecanismo de aquisição e os submódulos permanecem inalterados.
+
+## Restaurar na build de teste 0.1.5
+
+1. Com a sessão 4/4 mantida aberta e o jogo fechado, abra **Backup de saves → Restaurar save**.
+2. Escolha a pasta do backup do assistente ou sua subpasta `data`. Leia os destinos do console e confira o jogo e usuário selecionados.
+3. Clique em **Restaurar save**. O assistente confere a pasta, preserva os arquivos preparados e cria um pré-backup completo do estado atual do console.
+4. Confira a confirmação com o destino e os arquivos que serão substituídos. A escrita só começa após **Sim**.
+
+Quando arquivos do backup foram editados, somente os arquivos cujo hash difere do manifesto original são preparados. Se não há edições, são preparados todos os arquivos desse backup, permitindo devolver uma versão anterior. O manifesto original não é reescrito nem recebe hashes novos para ocultar edições.
+
+Pré-backups, plano, cópias dos arquivos e relatório ficam em `restauracoes`, ao lado da pasta de origem. A seleção de `data` é normalizada para a pasta que contém `manifest.json`. O programa exige o mesmo jogo, usuário, tipo, índice, rank e identificador de arquivo de save; não retargeta identidades entre usuários ou títulos.
+
+### Escopo e confirmação de sucesso
+
+- Substituição de arquivos existentes, com o mesmo tamanho da origem. Sem criação, remoção, redimensionamento ou alteração de diretórios.
+- Até 256 arquivos, 16 MiB por arquivo e 64 MiB no conjunto.
+- O plano confirma os hashes do pré-backup e dos arquivos preparados; mudanças posteriores no save do console exigem nova preparação.
+- Confere o envio de cada bloco com hash no console, descarrega os arquivos, verifica a árvore, faz um único commit, reabre o save em leitura e confere novamente todos os arquivos, inclusive os que não foram substituídos.
+- Sucesso só é apresentado depois de commit, releitura e limpeza confirmados. Isso confirma os bytes persistidos; a aceitação pelo jogo precisa de teste separado.
+- Pode cancelar antes da primeira escrita. Depois que ela começa, o programa termina commit/verificação em vez de interromper a transação. Não encerre a conexão ou o aplicativo nessa etapa.
+- Erro após início de escrita ou commit exige inspeção e sessão nova. Não existe promessa de rollback automático: o pré-backup é preservado, e chamadas incertas não são repetidas.
+
+### Primeiro caso: FireRed
+
+O backup de referência contém `FireRed_e.sav` (131.072 bytes) e `transaction.sav` (1.024 bytes). Somente o primeiro foi editado; o fluxo prepara sua substituição e mantém o segundo conforme o estado atual do console. Uma cópia verificada do conjunto editado foi preservada antes do desenvolvimento.
+
+Testes simulados cobrem integridade dos planos, identidade de destino, mudanças no console, erro de escrita sem repetição, falha de commit, divergência de releitura, cancelamento e limpeza. A interface real foi testada com leitura local desse backup, sem iniciar conexão ou escrita no console.
+
 ## Cobertura de validação
 
 O fluxo de backup foi concluído em console real em 6 de novembro de 2026. A identidade e os hashes permanecem no manifesto privado do backup. A validação não cobre restauração.
@@ -44,4 +73,4 @@ O fluxo de backup foi concluído em console real em 6 de novembro de 2026. A ide
 Testes adicionais:
 - Validar separadamente Account e Device.
 - Confirmar limpeza e saúde da sessão após a leitura.
-- Só depois planejar restauração e seu teste de ida e volta.
+- Validar a restauração experimental com teste de ida e volta e aceitação do save no jogo.

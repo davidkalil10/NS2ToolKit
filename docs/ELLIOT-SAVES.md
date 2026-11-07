@@ -2,7 +2,7 @@
 
 ## Estado em 7 de novembro de 2026
 
-**Análise inicial concluída; teste no emulador pendente. Conversão de progresso e restauração no console ainda não validadas.** O caso disponível compara o jogo completo no PC com a **Debut Demo** no Switch (`0400CAA023DB0000`), não com a versão completa de Switch.
+**Teste no emulador: save reconhecido, mas progresso incompleto na demo. Restauração no console não realizada.** O caso disponível compara o jogo completo no PC com a **Debut Demo** no Switch (`0400CAA023DB0000`), não com a versão completa de Switch.
 
 Antes da análise, foram criadas cópias separadas dos dois conjuntos, verificadas por SHA-256. Os arquivos de save e seus manifestos com identidades de usuário permanecem fora do repositório.
 
@@ -29,6 +29,8 @@ Nenhum byte desses arquivos foi transformado. Os demais slots de PC permanecem n
 Antes de instalar os arquivos no emulador, é necessário preservar sua pasta de save atual e fechar o jogo. O teste deve conferir carregamento, local, progresso e inventário; ausência de mensagem de erro não basta. Em recusa ou travamento, restaurar a cópia anterior. A demo pode não conter mapas, dados ou lógica usados pelo progresso completo; mudar o nome do arquivo não remove essa diferença.
 
 ## Próximas etapas
+
+O teste no Lichii build 95 reconheceu o save, mas apresentou mapa preto, conteúdo ausente e `MISSING STRING TABLE ENTRY`. Esse resultado não valida compatibilidade de progresso com a demo. A diferença de conteúdo entre edições é uma hipótese plausível, sem demonstração de que explique todos os sintomas. O pacote continua exclusivo para pesquisa no emulador; não foi habilitado para escrita no console. O primeiro caso de restauração passa a ser um save do FireRed editado a partir do próprio backup de Switch.
 
 1. Validar ou rejeitar o experimento no emulador com registro do resultado.
 2. Se a demo rejeitar os dados, comparar com um save da versão completa de Switch antes de atribuir a falha ao formato da plataforma. Não fabricar um save compatível por alteração arbitrária dos campos.

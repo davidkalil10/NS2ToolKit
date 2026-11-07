@@ -38,7 +38,7 @@ Atualizado em 6 de novembro de 2026. Prioridade: diagnóstico → backup de save
 
 ## P2 — restauração de saves
 
-**Estado: planejado; depende de P1.**
+**Estado: substituição de arquivos existentes implementada na build de teste 0.1.5; testes locais concluídos, validação de escrita no console pendente.** O primeiro caso é o FireRed, com arquivo editado do mesmo tamanho. Veja [escopo e fluxo](SAVES.md).
 
 - Conferir identidade, integridade e compatibilidade do backup.
 - Fazer uma cópia do estado atual antes de qualquer substituição.

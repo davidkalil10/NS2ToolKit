@@ -39,7 +39,7 @@ namespace NS2Panel {
             FormBorderStyle = FormBorderStyle.FixedDialog; MaximizeBox = false;
             StartPosition = FormStartPosition.CenterParent; Font = new Font("Segoe UI", 10); BackColor = Color.FromArgb(245, 247, 251);
             AddLabel(savesMode ? "Backup dos saves • somente leitura" : "Backup dos seus jogos", 20, 15, 820, 35, 18, true);
-            AddLabel(savesMode ? "Copia os saves em modo somente leitura. Restauração ainda não disponível." : "Exporta os arquivos do jogo em .tar com OunceCake. Não inclui saves ou chaves.", 22, 58, 820, 25, 10, false);
+            AddLabel(savesMode ? "Faça backup ou abra a restauração com pré-backup e confirmação antes de gravar." : "Exporta os arquivos do jogo em .tar com OunceCake. Não inclui saves ou chaves.", 22, 58, 820, 25, 10, false);
             AddLabel(savesMode ? "Liste os saves e confira o jogo e o identificador do usuário antes de copiar." : "IP do Switch 2 • detectado pela sessão; edite apenas se necessário", 22, 96, 820, 24, 10, false);
             host.SetBounds(22, 123, 240, 28); host.Visible = !savesMode; Controls.Add(host);
             if (!savesMode) host.Text = SessionAddress(run);
@@ -56,6 +56,17 @@ namespace NS2Panel {
             open.Text = "Abrir pasta"; open.SetBounds(373, 317, 140, 35); open.Click += delegate { OpenFolder(); }; Controls.Add(open);
             var profileLabel = new Label { Text = "Perfil de exportação", Location = new Point(530, 302), Size = new Size(312, 24), Visible = !savesMode };
             Controls.Add(profileLabel);
+            if (savesMode) {
+                var restoreButton = new Button { Text = "Restaurar save...", Location = new Point(530,317), Size = new Size(220,35) };
+                timer.Tick += delegate {restoreButton.Enabled = worker == null && !RequiresRestart;};
+                restoreButton.Click += delegate {
+                    if (worker != null || RequiresRestart) return;
+                    using (var dialog = new RestoreWindow(root, session)) {
+                        dialog.ShowDialog(this);
+                        if (dialog.RequiresRestart) {RequiresRestart=true; list.Enabled=begin.Enabled=false; restoreButton.Enabled=false; status.Text="A restauração exige uma sessão nova. Encerre a conexão e reinicie o console.";}
+                    }
+                }; Controls.Add(restoreButton);
+            }
             profile.DropDownStyle = ComboBoxStyle.DropDownList; profile.SetBounds(530, 326, 312, 30); profile.Visible = !savesMode;
             profile.Items.AddRange(new object[] { "Completo (padrão)", "Compatibilidade: sem manuais", "Diagnóstico: apenas inventário" }); profile.SelectedIndex = 0;
             profile.SelectedIndexChanged += delegate {

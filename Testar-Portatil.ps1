@@ -33,6 +33,12 @@ for section, entries in [('exefs', [('main.npdm', bytes(npdm))]), ('romfs', [('d
             archive.addfile(member, io.BytesIO(data))
     files.append(dict(path=relative, bytes=target.stat().st_size, sha256=hashlib.sha256(target.read_bytes()).hexdigest()))
 (root / 'manifest.json').write_text(json.dumps(dict(complete=True, title='0100000000000000', name='Teste portatil', files=files)), encoding='utf-8')
+save = root.parent / 'save com espacos'; (save / 'data').mkdir(parents=True)
+(save / 'data/slot.sav').write_bytes(b'modified')
+entry = dict(path='/slot.sav', local='data/slot.sav', size=8, sha256=hashlib.sha256(b'original').hexdigest())
+archive = dict(id='7', space=1, type=1, rank=0, index=0, title='0100000000000000', uid='1'*32)
+(save / 'manifest.json').write_text(json.dumps(dict(format='ns2toolkit-save-v1', complete=True, dataVerified=True,
+    cleanupConfirmed=True, archive=archive, entries=[entry], directories=[])), encoding='utf-8')
 '@
     $fixtureFile = Join-Path $work 'fixture.py'
     $fixture | Set-Content -LiteralPath $fixtureFile -Encoding UTF8
@@ -40,7 +46,7 @@ for section, entries in [('exefs', [('main.npdm', bytes(npdm))]), ('romfs', [('d
     & $python $fixtureFile $backup
     if ($LASTEXITCODE -ne 0) { throw 'Python incluído não conseguiu preparar a amostra.' }
     $source = ''
-    foreach ($file in @('Painel-NS2.cs','Painel-Backup.cs','Painel-Nup.cs')) {
+    foreach ($file in @('Painel-NS2.cs','Painel-Backup.cs','Painel-Nup.cs','Painel-Restore.cs')) {
         $source += Get-Content -LiteralPath (Join-Path $PSScriptRoot $file) -Raw -Encoding UTF8
         $source += "`n"
     }
@@ -52,6 +58,24 @@ for section, entries in [('exefs', [('main.npdm', bytes(npdm))]), ('romfs', [('d
     New-Item -ItemType Directory -Path $sessionFixture | Out-Null
     '{"consoleAddress":"192.168.18.139"}' | Set-Content -LiteralPath (Join-Path $sessionFixture 'result.json') -Encoding ASCII
     if ([NS2Panel.BackupWindow]::SessionAddress($sessionFixture) -ne '192.168.18.139') { throw 'IP do console nao foi carregado da sessao.' }
+    # Inspect an edited save through the real UI and embedded Node, without a console session.
+    $restoreWindow = New-Object NS2Panel.RestoreWindow($PSScriptRoot, $sessionFixture)
+    $restoreFlags = [Reflection.BindingFlags]'NonPublic,Instance'
+    $restoreTargets = $restoreWindow.GetType().GetField('targets', $restoreFlags).GetValue($restoreWindow)
+    $restoreTarget = New-Object NS2Panel.RestoreTarget
+    $restoreTarget.Id='7'; $restoreTarget.Title='0100000000000000'; $restoreTarget.User=('1'*32); $restoreTarget.Name='Teste de save'
+    $restoreTargets.Items.Add($restoreTarget) | Out-Null; $restoreTargets.SelectedIndex=0
+    $restoreSource = $restoreWindow.GetType().GetField('source', $restoreFlags).GetValue($restoreWindow)
+    $restoreSource.Text = Join-Path $work 'save com espacos\data'
+    $restoreWindow.GetType().GetMethod('Start', $restoreFlags).Invoke($restoreWindow, @('inspect')) | Out-Null
+    $restoreWorker = $restoreWindow.GetType().GetField('worker', $restoreFlags).GetValue($restoreWindow)
+    $restoreDeadline = [DateTime]::UtcNow.AddSeconds(15)
+    while (!$restoreWorker.Complete -and [DateTime]::UtcNow -lt $restoreDeadline) { Start-Sleep -Milliseconds 40 }
+    if (!$restoreWorker.Complete) { throw 'Inspecao local de save nao terminou.' }
+    $restoreWindow.GetType().GetMethod('ReadOutput', $restoreFlags).Invoke($restoreWindow, @()) | Out-Null
+    $restoreSelected = $restoreWindow.GetType().GetField('selected', $restoreFlags).GetValue($restoreWindow)
+    if ($restoreSelected.Count -ne 1 -or $restoreSelected[0] -ne '/slot.sav' -or $restoreWindow.GetType().GetField('failed', $restoreFlags).GetValue($restoreWindow)) { throw 'Arquivo editado nao reconhecido pela interface.' }
+    $restoreWorker.Dispose(); $restoreWindow.GetType().GetField('worker', $restoreFlags).SetValue($restoreWindow, $null); $restoreWindow.Dispose()
     $backupWindow = New-Object NS2Panel.BackupWindow($PSScriptRoot, $sessionFixture)
     $addressField = $backupWindow.GetType().GetField('host', [Reflection.BindingFlags]'NonPublic,Instance').GetValue($backupWindow)
     if ($addressField.Text -ne '192.168.18.139') { throw 'IP do console nao foi preenchido na interface.' }
