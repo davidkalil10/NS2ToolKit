@@ -228,6 +228,7 @@ async function apply({run, planPath, planSha256, confirmed, stop = () => false, 
       return replacement ? {...e, sha256:replacement.sha256} : e;
     })};
     assert(sameSnapshot(await snapshot(a, handle), expected), 'A conferência antes do commit encontrou divergência.');
+    if (!report.writesStarted) refuseUnless(!stop(), 'Restauração cancelada antes da escrita.');
     report.commitAttempted = true; await jsonWrite(reportFile, report);
     const commit = await a.s.ipc('Commit restored save filesystem', handle, 10);
     assert(!commit.result, 'O commit do save não foi confirmado: ' + commit.result);
@@ -237,7 +238,10 @@ async function apply({run, planPath, planSha256, confirmed, stop = () => false, 
     send('status', {message:'Relendo o save após o commit e conferindo todos os arquivos...'});
     assert(sameSnapshot(await snapshot(a, handle), expected), 'A releitura após o commit encontrou divergência.');
     report.verified = true;
-  } catch (error) {failure = error;}
+  } catch (error) {
+    failure = error;
+    if (!report.writesStarted && !report.commitAttempted && stop() && /^(Backup cancelado|Restauração cancelada)/.test(error.message)) error.restoreRefusal = true;
+  }
   finally {
     try {if (handle !== undefined) await a.s.close(handle);} catch (error) {failure ||= error; (failure.cleanupErrors ||= []).push(error.message);}
     try {await closeAttachment(a); report.cleanupConfirmed = true;} catch (error) {failure ||= error; (failure.cleanupErrors ||= []).push(error.message);}
