@@ -1,6 +1,6 @@
 # Roadmap
 
-Atualizado em 6 de novembro de 2026. Prioridade: diagnóstico → backup de saves → restauração. Implementação e validação no console são estados separados.
+Atualizado em 7 de novembro de 2026. Prioridade: diagnóstico → backup de saves → restauração. Implementação e validação no console são estados separados.
 
 ## Referência já validada
 
@@ -38,7 +38,7 @@ Atualizado em 6 de novembro de 2026. Prioridade: diagnóstico → backup de save
 
 ## P2 — restauração de saves
 
-**Estado: substituição de arquivos existentes implementada na build de teste 0.1.5; testes locais concluídos, validação de escrita no console pendente.** O primeiro caso é o FireRed, com arquivo editado do mesmo tamanho. Veja [escopo e fluxo](SAVES.md).
+**Estado: substituição de arquivos existentes validada no FireRed e incluída na 0.1.5.** O teste confirmou pré-backup, commit, releitura e funcionamento do arquivo editado no jogo. Ampliar cobertura para outros jogos, Device e retorno ao pré-backup; criação, remoção e redimensionamento ficam fora do escopo atual. Veja [escopo e fluxo](SAVES.md).
 
 - Conferir identidade, integridade e compatibilidade do backup.
 - Fazer uma cópia do estado atual antes de qualquer substituição.

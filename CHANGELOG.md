@@ -1,11 +1,12 @@
 # Histórico de versões
 
-## 0.1.5 — build de teste, restauração no console ainda não validada
+## 0.1.5 — 7 de novembro de 2026
 
 - Adiciona restauração de arquivos de save existentes, do mesmo tamanho, com seleção da pasta e do jogo/usuário lido do console.
 - Prepara automaticamente os arquivos editados e faz pré-backup antes da confirmação de escrita; preserva o manifesto de origem.
 - Confere identidade, estado atual e hashes, faz um único commit e verifica os arquivos por releitura antes de declarar sucesso.
 - Não altera aquisição do FS, não cria nem apaga arquivos no console e não repete escritas incertas.
+- Restauração do FireRed validada em console real: arquivo editado substituído, commit, releitura e limpeza confirmados, com funcionamento do save confirmado no jogo. Outros jogos ainda precisam de validação própria.
 
 ## 0.1.4 — 7 de novembro de 2026
 

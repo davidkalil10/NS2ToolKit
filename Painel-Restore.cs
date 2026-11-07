@@ -27,7 +27,7 @@ namespace NS2Panel {
         private bool failed, received, writing, cancelling;
         public bool RequiresRestart {get; private set;}
         public RestoreWindow(string rootFolder, string run) {
-            root=rootFolder; session=run; Text="NS2 • Restaurar save • teste"; ClientSize=new Size(900,535);
+            root=rootFolder; session=run; Text="NS2 • Restaurar save"; ClientSize=new Size(900,535);
             FormBorderStyle=FormBorderStyle.FixedDialog; MaximizeBox=false; StartPosition=FormStartPosition.CenterParent;
             Font=new Font("Segoe UI",10); BackColor=Color.FromArgb(245,247,251);
             AddLabel("Restaurar save",22,16,855,35,true);

@@ -13,7 +13,7 @@ O pacote inclui Node, Python, compressão e as DLLs necessárias. Não é precis
 - Conexão ns2jb com acompanhamento das quatro etapas e opção de manter a sessão RPC aberta.
 - Backup dos arquivos de jogos com OunceCake, transferência FTP de leitura e detecção automática do IP do console.
 - Backup de saves Account/Device em modo somente leitura, com identificação do jogo e usuário.
-- Na build de teste 0.1.5, restauração de arquivos existentes com pré-backup, confirmação e verificação após commit; validação no console pendente. A release pública 0.1.4 mantém apenas o backup.
+- Restauração de arquivos de save existentes, com pré-backup automático, confirmação e verificação após commit; validada no FireRed.
 - Geração de NUP pela interface, com conferência dos backups de entrada e verificação integral do pacote.
 - Pastas com **Nome do jogo [ID]**, registros de execução e preservação de operações incompletas.
 
@@ -24,7 +24,7 @@ O pacote inclui Node, Python, compressão e as DLLs necessárias. Não é precis
 - PC e Switch por Ethernet, na mesma rede local.
 - `bootstrap.bas` correspondente salvo como **NS2** no slot 0 do SmileBASIC.
 
-Conexão 4/4, backup de jogos e leitura de saves foram validados nessa configuração. Dois NUPs, incluindo conteúdo base e atualização, foram testados no Eglantine **0d86405bd1-nx2**, build de 04/11/2026. A compatibilidade de outros jogos, versões e ambientes requer testes específicos.
+Conexão 4/4, backup de jogos, leitura de saves e restauração de um save editado do FireRed foram validados nessa configuração. Dois NUPs, incluindo conteúdo base e atualização, foram testados no Eglantine **0d86405bd1-nx2**, build de 04/11/2026. A compatibilidade de outros jogos, versões e ambientes requer testes específicos.
 
 Não é necessário executar o assistente como administrador. Se o Windows solicitar acesso à rede, permita a comunicação na rede privada utilizada pelo console. Não é necessário desativar o firewall ou abrir portas no roteador.
 
@@ -72,7 +72,7 @@ As pastas usam **Nome do jogo [ID]**. Repetições recebem `(2)`, `(3)` e assim 
 
 O destino dos saves é lembrado separadamente do destino dos jogos. As preferências ficam em `%LOCALAPPDATA%/NS2ToolKit/settings.json`.
 
-A leitura confere os blocos no console, calcula hashes locais, relê os arquivos no PC e verifica novamente a estrutura. O manifesto só indica conclusão após a limpeza dos recursos. A build de teste 0.1.5 adiciona **Restaurar save**, com pré-backup automático e confirmação antes da escrita; validação no console pendente. Consulte [escopo e verificação dos saves](docs/SAVES.md).
+A leitura confere os blocos no console, calcula hashes locais, relê os arquivos no PC e verifica novamente a estrutura. O manifesto só indica conclusão após a limpeza dos recursos. **Restaurar save** permite selecionar a pasta e o jogo/usuário lido do console; cria um pré-backup automático e pede confirmação antes da escrita. Aceita arquivos existentes do mesmo tamanho, até 16 MiB por arquivo e 64 MiB no conjunto, com no máximo 256 arquivos. O fluxo foi validado no FireRed; a aceitação de saves editados por outros jogos exige teste próprio. Consulte [escopo e verificação dos saves](docs/SAVES.md).
 
 ## Gerar NUP
 
@@ -95,7 +95,7 @@ Consulte [incidentes conhecidos](docs/INCIDENTES.md), [compatibilidade](docs/COM
 
 ## Perfis experimentais em desenvolvimento
 
-A branch `fix/game-backup-mounts` acrescenta inventário sem montagem, registros por chamada e um perfil que omite manuais e testa outra rota para programas secundários. Esses recursos ainda precisam de validação no console; veja [o roteiro](docs/TESTE-MONTAGENS.md). A exportação com manuais omitidos é identificada no manifesto.
+Os perfis integrados na 0.1.4 oferecem inventário sem montagem, registros por chamada e um modo de compatibilidade que omite manuais e testa outra rota para programas secundários. A exportação do Split Fiction sem manuais foi validada no console; o dump do Legends Z-A continua pendente. Veja [resultados e limitações](docs/TESTE-MONTAGENS.md). A exportação com manuais omitidos é identificada no manifesto.
 
 ## Desenvolvimento
 
