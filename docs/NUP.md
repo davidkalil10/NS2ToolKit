@@ -75,3 +75,11 @@ O NUP de Split Fiction foi gerado com 71.590.487.701 bytes e SHA-256 `349af14668
 | DLC | `0400CA40208C9001` | 0 | 2 |
 
 Nome, ícone, publicadora Electronic Arts e versão de exibição 1.3.0 foram preservados. O relatório mantém a omissão do manual da atualização. A geração e a integridade estão validadas no PC; a execução desse NUP no Eglantine continua pendente.
+
+### Teste nos emuladores: falha de gravação do cache
+
+Em 07/11/2026, o teste no Eglantine e no Lichii exibiu `Failed to open descriptor file ../../../Split/Split.uproject`. Os logs das duas tentativas registraram antes disso falhas `NUP zstd decompression ... to a temporary file failed: cannot write the temporary file`, inclusive para arquivos `pakchunk*-Sage`.
+
+O [leitor NUP do Eglantine](https://github.com/Djihads80/Eglantine/blob/nx2/src/core/file_sys/nup_container.cpp) descompacta arquivos grandes para `CacheDir/nup`. Na instalação examinada, os emuladores usam o cache compartilhado em `%APPDATA%/eden/cache/nup`, no C, com aproximadamente 6 GB livres. O D tinha aproximadamente 181 GB livres. A falha de escrita do cache é comprovada pelo log; falta de espaço no C é a hipótese principal, ainda dependente de novo teste. A ausência do descritor como arquivo solto também foi confirmada no TAR e no NUP; isoladamente, isso não comprova perda na conversão, pois o jogo usa arquivos de conteúdo empacotados.
+
+Com os emuladores fechados, somente a pasta `cache/nup` foi redirecionada por junction para `D:/Games/NS2ToolKit-cache/nup`. A pasta anterior foi preservada como `nup.before-disk-D-<horário>`, e a escrita pelo caminho original foi conferida no destino. O NUP não foi regenerado nem alterado. O próximo teste deve abrir o mesmo arquivo e verificar se as falhas de cache desapareceram. Esta medida não comprova ainda que o jogo inicia.
