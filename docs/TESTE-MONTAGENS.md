@@ -1,6 +1,6 @@
-# Perfis experimentais de exportação — 0.1.3
+# Perfis de exportação — 0.1.4
 
-**Estado: Split Fiction exportado sem manuais em console real; Z-A continua falhando na CodeFS secundária. Continuidade da sessão validada após essa recusa.** A main e a release 0.1.1 permanecem preservadas. Os tempos de espera e o mecanismo de aquisição do FS não foram alterados.
+**Estado: Split Fiction exportado sem manuais em console real; Z-A continua falhando na CodeFS secundária. Continuidade da sessão validada após essa recusa.** Os perfis foram incorporados à release 0.1.4. O perfil completo continua usando a dependência original; o modo de compatibilidade permanece experimental. Os tempos de espera e o mecanismo de aquisição do FS não foram alterados.
 
 ## Origem dos dois casos
 

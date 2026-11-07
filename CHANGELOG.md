@@ -1,11 +1,12 @@
 # Histórico de versões
 
-## 0.1.4 — experimental, em validação
+## 0.1.4 — 7 de novembro de 2026
 
 - Converte DLC base de versão zero em pacotes NUP addon, preservando IDs, arquivos e metadados. Outros programas e atualizações de DLC continuam recusados.
 - Verifica todos os layouts antes dos hashes e mostra bytes/percentual durante a conferência, extração, verificação, comparação da origem e hash final.
 - Informa também o tamanho gravado durante a compactação de arquivos grandes, sem estimar um tamanho final ainda desconhecido.
 - Verifica conteúdo raw/zstd em blocos, evitando carregar arquivos grandes inteiros na memória. Inclui testes de integridade, identidades de DLC, cancelamento e recusa antecipada.
+- Reúne os perfis de diagnóstico/compatibilidade e a recuperação de sessão desenvolvidos nas revisões 0.1.2 e 0.1.3. Split Fiction foi exportado sem manuais; o dump do Legends Z-A e a execução do NUP de Split Fiction nos emuladores continuam pendentes.
 
 ## 0.1.3 — experimental, em validação
 
