@@ -100,4 +100,4 @@ Ordem confirmada: P0 → P1 → P2, validando a leitura antes da restauração. 
 
 ## Experimento atual — Z-A e Split Fiction
 
-Perfis separados, inventário sem montagem e registros por chamada estão implementados na branch `fix/game-backup-mounts`. Testes locais passaram; a validação de montagem no console e a correção do dump integral continuam pendentes. [Roteiro e limitações](TESTE-MONTAGENS.md).
+Perfis separados, inventário sem montagem e registros por chamada foram integrados à main na versão 0.1.4. Split Fiction foi exportado sem manuais e a continuidade após recusa foi validada no console. A montagem integral dos conteúdos afetados, o dump do Z-A e a execução do NUP de Split Fiction nos emuladores continuam pendentes. [Roteiro e limitações](TESTE-MONTAGENS.md).
