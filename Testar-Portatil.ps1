@@ -46,7 +46,7 @@ archive = dict(id='7', space=1, type=1, rank=0, index=0, title='0100000000000000
     & $python $fixtureFile $backup
     if ($LASTEXITCODE -ne 0) { throw 'Python incluído não conseguiu preparar a amostra.' }
     $source = ''
-    foreach ($file in @('Painel-NS2.cs','Painel-Backup.cs','Painel-Nup.cs','Painel-Restore.cs')) {
+    foreach ($file in @('Painel-NS2.cs','Painel-Backup.cs','Painel-Nup.cs','Painel-Restore.cs','Painel-Ftp.cs')) {
         $source += Get-Content -LiteralPath (Join-Path $PSScriptRoot $file) -Raw -Encoding UTF8
         $source += "`n"
     }
@@ -76,6 +76,26 @@ archive = dict(id='7', space=1, type=1, rank=0, index=0, title='0100000000000000
     $restoreSelected = $restoreWindow.GetType().GetField('selected', $restoreFlags).GetValue($restoreWindow)
     if ($restoreSelected.Count -ne 1 -or $restoreSelected[0] -ne '/slot.sav' -or $restoreWindow.GetType().GetField('failed', $restoreFlags).GetValue($restoreWindow)) { throw 'Arquivo editado nao reconhecido pela interface.' }
     $restoreWorker.Dispose(); $restoreWindow.GetType().GetField('worker', $restoreFlags).SetValue($restoreWindow, $null); $restoreWindow.Dispose()
+    # Exercise FTP ready/unmount UI states without opening Explorer or a console connection.
+    $ftpScript=Join-Path $work 'ftp-ui-fixture.cjs'
+    @'
+console.log('PANEL:'+JSON.stringify({kind:'ftp_ready',url:'ftp://127.0.0.1:30000/',scopes:['SD','Interno'],unavailable:[],upload:false}));
+process.stdin.setEncoding('utf8');process.stdin.on('data',text=>{if(text.includes('stop')){console.log('PANEL:'+JSON.stringify({kind:'complete'}));process.stdin.pause();}});
+'@ | Set-Content -LiteralPath $ftpScript -Encoding ASCII
+    $ftpWindow=New-Object NS2Panel.FtpWindow($PSScriptRoot,$sessionFixture,$false)
+    $ftpFlags=[Reflection.BindingFlags]'NonPublic,Instance'
+    $ftpWorker=New-Object NS2Panel.Runner
+    $ftpWorker.Start((Join-Path $PSScriptRoot 'runtime\node\node.exe'),$ftpScript,'',$PSScriptRoot)
+    $ftpWindow.GetType().GetField('worker',$ftpFlags).SetValue($ftpWindow,$ftpWorker)
+    $ftpToggle=$ftpWindow.GetType().GetField('toggle',$ftpFlags).GetValue($ftpWindow);$ftpToggle.Text='Desmontar FTP'
+    $ftpExplorer=$ftpWindow.GetType().GetField('explorer',$ftpFlags).GetValue($ftpWindow)
+    $ftpWindow.Show();$ftpDeadline=[DateTime]::UtcNow.AddSeconds(10)
+    while(!$ftpExplorer.Enabled -and [DateTime]::UtcNow -lt $ftpDeadline){[System.Windows.Forms.Application]::DoEvents();Start-Sleep -Milliseconds 40}
+    if(!$ftpExplorer.Enabled -or !$ftpWindow.GetType().GetMethod('ValidAddress',$ftpFlags).Invoke($ftpWindow,@())){throw 'FTP pronto nao reconhecido pela interface'}
+    $ftpToggle.PerformClick();$ftpDeadline=[DateTime]::UtcNow.AddSeconds(10)
+    while($ftpWindow.GetType().GetField('worker',$ftpFlags).GetValue($ftpWindow) -ne $null -and [DateTime]::UtcNow -lt $ftpDeadline){[System.Windows.Forms.Application]::DoEvents();Start-Sleep -Milliseconds 40}
+    if($ftpWindow.GetType().GetField('worker',$ftpFlags).GetValue($ftpWindow) -ne $null -or $ftpToggle.Text -ne 'Montar FTP' -or $ftpWindow.RequiresRestart){throw 'Desmontagem FTP nao reconhecida'}
+    $ftpWindow.Close();$ftpWindow.Dispose()
     $backupWindow = New-Object NS2Panel.BackupWindow($PSScriptRoot, $sessionFixture)
     $addressField = $backupWindow.GetType().GetField('host', [Reflection.BindingFlags]'NonPublic,Instance').GetValue($backupWindow)
     if ($addressField.Text -ne '192.168.18.139') { throw 'IP do console nao foi preenchido na interface.' }

@@ -112,6 +112,7 @@ namespace NS2Panel {
         private readonly Button backup = new Button();
         private readonly Button saves = new Button();
         private readonly Button nup = new Button();
+        private readonly Button ftp = new Button();
         private readonly Label status = new Label(), detail = new Label();
         private readonly TextBox output = new TextBox();
         private readonly TextBox[] commands = new TextBox[4];
@@ -192,7 +193,8 @@ namespace NS2Panel {
             saves.Click += delegate { using (var dialog = new BackupWindow(root, progress.Folder, true)) { dialog.ShowDialog(this); if (dialog.RequiresRestart) backupFailed = true; } }; footer.Controls.Add(saves);
             nup.Text = "Gerar NUP"; nup.SetBounds(482, 8, 125, 31);
             nup.Click += delegate { using (var dialog = new NupWindow(root)) dialog.ShowDialog(this); }; footer.Controls.Add(nup);
-            footer.Controls.Add(new Label { Text = "NUP: operação local no PC.", AutoSize = true, Font = new Font("Segoe UI", 9), Location = new Point(617, 15) });
+            ftp.Text = "Arquivos / FTP"; ftp.SetBounds(617,8,165,31); ftp.Enabled=false;
+            ftp.Click += delegate {using(var dialog=new FtpWindow(root,progress.Folder)){dialog.ShowDialog(this);if(dialog.RequiresRestart)backupFailed=true;}}; footer.Controls.Add(ftp);
             layout.Controls.Add(footer);
             LoadAddresses();
             timer.Interval = 150; timer.Tick += Poll; timer.Start();
@@ -246,6 +248,7 @@ namespace NS2Panel {
             bar.Value = progress.Stage;
             backup.Enabled = progress.State == RunState.Held && !cleaning && !stopping && !backupFailed && runner.Alive;
             saves.Enabled = backup.Enabled;
+            ftp.Enabled = backup.Enabled;
             stop.Text = progress.State == RunState.Held ? "Encerrar conexão" : "Interromper";
             bool waiting = progress.State == RunState.Waiting;
             foreach (var button in copy) button.Enabled = waiting;
@@ -264,6 +267,7 @@ namespace NS2Panel {
             foreach (var button in copy) button.Enabled = false;
             backup.Enabled = false;
             saves.Enabled = false;
+            ftp.Enabled = false;
             if (stopping) { status.Text = "Tentativa interrompida • reinicie o console"; detail.Text = "A limpeza não foi confirmada. Reinicie completamente antes de tentar outra vez."; }
             else if (progress.State == RunState.Verified) { status.Text = "Sucesso • 4/4 verificado e limpeza concluída"; detail.Text = "A demonstração terminou e fechou a conexão. Reinicie o console para finalizar."; }
             else { status.Text = "Sessão encerrada • confira os registros e reinicie o console"; detail.Text = "RPC STOP no Switch não comprova sucesso. O resultado depende das verificações do PC."; }

@@ -14,6 +14,7 @@ O pacote inclui Node, Python, compressão e as DLLs necessárias. Não é precis
 - Backup dos arquivos de jogos com OunceCake, transferência FTP de leitura e detecção automática do IP do console.
 - Backup de saves Account/Device em modo somente leitura, com identificação do jogo e usuário.
 - Restauração de arquivos de save existentes, com pré-backup automático, confirmação e verificação após commit; validada no FireRed.
+- Na build de teste 0.1.6, **Arquivos / FTP** com Montar/Desmontar, navegação no Explorer e envio opcional de arquivos novos ao SD. Validação no console pendente; a release pública 0.1.5 não inclui FTP.
 - Geração de NUP pela interface, com conferência dos backups de entrada e verificação integral do pacote.
 - Pastas com **Nome do jogo [ID]**, registros de execução e preservação de operações incompletas.
 
@@ -89,7 +90,7 @@ O pacote e sua pasta usam **Nome do jogo [ID]**. O relatório `build-report.json
 
 A aquisição do FS depende de temporização e pode falhar. Algumas combinações de conteúdo também apresentam falhas de preparação no OunceCake. Após uma falha que invalide a sessão, preserve os registros em `runs/`, encerre a conexão e reinicie o console antes de tentar novamente. O assistente bloqueia repetições quando a limpeza não está confirmada. Uma recusa conhecida de conteúdo permite escolher outro jogo após confirmação da limpeza e verificação dos endpoints; timeouts e falhas desconhecidas ainda exigem uma sessão nova.
 
-O backup de jogos não inclui saves ou chaves e não gera imagens NSP/XCI instaláveis. FTP dedicado e HBLauncher ainda não estão disponíveis. A restauração experimental não cria nem apaga arquivos e exige o mesmo jogo/usuário e arquivos do mesmo tamanho. O acesso ao console é temporário e depende do PC e do SmileBASIC em execução. Use seus próprios jogos e console.
+O backup de jogos não inclui saves ou chaves e não gera imagens NSP/XCI instaláveis. O FTP da build de teste 0.1.6 mantém o armazenamento interno somente leitura e permite apenas criação no SD quando habilitada; veja [uso e limitações](docs/FTP.md). HBLauncher ainda não está integrado. A restauração de saves não cria nem apaga arquivos e exige o mesmo jogo/usuário e arquivos do mesmo tamanho. O acesso ao console é temporário e depende do PC e do SmileBASIC em execução. Use seus próprios jogos e console.
 
 Consulte [incidentes conhecidos](docs/INCIDENTES.md), [compatibilidade](docs/COMPATIBILIDADE.md), [roadmap](docs/ROADMAP.md) e o [índice da documentação](docs/README.md).
 

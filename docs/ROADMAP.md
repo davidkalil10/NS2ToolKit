@@ -51,9 +51,9 @@ Atualizado em 7 de novembro de 2026. Prioridade: diagnóstico → backup de save
 
 ## P3 — navegação e FTP
 
-**Estado: planejado.**
+**Estado: build de teste 0.1.6 implementada; testes de protocolo, adaptador simulado e APIs FTP Windows concluídos. Console e Explorer ainda pendentes.** Veja [escopo e validação](FTP.md).
 
-Primeiro marco: sessão FTP de leitura para conteúdo selecionado, com endereço visível e encerramento explícito. Segundo marco: gerenciador de arquivos com escopo e permissões claros. Escrita deve ser avaliada separadamente de navegação.
+Primeiro marco: SD e armazenamento interno USER com endereço local e encerramento explícito, mais envio opcional de arquivos novos ao SD. A escrita interna, sobrescrita e exclusão ficam fora deste marco. O botão Montar/Desmontar controla o servidor e seus recursos; não mapeia uma unidade com letra.
 
 - Expor apenas o escopo realmente montado.
 - Testar listagem, download, interrupção e fechamento antes do encerramento do RPC.

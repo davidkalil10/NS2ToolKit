@@ -1,5 +1,12 @@
 # Histórico de versões
 
+## 0.1.6 — build de teste, FTP no console ainda não validado
+
+- Adiciona **Arquivos / FTP**, com botão Montar/Desmontar e abertura do endereço no Explorer.
+- Navegação e download no SD e na partição interna USER, conforme os armazenamentos que abrirem.
+- Envio opcional de arquivos e pastas novos ao SD, sem sobrescrever ou apagar; verificação de tamanho e hash por releitura. Memória interna somente leitura.
+- Ponte FTP local, operações serializadas, bloqueio de operações concorrentes e encerramento com limpeza dos recursos.
+
 ## 0.1.5 — 7 de novembro de 2026
 
 - Adiciona restauração de arquivos de save existentes, do mesmo tamanho, com seleção da pasta e do jogo/usuário lido do console.

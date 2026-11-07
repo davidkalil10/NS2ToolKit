@@ -4,7 +4,8 @@
     [switch]$BackupPreview,
     [switch]$SavesPreview,
     [switch]$NupPreview,
-    [switch]$RestorePreview
+    [switch]$RestorePreview,
+    [switch]$FtpPreview
 )
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Windows.Forms
@@ -13,13 +14,16 @@ $source = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'Painel-NS2.cs') -Ra
 $source += Get-Content -LiteralPath (Join-Path $PSScriptRoot 'Painel-Backup.cs') -Raw -Encoding UTF8
 $source += Get-Content -LiteralPath (Join-Path $PSScriptRoot 'Painel-Nup.cs') -Raw -Encoding UTF8
 $source += Get-Content -LiteralPath (Join-Path $PSScriptRoot 'Painel-Restore.cs') -Raw -Encoding UTF8
+$source += Get-Content -LiteralPath (Join-Path $PSScriptRoot 'Painel-Ftp.cs') -Raw -Encoding UTF8
 Add-Type -TypeDefinition $source -ReferencedAssemblies System.Windows.Forms,System.Drawing,System.Web.Extensions
 if ($SelfTest) {
     [NS2Panel.Checks]::Run($PSScriptRoot)
     exit
 }
 [System.Windows.Forms.Application]::EnableVisualStyles()
-if ($RestorePreview) {
+if ($FtpPreview) {
+    $window = New-Object NS2Panel.FtpWindow($PSScriptRoot, $PSScriptRoot, $false)
+} elseif ($RestorePreview) {
     $window = New-Object NS2Panel.RestoreWindow($PSScriptRoot, $PSScriptRoot)
 } elseif ($NupPreview) {
     $window = New-Object NS2Panel.NupWindow($PSScriptRoot)
