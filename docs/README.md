@@ -11,7 +11,7 @@ Este diretório registra evidências, decisões e trabalho planejado. Uma funç�
 | [Roadmap](ROADMAP.md) | Ordem sugerida das melhorias e critérios de conclusão |
 | [Compatibilidade](COMPATIBILIDADE.md) | Limites de homebrew, saves e acesso a arquivos |
 | [Backup e restauração de saves](SAVES.md) | Uso, limites e validação do backup e da restauração no FireRed |
-| [Arquivos / FTP](FTP.md) | Montar/desmontar, raízes disponíveis, envio ao SD e testes pendentes no console |
+| [Arquivos / FTP](FTP.md) | Montar/desmontar, raízes disponíveis, envio ao SD e escopo validado no console |
 | [Empacotamento NUP](NUP.md) | Interface e adaptador CLI, uso e limites dos layouts suportados |
 | [Validação NUP](VALIDACAO-NUP-2026-11-05.md) | Resultados dos dois backups próprios gerados/verificados |
 | [README do ns2jb de origem](NS2JB-UPSTREAM.md) | Instruções preservadas da base utilizada |

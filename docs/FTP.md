@@ -1,6 +1,6 @@
 # Arquivos do console via FTP
 
-**Estado: build de teste 0.1.6. Protocolo, adaptador simulado e APIs FTP do Windows testados no PC. Montagem dos armazenamentos e transferências no console real ainda pendentes.**
+**Estado: build de teste 0.1.6. Protocolo, adaptador simulado e APIs FTP do Windows testados no PC. Montagem e listagem de SD e USER confirmadas no console real em 08/11/2026. Transferências reais e recuperação após desmontagem precisam de registro separado.**
 
 ## Usar no assistente
 
@@ -17,6 +17,18 @@
 - `Interno`: sistema de arquivos da partição interna USER, somente leitura. Não inclui SYSTEM, calibração ou armazenamento bruto.
 - Somente raízes que abriram são anunciadas. Recusas aparecem na janela; não são substituídas por pastas fictícias.
 - Saves e conteúdos instalados encontrados nesses armazenamentos podem ser contêineres do sistema. Para backup/restauração de saves e dump de jogos, utilize os módulos próprios.
+
+### Jogos e saves na navegação
+
+Esta versão expõe o armazenamento como ele está organizado pelo sistema. `Interno/Contents`, `Interno/save` e `Interno/saveMeta` não são os diretórios de arquivos já montados pelos módulos de backup. Seus nomes e identificadores não oferecem, por si, a mesma identificação amigável de jogo, usuário e save apresentada no assistente.
+
+O backup de saves consulta o inventário e abre o save selecionado por um serviço específico, obtendo uma árvore de arquivos como `FireRed_e.sav`. O backup de jogos resolve e abre as seções do conteúdo selecionado, incluindo base e atualização quando aplicável. O FTP atual abre apenas as raízes SD e USER; não executa essas montagens por jogo ou save.
+
+Uma navegação amigável de jogos e saves exigiria raízes virtuais próprias, com inventário por título e abertura das seções ou do save sob demanda. A primeira implementação deve ser somente leitura. A restauração de saves deve continuar no módulo próprio, que oferece cópia de segurança, commit e verificação; copiar arquivos sobre contêineres em `Interno/save` não equivale a esse procedimento.
+
+### Verificação no console em 08/11/2026
+
+Uma consulta FTP somente de leitura confirmou `/SD` e `/Interno`. A raiz do SD apresentou `Nintendo`; USER apresentou `PRF2SAFE.RCV`, `temp`, `Album`, `Contents`, `save` e `saveMeta`. Foram consultadas somente essas listagens de raiz, sem download, upload, alteração de arquivo ou montagem adicional de jogo/save. O endereço local e a porta pertencem à sessão e não devem ser fixados no aplicativo.
 
 Não há exclusão, renomeação, sobrescrita ou retomada de upload. Copiar sobre um nome existente é recusado; para a primeira versão, use um nome ou pasta novo. Downloads aceitam retomada por offset. Datas de listagem usam 1970 como referência, pois a consulta de diretórios não fornece timestamps.
 

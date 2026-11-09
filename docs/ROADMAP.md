@@ -51,7 +51,7 @@ Atualizado em 7 de novembro de 2026. Prioridade: diagnóstico → backup de save
 
 ## P3 — navegação e FTP
 
-**Estado: build de teste 0.1.6 implementada; testes de protocolo, adaptador simulado e APIs FTP Windows concluídos. Console e Explorer ainda pendentes.** Veja [escopo e validação](FTP.md).
+**Estado: FTP incluído na 0.1.6; testes locais concluídos e montagem/navegação confirmadas no console.** Veja [escopo e validação](FTP.md). Próximo marco: raízes virtuais somente leitura de jogos e saves, com nomes amigáveis e montagem sob demanda reaproveitando os módulos de backup.
 
 Primeiro marco: SD e armazenamento interno USER com endereço local e encerramento explícito, mais envio opcional de arquivos novos ao SD. A escrita interna, sobrescrita e exclusão ficam fora deste marco. O botão Montar/Desmontar controla o servidor e seus recursos; não mapeia uma unidade com letra.
 

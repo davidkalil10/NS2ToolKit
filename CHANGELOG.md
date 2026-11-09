@@ -1,11 +1,12 @@
 # Histórico de versões
 
-## 0.1.6 — build de teste, FTP no console ainda não validado
+## 0.1.6 — 8 de novembro de 2026
 
 - Adiciona **Arquivos / FTP**, com botão Montar/Desmontar e abertura do endereço no Explorer.
 - Navegação e download no SD e na partição interna USER, conforme os armazenamentos que abrirem.
 - Envio opcional de arquivos e pastas novos ao SD, sem sobrescrever ou apagar; verificação de tamanho e hash por releitura. Memória interna somente leitura.
 - Ponte FTP local, operações serializadas, bloqueio de operações concorrentes e encerramento com limpeza dos recursos.
+- Montagem e navegação FTP confirmadas em console real; listagem de SD e USER conferida. Jogos e saves ainda aparecem na organização do armazenamento, sem montagem por título.
 
 ## 0.1.5 — 7 de novembro de 2026
 

@@ -6,6 +6,7 @@
 /exports/
 /dist/
 /runtime/
+/experimentos/
 __pycache__/
 *.part
 *.nup
