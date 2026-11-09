@@ -53,6 +53,8 @@ Atualizado em 7 de novembro de 2026. Prioridade: diagnóstico → backup de save
 
 **Estado: FTP incluído na 0.1.6; testes locais concluídos e montagem/navegação confirmadas no console.** Veja [escopo e validação](FTP.md). Próximo marco: raízes virtuais somente leitura de jogos e saves, com nomes amigáveis e montagem sob demanda reaproveitando os módulos de backup.
 
+Na build 0.1.7, as raízes Jogos/Saves já estão implementadas, com teste inicial no FireRed: leitura de save, controle, ExeFS e retomada de RomFS. Limpeza e continuidade da sessão confirmadas. Validar pela interface e ampliar cobertura de jogos, atualizações e DLC antes de uma nova release. Apelidos de perfil e nomes de títulos ausentes do inventário ficam para uma melhoria posterior.
+
 Primeiro marco: SD e armazenamento interno USER com endereço local e encerramento explícito, mais envio opcional de arquivos novos ao SD. A escrita interna, sobrescrita e exclusão ficam fora deste marco. O botão Montar/Desmontar controla o servidor e seus recursos; não mapeia uma unidade com letra.
 
 - Expor apenas o escopo realmente montado.

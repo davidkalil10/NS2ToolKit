@@ -1,5 +1,13 @@
 # Histórico de versões
 
+## 0.1.7 — em desenvolvimento
+
+- Adiciona raízes virtuais **Jogos** e **Saves** ao FTP, com nome do jogo e ID, somente leitura e download.
+- Abre arquivos sob demanda, mantém apenas uma seção/save ativo e preserva a distinção entre usuário, índice e arquivo de save.
+- Reaproveita a preparação de acesso ao conteúdo licenciado dos backups de jogos; não modifica arquivos do jogo nem restaura saves pelo FTP.
+- Primeira validação em console: inventário, save do FireRed, controle, ExeFS e leitura com retomada de RomFS; desmontagem e saúde da sessão confirmadas.
+- Manuais de atualizações ficam indisponíveis neste modo. Outros conteúdos e jogos mantêm suas limitações próprias de montagem.
+
 ## 0.1.6 — 8 de novembro de 2026
 
 - Adiciona **Arquivos / FTP**, com botão Montar/Desmontar e abertura do endereço no Explorer.

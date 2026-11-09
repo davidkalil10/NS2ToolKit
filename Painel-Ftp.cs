@@ -10,7 +10,7 @@ namespace NS2Panel {
         private readonly string root,session;
         private readonly bool autoOpen;
         private readonly Button toggle=new Button(),explorer=new Button(),copy=new Button();
-        private readonly CheckBox upload=new CheckBox();
+        private readonly CheckBox upload=new CheckBox(),browse=new CheckBox();
         private readonly TextBox address=new TextBox(),output=new TextBox();
         private readonly Label status=new Label(),scope=new Label();
         private readonly System.Windows.Forms.Timer timer=new System.Windows.Forms.Timer();
@@ -20,19 +20,20 @@ namespace NS2Panel {
         public bool RequiresRestart {get;private set;}
         public FtpWindow(string folder,string run):this(folder,run,true){}
         public FtpWindow(string folder,string run,bool openAutomatically) {
-            root=folder;session=run;autoOpen=openAutomatically;Text="NS2 • Arquivos / FTP";ClientSize=new Size(865,455);
+            root=folder;session=run;autoOpen=openAutomatically;Text="NS2 • Arquivos / FTP";ClientSize=new Size(865,490);
             FormBorderStyle=FormBorderStyle.FixedDialog;MaximizeBox=false;StartPosition=FormStartPosition.CenterParent;
             Font=new Font("Segoe UI",10);BackColor=Color.FromArgb(245,247,251);
             Controls.Add(new Label {Text="Arquivos do console",Font=new Font("Segoe UI",18,FontStyle.Bold),Location=new Point(22,18),Size=new Size(820,35)});
             Controls.Add(new Label {Text="Monte o FTP para navegar pelo Explorer. Desmonte antes de usar os outros módulos.",Location=new Point(22,65),Size=new Size(820,28)});
-            upload.Text="Permitir arquivos e pastas novos no SD (sem sobrescrever ou apagar)";upload.SetBounds(22,108,820,27);Controls.Add(upload);
-            scope.Text="SD e memória interna USER serão consultados. A memória interna é somente leitura.";scope.SetBounds(22,146,820,45);Controls.Add(scope);
-            address.ReadOnly=true;address.SetBounds(22,202,820,28);address.Text="FTP desmontado";Controls.Add(address);
-            toggle.Text="Montar FTP";toggle.SetBounds(22,246,180,35);toggle.Click+=delegate {if(worker==null)Mount();else Unmount();};Controls.Add(toggle);
-            explorer.Text="Abrir no Explorer";explorer.SetBounds(212,246,190,35);explorer.Enabled=false;explorer.Click+=delegate {OpenExplorer();};Controls.Add(explorer);
-            copy.Text="Copiar endereço";copy.SetBounds(412,246,170,35);copy.Enabled=false;copy.Click+=delegate {try{Clipboard.SetText(address.Text);}catch(Exception error){status.Text=error.Message;}};Controls.Add(copy);
-            status.Text="Envio ao SD: arquivos novos de até 1 GiB. Para saves, use backup/restauração.";status.SetBounds(22,301,820,43);Controls.Add(status);
-            output.SetBounds(22,354,820,79);output.Multiline=true;output.ReadOnly=true;output.WordWrap=false;output.ScrollBars=ScrollBars.Both;output.Font=new Font("Consolas",9);Controls.Add(output);
+            browse.Text="Mostrar jogos e saves por nome (somente leitura)";browse.Checked=true;browse.SetBounds(22,102,820,27);Controls.Add(browse);
+            upload.Text="Permitir arquivos e pastas novos no SD (sem sobrescrever ou apagar)";upload.SetBounds(22,137,820,27);Controls.Add(upload);
+            scope.Text="Jogos e saves abrem sob demanda. A memória interna é somente leitura.";scope.SetBounds(22,181,820,45);Controls.Add(scope);
+            address.ReadOnly=true;address.SetBounds(22,237,820,28);address.Text="FTP desmontado";Controls.Add(address);
+            toggle.Text="Montar FTP";toggle.SetBounds(22,281,180,35);toggle.Click+=delegate {if(worker==null)Mount();else Unmount();};Controls.Add(toggle);
+            explorer.Text="Abrir no Explorer";explorer.SetBounds(212,281,190,35);explorer.Enabled=false;explorer.Click+=delegate {OpenExplorer();};Controls.Add(explorer);
+            copy.Text="Copiar endereço";copy.SetBounds(412,281,170,35);copy.Enabled=false;copy.Click+=delegate {try{Clipboard.SetText(address.Text);}catch(Exception error){status.Text=error.Message;}};Controls.Add(copy);
+            status.Text="Jogos e saves: leitura e download. Para restaurar, use o módulo de saves.";status.SetBounds(22,336,820,43);Controls.Add(status);
+            output.SetBounds(22,389,820,79);output.Multiline=true;output.ReadOnly=true;output.WordWrap=false;output.ScrollBars=ScrollBars.Both;output.Font=new Font("Consolas",9);Controls.Add(output);
             timer.Interval=200;timer.Tick+=Poll;timer.Start();
             FormClosing+=delegate(object sender,FormClosingEventArgs args){if(worker!=null){args.Cancel=true;closeRequested=true;if(!critical)Unmount();else status.Text="Aguarde a gravação e a verificação do arquivo antes de fechar.";return;}timer.Stop();};
         }
@@ -45,10 +46,10 @@ namespace NS2Panel {
         private void Mount() {
             if(RequiresRestart)return;
             try{
-                worker=new Runner();worker.Start(Checks.FindNode(root),Path.Combine(root,"painel-ftp.cjs"),Checks.QuoteArgument(session)+" "+(upload.Checked?"sd-new-files":"read-only"),root);
-                stopping=failed=complete=critical=closeRequested=false;output.Clear();upload.Enabled=false;
+                worker=new Runner();worker.Start(Checks.FindNode(root),Path.Combine(root,"painel-ftp.cjs"),Checks.QuoteArgument(session)+" "+(upload.Checked?"sd-new-files":"read-only")+(browse.Checked?" catalog":""),root);
+                stopping=failed=complete=critical=closeRequested=false;output.Clear();upload.Enabled=browse.Enabled=false;
                 toggle.Text="Desmontar FTP";status.Text="Montando os armazenamentos disponíveis...";address.Text="Abrindo FTP local...";
-            }catch(Exception error){if(worker!=null)worker.Dispose();worker=null;status.Text=error.Message;upload.Enabled=true;toggle.Text="Montar FTP";}
+            }catch(Exception error){if(worker!=null)worker.Dispose();worker=null;status.Text=error.Message;upload.Enabled=browse.Enabled=true;toggle.Text="Montar FTP";}
         }
         private void Unmount() {
             if(worker==null||stopping||critical)return;stopping=true;toggle.Enabled=explorer.Enabled=copy.Enabled=false;
@@ -81,7 +82,7 @@ namespace NS2Panel {
             if(!success&&!failed){RequiresRestart=true;status.Text="FTP terminou sem confirmar a limpeza.";}
             if(success)status.Text="FTP desmontado. A conexão está disponível para os outros módulos.";
             try{File.WriteAllText(Path.Combine(session,"painel-ftp-"+DateTime.Now.ToString("yyyyMMdd-HHmmss-fff")+".log"),worker.Transcript);}catch{}
-            worker.Dispose();worker=null;stopping=critical=false;toggle.Text="Montar FTP";toggle.Enabled=upload.Enabled=!RequiresRestart;
+            worker.Dispose();worker=null;stopping=critical=false;toggle.Text="Montar FTP";toggle.Enabled=upload.Enabled=browse.Enabled=!RequiresRestart;
             explorer.Enabled=copy.Enabled=false;address.Text="FTP desmontado";
             if(RequiresRestart)status.Text+=" Encerre a conexão e reinicie o console.";
             if(closeRequested)Close();

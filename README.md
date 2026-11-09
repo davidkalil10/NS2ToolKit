@@ -15,6 +15,7 @@ O pacote inclui Node, Python, compressão e as DLLs necessárias. Não é precis
 - Backup de saves Account/Device em modo somente leitura, com identificação do jogo e usuário.
 - Restauração de arquivos de save existentes, com pré-backup automático, confirmação e verificação após commit; validada no FireRed.
 - **Arquivos / FTP** com Montar/Desmontar, navegação no Explorer e envio opcional de arquivos novos ao SD. Montagem e navegação confirmadas no console; jogos e saves ainda seguem a organização do armazenamento.
+- Em desenvolvimento na 0.1.7: pastas virtuais **Jogos** e **Saves**, com nome e ID, leitura sob demanda e primeiro teste no FireRed concluído. A release pública 0.1.6 mantém o acesso direto ao armazenamento.
 - Geração de NUP pela interface, com conferência dos backups de entrada e verificação integral do pacote.
 - Pastas com **Nome do jogo [ID]**, registros de execução e preservação de operações incompletas.
 

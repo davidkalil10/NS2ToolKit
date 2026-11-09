@@ -1,6 +1,8 @@
 # Arquivos do console via FTP
 
-**Estado: build de teste 0.1.6. Protocolo, adaptador simulado e APIs FTP do Windows testados no PC. Montagem e listagem de SD e USER confirmadas no console real em 08/11/2026. Transferências reais e recuperação após desmontagem precisam de registro separado.**
+**Release 0.1.6:** protocolo, adaptador simulado e APIs FTP do Windows testados no PC; montagem e listagem de SD e USER confirmadas no console real em 08/11/2026. O registro abaixo distingue esses testes da validação das raízes virtuais da 0.1.7.
+
+**Desenvolvimento 0.1.7:** raízes virtuais Jogos/Saves implementadas e primeira leitura validada no FireRed em console real. A release pública 0.1.6 permanece como referência do acesso direto a SD/USER.
 
 ## Usar no assistente
 
@@ -20,15 +22,36 @@
 
 ### Jogos e saves na navegação
 
-Esta versão expõe o armazenamento como ele está organizado pelo sistema. `Interno/Contents`, `Interno/save` e `Interno/saveMeta` não são os diretórios de arquivos já montados pelos módulos de backup. Seus nomes e identificadores não oferecem, por si, a mesma identificação amigável de jogo, usuário e save apresentada no assistente.
+Na release 0.1.6, o FTP expõe o armazenamento como ele está organizado pelo sistema. `Interno/Contents`, `Interno/save` e `Interno/saveMeta` não são os diretórios de arquivos já montados pelos módulos de backup. Seus nomes e identificadores não oferecem, por si, a mesma identificação amigável de jogo, usuário e save apresentada no assistente.
 
 O backup de saves consulta o inventário e abre o save selecionado por um serviço específico, obtendo uma árvore de arquivos como `FireRed_e.sav`. O backup de jogos resolve e abre as seções do conteúdo selecionado, incluindo base e atualização quando aplicável. O FTP atual abre apenas as raízes SD e USER; não executa essas montagens por jogo ou save.
 
-Uma navegação amigável de jogos e saves exigiria raízes virtuais próprias, com inventário por título e abertura das seções ou do save sob demanda. A primeira implementação deve ser somente leitura. A restauração de saves deve continuar no módulo próprio, que oferece cópia de segurança, commit e verificação; copiar arquivos sobre contêineres em `Interno/save` não equivale a esse procedimento.
+A build 0.1.7 acrescenta a opção **Mostrar jogos e saves por nome**, marcada por padrão. Desmarcar mantém o acesso direto da 0.1.6. As novas raízes são somente leitura:
+
+```text
+Jogos/
+  Nome do jogo [ID]/
+    Base/programa 0/romfs/
+    Base/programa 0/exefs/
+    Atualizações/65536/programa 0/romfs/
+    DLC/ID/versão/Base/programa 0/romfs/
+Saves/
+  Nome do jogo [ID]/
+    Usuário identificador - Principal - índice 0 [save identificador]/
+      arquivos do save
+```
+
+As pastas são virtuais: não criam diretórios novos no console. A listagem consulta o inventário; a abertura de uma seção ou save ocorre quando seu conteúdo é solicitado. Apenas uma seção/save permanece aberto por vez. O leitor reaproveita a seleção de conteúdo e o tratamento de licença dos backups. RomFS usa leitura das tabelas do sistema de arquivos, sem baixar o jogo inteiro para montar a árvore.
+
+O nome vem do inventário de jogos disponíveis. Saves de títulos sem nome disponível usam `Jogo [ID]`. Usuários são identificados pelo UID, sem prometer a exibição do apelido do perfil; tipo, rank, índice e ID do save impedem misturar arquivos distintos. O save é aberto pelo comando de leitura 53. A restauração continua no módulo próprio, que oferece cópia de segurança, commit e verificação; copiar arquivos sobre contêineres em `Interno/save` não equivale a esse procedimento.
+
+Os números em Atualizações e DLC são as versões internas do conteúdo. Manuais de atualizações são recusados neste modo devido às limitações conhecidas dessa montagem. Recusas conhecidas de acesso aparecem como erro FTP; falhas de transporte ou limpeza incerta encerram o FTP e exigem recuperação da sessão. O inventário é mantido durante a montagem: desmonte e monte novamente após alterar os títulos disponíveis.
 
 ### Verificação no console em 08/11/2026
 
 Uma consulta FTP somente de leitura confirmou `/SD` e `/Interno`. A raiz do SD apresentou `Nintendo`; USER apresentou `PRF2SAFE.RCV`, `temp`, `Album`, `Contents`, `save` e `saveMeta`. Foram consultadas somente essas listagens de raiz, sem download, upload, alteração de arquivo ou montagem adicional de jogo/save. O endereço local e a porta pertencem à sessão e não devem ser fixados no aplicativo.
+
+Na implementação 0.1.7, outra consulta somente leitura encontrou 16 jogos e 38 títulos com saves. No FireRed, listou `transaction.sav` e `FireRed_e.sav`; duas leituras de `FireRed_e.sav` (131.072 bytes) produziram o mesmo SHA-256. Foram lidas as seções control, RomFS e ExeFS, com download de `control.nacp` e `main.npdm`. A retomada dos últimos 8.192 bytes de `FireRed_e.gba` foi repetida e comparada. A montagem foi encerrada com confirmação de limpeza, liberação da trava e verificação da saúde da sessão 4/4. Não houve escrita de arquivos no console nem restauração de save. Esse teste não valida todos os jogos, DLCs ou atualizações.
 
 Não há exclusão, renomeação, sobrescrita ou retomada de upload. Copiar sobre um nome existente é recusado; para a primeira versão, use um nome ou pasta novo. Downloads aceitam retomada por offset. Datas de listagem usam 1970 como referência, pois a consulta de diretórios não fornece timestamps.
 
@@ -52,5 +75,6 @@ Os comandos foram conferidos no [libnx, serviços FS](https://github.com/switchb
 - `test-painel-ftp.py`: cliente FTP real contra armazenamento simulado; PASV, EPSV, PORT, UTF-8, listagem, download, retomada, envio, permissões e serialização de clientes.
 - `Testar-FTP-Windows.ps1`: WinINet do Windows, com listagem, download binário e upload, em modos passivo e ativo, sem console.
 - O teste portátil exercita a alternância Montar/Desmontar, sem abrir o Explorer nem conectar ao Switch.
+- Na 0.1.7, `painel-ftp-virtual.test.cjs` cobre abertura sob demanda, usuários/arquivos distintos, offset de RomFS, preparação de licença limitada, recusa de escrita e ordem de limpeza. `test-painel-ftp-virtual.py` usa FTP real contra armazenamento simulado para nomes UTF-8, downloads, retomada e permissões.
 
 No console, validar primeiro listagem e cópia de um arquivo pequeno; depois, um envio pequeno para uma pasta nova do SD, comparar bytes, desmontar e confirmar que backups continuam disponíveis na mesma sessão. Desempenho e compatibilidade do Explorer devem ser registrados separadamente dos testes simulados.

@@ -16,10 +16,9 @@ const safeSize = (n) => { // lol, ai put this in. in what situation would this e
   return Number(n);
 };
 
-function createGameFiles(attachment, { experimentalProgram1 = false, resolve = resolveContent, mounts = createProgramMounts } = {}) {
+function createGameFiles(attachment, { experimentalProgram1 = false, resolve = resolveContent, mounts = createProgramMounts,
+  originals = new Map(), originalManuals = new Map() } = {}) {
   const { openCode, openUpdate, openManualPatch } = mounts(attachment);
-  const originals = new Map();
-  const originalManuals = new Map();
   const { s, root, domain, filesystem, service } = attachment;
 
   const send = async (label, handle, bytes) => success(await domain.send(s, label, handle, bytes), label);
