@@ -46,8 +46,8 @@ namespace NS2Panel {
             StartPosition = FormStartPosition.CenterParent; Font = new Font("Segoe UI", 10);
             BackColor = Color.FromArgb(245, 247, 251);
             LabelAt("Gerar NUP a partir de um backup", 18, 18, 820, 35, true);
-            LabelAt("Operação no PC. Escolha a pasta do jogo que contém manifest.json e os arquivos TAR.", 22, 62, 820, 25, false);
-            Field("Pasta do backup completo", source, 100, Path.Combine(root, "backups"));
+            LabelAt("Escolha a pasta do jogo: backup do assistente ou pasta copiada pelo FTP.", 22, 62, 820, 25, false);
+            Field("Pasta de origem", source, 100, Path.Combine(root, "backups"));
             Field("Salvar NUP em", destination, 174, Path.Combine(root, "exports", "nup"));
             LabelAt("Nome do jogo (opcional; preencha para backups antigos sem nome)", 22, 248, 820, 24, false);
             name.SetBounds(22, 276, 820, 28); Controls.Add(name); inputs.Add(name);
@@ -88,7 +88,7 @@ namespace NS2Panel {
             Runner next = null;
             try {
                 string backup = Path.GetFullPath(source.Text), target = Path.GetFullPath(destination.Text);
-                if (!File.Exists(Path.Combine(backup, "manifest.json"))) throw new Exception("Escolha a pasta de um jogo que contenha manifest.json.");
+                if (!Directory.Exists(backup)) throw new Exception("Escolha a pasta de origem do jogo.");
                 string python = Checks.FindPython(root);
                 next = new Runner(); next.SetEnvironment("PYTHONUTF8", "1");
                 string arguments = Checks.QuoteArgument(backup) + " --out " + Checks.QuoteArgument(target) + " --panel";
@@ -97,7 +97,7 @@ namespace NS2Panel {
                 worker = next; progress = new NupProgress(); cancelling = false; resultFolder = null; started = DateTime.UtcNow;
                 foreach (var input in inputs) input.Enabled = false;
                 begin.Enabled = false; cancel.Enabled = true; open.Enabled = false;
-                output.Clear(); bar.Value = 0; bar.Style = ProgressBarStyle.Marquee; status.Text = "Conferindo o backup...";
+                output.Clear(); bar.Value = 0; bar.Style = ProgressBarStyle.Marquee; status.Text = "Conferindo a pasta de origem...";
             } catch (Exception error) { if (next != null) next.Dispose(); MessageBox.Show(this, error.Message, "Gerar NUP"); }
         }
         private void CancelBuild() {

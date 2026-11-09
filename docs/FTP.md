@@ -2,7 +2,7 @@
 
 **Release 0.1.6:** protocolo, adaptador simulado e APIs FTP do Windows testados no PC; montagem e listagem de SD e USER confirmadas no console real em 08/11/2026. O registro abaixo distingue esses testes da validação das raízes virtuais da 0.1.7.
 
-**Desenvolvimento 0.1.7:** raízes virtuais Jogos/Saves implementadas e primeira leitura validada no FireRed em console real. A release pública 0.1.6 permanece como referência do acesso direto a SD/USER.
+**0.1.7:** raízes virtuais Jogos/Saves implementadas e primeira leitura validada no FireRed em console real. A 0.1.6 permanece como referência do acesso direto a SD/USER.
 
 ## Usar no assistente
 

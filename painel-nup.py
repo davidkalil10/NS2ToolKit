@@ -1,4 +1,4 @@
-"""Convert verified OunceCake TAR backups into verified NUPs on the PC.
+"""Convert OunceCake TAR backups or extracted FTP folders into verified NUPs.
 
 Original backups are read-only. Supports base/program/0, updates/<version>/program/0
 and unpatched version-zero DLC/program/0, refusing other layouts rather than omitting them.
@@ -30,7 +30,8 @@ import nup
 from painel_names import game_label, new_directory
 from nup import format as nup_format
 from nup.access import app_meta
-from painel_nup_metadata import use_spec_metadata, control_metadata
+from painel_nup_metadata import use_spec_metadata, control_metadata, nacp_titles
+from painel_nup_folder import plan_folder, prepare_folder, folder_snapshot
 
 use_spec_metadata(nup_format)
 
@@ -323,6 +324,7 @@ def verify_streamed(file):
 
 
 def nacp_name(data):
+    data = nacp_titles(data)
     for index in range(16):
         raw = data[index * 0x300:index * 0x300 + 0x200].split(b'\0')[0]
         try:
@@ -335,11 +337,25 @@ def nacp_name(data):
 
 
 def generate(backup, output_parent, name=None):
-    backup, manifest, title, items = plan_inputs(backup)
+    source = Path(backup).absolute()
+    folder_input = not (source / 'manifest.json').exists()
+    output_parent = Path(output_parent).resolve()
+    if folder_input:
+        if output_parent.is_relative_to(source.resolve()):
+            raise ValueError('Escolha uma pasta de saída fora da pasta de origem.')
+        emit('status', message='Identificando a pasta copiada pelo FTP...')
+        backup, manifest, title, items = plan_folder(source, digest=digest, parse_id=parse_npdm_program_id, check=check_cancelled, emit=emit)
+    else:
+        emit('status', message='Identificando o backup com manifesto e TARs...')
+        backup, manifest, title, items = plan_inputs(source)
     name = name or manifest.get('name')
     if not name:
         for item in items:
             if item['package'] == 'base' and item['section'] == 'control':
+                if folder_input:
+                    if item['kind'] == 'file' and item['target'] == 'data/control/control.nacp' and item['size'] == 0x4000:
+                        name = nacp_name(item['file'].read_bytes())
+                    continue
                 with tarfile.open(item['file'], 'r:') as control:
                     try:
                         member = control.getmember('control/control.nacp')
@@ -349,19 +365,22 @@ def generate(backup, output_parent, name=None):
                         with control.extractfile(member) as source:
                             name = nacp_name(source.read())
     label = game_label(name, title)
-    output_parent = Path(output_parent).resolve()
     output_parent.mkdir(parents=True, exist_ok=True)
     job = new_directory(output_parent, label)
     report_path = job / 'build-report.json'
-    report = dict(complete=False, title=title, source=str(backup), source_manifest_sha256=digest(backup / 'manifest.json'),
+    report = dict(complete=False, title=title, source=str(backup), source_kind='ftp-folder' if folder_input else 'manifest-tar',
+                  source_manifest_sha256=None if folder_input else digest(backup / 'manifest.json'),
                   source_scope=manifest.get('scope', dict(profile='legacy', omittedSections=[])),
                   nup_revision='d40d9cfa50792ba8021d2967d994d1b1c25d62b0', nup_version=nup.__version__,
-                  input_files=[dict(path=item['path'], sha256=item['sha256']) for item in items])
+                  input_files=[dict(path=item['path'], sha256=item['sha256']) for item in items if 'sha256' in item])
     report_path.write_text(json.dumps(report, indent=2), encoding='utf-8')
     try:
         with tempfile.TemporaryDirectory(prefix='.nup-work-', dir=output_parent) as work:
             stage = Path(work)
-            extract_inputs(items, stage)
+            if folder_input:
+                prepare_folder(items, stage, check=check_cancelled, emit=emit)
+            else:
+                extract_inputs(items, stage)
             for package, expected_title in {(item['package'], item['title']) for item in items}:
                 npdm = stage / Path(*PurePosixPath(package).parts) / 'exefs/main.npdm'
                 if npdm.exists() and parse_npdm_program_id(npdm.read_bytes()) != int(expected_title, 16):
@@ -411,6 +430,8 @@ def generate(backup, output_parent, name=None):
                     hash_last = now
             emit('status', message='Conferindo hash do NUP final...')
             output_hash = digest(pending, progress=hash_progress)
+            if folder_input and folder_snapshot(backup, check_cancelled) != manifest['_snapshot']:
+                raise ValueError('A pasta de origem mudou durante a geração.')
             check_cancelled()
             pending.rename(final)
             report.update(complete=True, output=str(final), bytes=final.stat().st_size, sha256=output_hash,

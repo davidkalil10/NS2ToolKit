@@ -1,12 +1,15 @@
 # Histórico de versões
 
-## 0.1.7 — em desenvolvimento
+## 0.1.7 — 9 de novembro de 2026
 
 - Adiciona raízes virtuais **Jogos** e **Saves** ao FTP, com nome do jogo e ID, somente leitura e download.
 - Abre arquivos sob demanda, mantém apenas uma seção/save ativo e preserva a distinção entre usuário, índice e arquivo de save.
 - Reaproveita a preparação de acesso ao conteúdo licenciado dos backups de jogos; não modifica arquivos do jogo nem restaura saves pelo FTP.
 - Primeira validação em console: inventário, save do FireRed, controle, ExeFS e leitura com retomada de RomFS; desmontagem e saúde da sessão confirmadas.
 - Manuais de atualizações ficam indisponíveis neste modo. Outros conteúdos e jogos mantêm suas limitações próprias de montagem.
+- Gerar NUP identifica automaticamente backups com manifesto/TARs e pastas copiadas pelo FTP; mantém a mesma escolha de pasta na interface.
+- Confere identidade, layout e integridade da pasta extraída, preserva todos os arquivos e recusa entradas ainda não suportadas antes de ler conteúdos grandes.
+- Inclui leitura limitada dos títulos NACP comprimidos, com nome, publicadora e ícone. Ensaio do FireRed copiado por FTP aprovado; 29 testes cobrem os dois formatos, metadados e equivalência de conteúdo.
 
 ## 0.1.6 — 8 de novembro de 2026
 

@@ -1,6 +1,6 @@
 # Empacotamento NUP — adaptador local
 
-**Estado: adaptador CLI testado com dados sintéticos e dois backups próprios. O usuário confirmou funcionamento dos dois no Eglantine `0d86405bd1-nx2`. Integrado ao assistente pelo botão Gerar NUP.** Referência: [a55uka/nup](https://github.com/a55uka/nup), revisão fixada `d40d9cfa50792ba8021d2967d994d1b1c25d62b0`.
+**Estado: integrado ao assistente pelo botão Gerar NUP, com detecção automática de manifesto/TARs ou pasta FTP. Dois backups TAR validados no Eglantine `0d86405bd1-nx2`; ensaio do FireRed copiado por FTP aprovado em 09/11/2026.** Referência: [a55uka/nup](https://github.com/a55uka/nup), revisão fixada `d40d9cfa50792ba8021d2967d994d1b1c25d62b0`.
 
 ## O que o projeto oferece
 
@@ -8,15 +8,19 @@ O [README](https://github.com/a55uka/nup) descreve um contêiner para dumps sem 
 
 A [especificação consultada](https://github.com/a55uka/nup/blob/meow/SPEC.md) é 1.0-draft. Cada pacote tem árvore de arquivos e metadados de identidade/versão. O formato prevê hashes de integridade. Uma versão futura pode alterar requisitos: fixar revisão e versão antes de integrar.
 
-## Diferença de layout a resolver
+## Formatos de entrada
 
 Nosso backup pode produzir `base/program/0/exefs.tar` e `base/program/0/romfs.tar`, além de outras versões e programas. O empacotador documenta árvores extraídas como `base/exefs/` e `base/romfs/`.
 
 O adaptador converte os TARs de `base/program/0`, `updates/<versão>/program/0` e `dlc/<ID>/0/base/program/0`. ExeFS/RomFS vão para as árvores canônicas; outras seções são preservadas sob `data/`. Cada DLC recebe um pacote `addon` com seu próprio ID, incluindo seções de metadados e diretórios vazios. DLC de versão diferente de zero, atualizações de DLC e índices de programa diferentes de zero continuam recusados, sem descarte silencioso nem perda de versão.
 
+Na pasta FTP, são reconhecidos `Base/programa 0/<seção>`, `Atualizações/<versão>/programa 0/<seção>` e `DLC/<ID>/0/Base/programa 0/<seção>`. Selecione a pasta do jogo, acima de Base. O ID vem de `exefs/main.npdm`; base e atualizações exigem também `exefs/main`. Cada seção vai para a mesma árvore canônica do conversor de TARs. Arquivos, diretórios vazios e metadados são preservados. Links, pontos de nova análise, arquivos extras fora do layout e colisões de nomes são recusados.
+
+Se `manifest.json` existir, o fluxo de backup exige sua validade e os hashes dos TARs. Um manifesto incompleto não permite alternar automaticamente para o modo de pasta FTP. Sem manifesto, o formato extraído é validado antes dos hashes dos arquivos grandes. A saída deve ficar fora da pasta de origem. A conferência cobre os arquivos presentes na cópia; não consulta o console para comprovar que todo conteúdo remoto foi copiado.
+
 ## Executar no assistente
 
-Clique em **Gerar NUP** na janela principal, selecione a pasta de um backup completo com `manifest.json`, escolha o destino e clique em **Gerar e verificar**. O campo de nome é opcional para backups antigos. A janela mostra as fases, permite solicitar cancelamento e abre a pasta final. Não exige uma sessão ativa do Switch. A [build portátil](PORTATIL.md) inclui as dependências.
+Clique em **Gerar NUP**, selecione a pasta de origem do jogo, escolha o destino e clique em **Gerar e verificar**. A mesma janela aceita o backup com manifesto/TARs e a pasta copiada pelo FTP; não há seletor de formato. O campo de nome é opcional para entradas antigas sem título disponível. A janela mostra as fases, permite cancelar e abre a pasta final. Não exige uma sessão ativa do Switch. A [build portátil](PORTATIL.md) inclui as dependências.
 
 ## Executar no PC pelo terminal
 
@@ -32,10 +36,10 @@ Pastas e arquivos usam **Nome do jogo [ID]**. O nome vem do manifesto do backup,
 
 ## Fluxo implementado para os layouts suportados
 
-1. Selecionar um backup local e exigir manifesto completo.
+1. Identificar automaticamente o formato da pasta de origem. Exigir manifesto completo no formato TAR ou identidade e layout válidos no formato extraído.
 2. Conferir o layout e os tamanhos de todas as entradas, recusando conteúdos ainda não suportados antes de ler os arquivos grandes.
 3. Conferir novamente os hashes dos arquivos de entrada, com bytes e percentual no acompanhamento.
-4. Extrair TARs para área temporária isolada, recusando caminhos absolutos, travessia de diretórios e links. Preservar os arquivos originais.
+4. Extrair TARs ou copiar arquivos extraídos para uma área temporária isolada. Conferir a cópia com os hashes planejados, recusar caminhos inválidos e links e preservar a origem.
 5. Adaptar somente layouts cuja correspondência tenha sido comprovada. Recusar casos ambíguos ou não suportados com um relatório claro.
 6. Executar a ferramenta de referência numa revisão fixada, produzindo um arquivo temporário sem substituir uma saída anterior.
 7. Executar a verificação completa; não considerar a checagem rápida de estrutura suficiente para declarar integridade dos arquivos.
@@ -45,7 +49,7 @@ Pastas e arquivos usam **Nome do jogo [ID]**. O nome vem do manifesto do backup,
 
 ## Validação
 
-- Passaram 17 testes, incluindo base/atualização e dois DLCs, identidades de DLC, recusa antecipada dos layouts ainda não suportados, cancelamento, progresso, integridade, metadados e extração segura.
+- Passaram 29 testes: base, atualizações e DLC nos dois formatos, equivalência das árvores TAR/pasta, metadados comprimidos e diretos, recusa de manifesto incompleto, layouts desconhecidos, mudanças na origem e cancelamento.
 - A verificação NUP confere a estrutura com a biblioteca fixada e recalcula tamanho e SHA-256 de cada arquivo em blocos de até 1 MiB, tanto para extents raw quanto zstd. Não carrega arquivos inteiros na memória. Testes cobrem corrupção dos dois codecs e impedem a chamada de leitura integral. Uma comparação adicional confere caminhos, diretórios, tamanhos e hashes com as árvores preparadas.
 - Dois backups próprios foram gerados/verificados: veja [o registro resumido](VALIDACAO-NUP-2026-11-05.md).
 - Espaço insuficiente e interrupção têm tratamento no fluxo, mas ainda não passaram por ensaio de falha dedicado. Não tratá-los como validados.
@@ -55,6 +59,8 @@ Gerar um pacote íntegro não demonstra que ele será executado por qualquer lau
 ## Metadados e compatibilidade com Eglantine (0.1.1)
 
 `painel_nup_metadata.py` aplica a numeração TLV 1–10 da SPEC v1 às constantes exportadas pela biblioteca fixada, cujo enum começa em zero. O ajuste é limitado ao processo do adaptador; não modifica o submódulo nem arquivos antigos. Além do nome padrão, são adicionados nomes localizados, imagens JPEG/PNG dos arquivos `icon_*.dat`, versão e publicadora quando válidos. O controle da atualização mais recente tem prioridade sobre a base.
+
+Na 0.1.7, os textos NACP podem estar em formato direto ou DEFLATE raw, conforme o byte `0x3215`. A descompressão tem limite de 32 registros de 0x300 bytes e confere tamanho, alinhamento e término do fluxo. O controle original é preservado no NUP; somente a leitura dos metadados usa os textos descomprimidos.
 
 Os arquivos originais em `data/control/` continuam preservados. Testes conferem nome no TLV 5 e ícone no TLV 3, os mesmos tipos consultados pelo leitor da revisão Eglantine examinada. A identidade do programa não é alterada. Para atualizar um NUP antigo, gere outro a partir do backup completo existente e faça nova varredura da biblioteca no emulador. O pacote anterior permanece intacto.
 

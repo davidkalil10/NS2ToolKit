@@ -79,6 +79,8 @@ Primeiro marco: SD e armazenamento interno USER com endereço local e encerramen
 
 ## P5 — gerar NUP a partir de backups locais
 
+**Pasta FTP na 0.1.7:** ensaio FireRed aprovado, com 43 arquivos preservados; detecção automática dos dois formatos integrada à mesma janela e validada no portátil. Testes comparam conteúdo TAR/pasta, incluindo atualizações e DLC base, e validam títulos comprimidos. Próxima frente: estudar sobrescrita no FTP por escopo. [Resultado e decisões](TESTE-NUP-PASTA-FTP.md).
+
 **Estado: adaptador CLI implementado, dois backups gerados/verificados e funcionamento informado pelo usuário no Eglantine `0d86405bd1-nx2`. Interface gráfica integrada e testada com dados sintéticos.** Veja [o fluxo atual](NUP.md) e a [validação](VALIDACAO-NUP-2026-11-05.md).
 
 - [x] Exigir backup completo e conferir sua integridade.

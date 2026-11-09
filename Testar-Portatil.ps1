@@ -19,7 +19,7 @@ try {
     $python = Join-Path $PSScriptRoot 'runtime\python\python.exe'
     if (!(Test-Path -LiteralPath $python)) { throw 'Execute este teste dentro do pacote portátil.' }
     $fixture = @'
-import hashlib, io, json, struct, sys, tarfile
+import hashlib, io, json, struct, sys, tarfile, zlib
 from pathlib import Path
 root = Path(sys.argv[1]); root.mkdir()
 npdm = bytearray(64); npdm[:4] = b'ACI0'; struct.pack_into('<Q', npdm, 16, 0x0100000000000000)
@@ -33,6 +33,16 @@ for section, entries in [('exefs', [('main.npdm', bytes(npdm))]), ('romfs', [('d
             archive.addfile(member, io.BytesIO(data))
     files.append(dict(path=relative, bytes=target.stat().st_size, sha256=hashlib.sha256(target.read_bytes()).hexdigest()))
 (root / 'manifest.json').write_text(json.dumps(dict(complete=True, title='0100000000000000', name='Teste portatil', files=files)), encoding='utf-8')
+ftp = root.parent / 'pasta FTP com espacos'
+for relative, data in [('exefs/main.npdm', bytes(npdm)), ('exefs/main', b'fake executable'), ('romfs/data.bin', b'FTP synthetic data')]:
+    target = ftp / 'Base/programa 0' / relative
+    target.parent.mkdir(parents=True, exist_ok=True); target.write_bytes(data)
+raw = bytearray(0x4000); titles = bytearray(16*0x300); titles[:9] = b'Pasta FTP'
+encoder = zlib.compressobj(wbits=-15); payload = encoder.compress(titles) + encoder.flush()
+raw[:2] = len(payload).to_bytes(2, 'little'); raw[2:2+len(payload)] = payload; raw[0x3215] = 1
+control = ftp / 'Base/programa 0/control'; control.mkdir()
+(control / 'control.nacp').write_bytes(raw)
+(control / 'icon_AmericanEnglish.dat').write_bytes(b'\xff\xd8synthetic icon\xff\xd9')
 save = root.parent / 'save com espacos'; (save / 'data').mkdir(parents=True)
 (save / 'data/slot.sav').write_bytes(b'modified')
 entry = dict(path='/slot.sav', local='data/slot.sav', size=8, sha256=hashlib.sha256(b'original').hexdigest())
@@ -178,11 +188,26 @@ const {assessFailure} = require(__RECOVERY__);
     $reportPath = Get-ChildItem -LiteralPath (Join-Path $work 'saida com espacos') -Filter build-report.json -Recurse | Select-Object -First 1
     $report = Get-Content -LiteralPath $reportPath.FullName -Raw | ConvertFrom-Json
     if (!$report.complete -or !$report.deep_verified -or !$report.source_trees_matched -or !(Test-Path -LiteralPath $report.output)) { throw 'NUP não foi verificado.' }
+    # The same source picker accepts an extracted FTP folder without a manifest.
+    (Field 'source').Text = Join-Path $work 'pasta FTP com espacos'
+    (Field 'name').Clear()
+    $window.GetType().GetMethod('StartBuild', $flags).Invoke($window, @()) | Out-Null
+    $deadline = [DateTime]::UtcNow.AddSeconds(60)
+    while ((Field 'worker') -ne $null -and [DateTime]::UtcNow -lt $deadline) {
+        [System.Windows.Forms.Application]::DoEvents(); Start-Sleep -Milliseconds 50
+    }
+    if ((Field 'worker') -ne $null -or !(Field 'status').Text.StartsWith('NUP concluído')) { throw ('Pasta FTP falhou na interface: ' + (Field 'output').Text) }
+    $folderReports = @(Get-ChildItem -LiteralPath (Join-Path $work 'saida com espacos') -Filter build-report.json -Recurse | ForEach-Object {
+        $value = Get-Content -LiteralPath $_.FullName -Raw | ConvertFrom-Json
+        if ($value.source_kind -eq 'ftp-folder') { $value }
+    })
+    if ($folderReports.Count -ne 1 -or !$folderReports[0].deep_verified -or !$folderReports[0].metadata.icon -or $folderReports[0].metadata.title -ne 'Pasta FTP') { throw 'Pasta FTP ou metadados comprimidos nao verificados.' }
     # Exercise a backend failure through the same window; zero false successes.
     $manifest = Join-Path $backup 'manifest.json'
     $value = Get-Content -LiteralPath $manifest -Raw | ConvertFrom-Json
     $value.complete = $false
     $value | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $manifest -Encoding ASCII
+    (Field 'source').Text = $backup
     $window.GetType().GetMethod('StartBuild', $flags).Invoke($window, @()) | Out-Null
     $deadline = [DateTime]::UtcNow.AddSeconds(30)
     while ((Field 'worker') -ne $null -and [DateTime]::UtcNow -lt $deadline) {
@@ -190,7 +215,7 @@ const {assessFailure} = require(__RECOVERY__);
     }
     if ((Field 'worker') -ne $null -or !(Field 'status').Text.StartsWith('Falha na geração')) { throw 'Falha do backend não foi reconhecida.' }
     $window.Close(); $window.Dispose()
-    Write-Output 'Portátil validado com PATH sem Node/Python: processos, GUI NUP, sucesso verificado e recusa de backup incompleto.'
+    Write-Output 'Portátil validado com PATH sem Node/Python: GUI NUP aceita TAR e pasta FTP automaticamente; metadados comprimidos e recusa de backup incompleto conferidos.'
 } finally {
     $env:PATH = $savedPath; $env:PYTHONHOME = $savedHome; $env:PYTHONPATH = $savedPythonPath; $env:PYTHONUTF8 = $savedUtf8; $env:NS2_PANEL_SETTINGS = $savedSettings
     if (Test-Path -LiteralPath $logDir) {

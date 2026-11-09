@@ -7,6 +7,7 @@ import struct
 import tarfile
 import tempfile
 import unittest
+import zlib
 from unittest.mock import patch
 
 spec = importlib.util.spec_from_file_location('builder', Path(__file__).with_name('painel-nup.py'))
@@ -276,6 +277,201 @@ class BuildTests(unittest.TestCase):
             self.assertIn('data/control/control.nacp', builder.container_tree(reader, package.root_dir)[1])
         self.assertTrue(report['metadata']['icon'])
         self.assertTrue(report['source_trees_matched'])
+
+
+class FolderBuildTests(unittest.TestCase):
+    setUp = BuildTests.setUp
+
+    def write(self, relative, data):
+        target = self.backup / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(data)
+        return target
+
+    def npdm(self, title=0x0100000000000000):
+        result = bytearray(64)
+        result[:4] = b'ACI0'
+        struct.pack_into('<Q', result, 16, title)
+        return bytes(result)
+
+    def control(self, name='Folder Game', publisher='Publisher', compressed=True):
+        raw, titles = bytearray(0x4000), bytearray(16 * 0x300)
+        titles[:len(name.encode())] = name.encode()
+        titles[0x200:0x200 + len(publisher)] = publisher.encode()
+        if compressed:
+            compressor = zlib.compressobj(wbits=-15)
+            payload = compressor.compress(titles) + compressor.flush()
+            raw[:2] = len(payload).to_bytes(2, 'little')
+            raw[2:2 + len(payload)] = payload
+            raw[0x3215] = 1
+        else:
+            raw[:0x3000] = titles
+        raw[0x3060:0x3065] = b'1.0.0'
+        return bytes(raw)
+
+    def fixture(self, updates=False, dlc=False):
+        for prefix in ['Base'] + (['Atualizações/65536'] if updates else []):
+            self.write(prefix + '/programa 0/exefs/main.npdm', self.npdm())
+            self.write(prefix + '/programa 0/exefs/main', b'fake executable')
+            self.write(prefix + '/programa 0/romfs/file.bin', b'folder data')
+            (self.backup / prefix / 'programa 0/romfs/empty').mkdir()
+        self.write('Base/programa 0/control/control.nacp', self.control())
+        self.write('Base/programa 0/control/icon_AmericanEnglish.dat', b'\xff\xd8synthetic icon\xff\xd9')
+        if dlc:
+            self.write('DLC/0100000000001001/0/Base/programa 0/romfs/extra', b'addon data')
+
+    def test_folder_base_update_dlc_preserve_all_files_and_source(self):
+        self.fixture(updates=True, dlc=True)
+        before = builder.folder_snapshot(self.backup, lambda: None)
+        report = builder.generate(self.backup, self.root / 'outputs')
+        self.assertEqual(report['source_kind'], 'ftp-folder')
+        self.assertIsNone(report['source_manifest_sha256'])
+        self.assertTrue(report['deep_verified'] and report['source_trees_matched'])
+        self.assertEqual([(p['kind'], p['title'], p['version']) for p in report['packages']],
+                         [('base', '0100000000000000', 0), ('update', '0100000000000000', 65536), ('addon', '0100000000001001', 0)])
+        with builder.NupReader(report['output']) as reader:
+            tree = builder.container_tree(reader, reader.packages[0].root_dir)
+            self.assertIn('romfs/empty', tree[0])
+            self.assertIn('data/control/control.nacp', tree[1])
+            self.assertEqual(builder.app_meta(reader, reader.packages[0])[5], b'Folder Game')
+        self.assertEqual(before, builder.folder_snapshot(self.backup, lambda: None))
+
+    def test_compressed_and_plain_metadata_have_same_name_icon_and_publisher(self):
+        self.fixture()
+        first = builder.generate(self.backup, self.root / 'outputs')
+        control = self.backup / 'Base/programa 0/control/control.nacp'
+        control.write_bytes(self.control(compressed=False))
+        second = builder.generate(self.backup, self.root / 'outputs')
+        self.assertEqual(first['metadata'], second['metadata'])
+        self.assertEqual(first['metadata']['publisher'], 'Publisher')
+        self.assertNotEqual(first['output'], second['output'])
+
+    def test_tar_and_folder_inputs_produce_identical_package_trees(self):
+        self.fixture(updates=True, dlc=True)
+        folder_report = builder.generate(self.backup, self.root / 'outputs')
+        tar_backup = self.root / 'tar-backup'
+        tar_backup.mkdir()
+        entries = []
+        for prefix, destination in [('Base', 'base'), ('Atualizações/65536', 'updates/65536'),
+                                    ('DLC/0100000000001001/0/Base', 'dlc/0100000000001001/0/base')]:
+            for section in (self.backup / prefix / 'programa 0').iterdir():
+                relative = destination + '/program/0/' + section.name + '.tar'
+                archive_path = tar_backup / relative
+                archive_path.parent.mkdir(parents=True, exist_ok=True)
+                with tarfile.open(archive_path, 'w:') as archive:
+                    archive.add(section, arcname=section.name)
+                entries.append(dict(path=relative, bytes=archive_path.stat().st_size, sha256=builder.digest(archive_path)))
+        (tar_backup / 'manifest.json').write_text(json.dumps(dict(complete=True, title='0100000000000000', files=entries)))
+        tar_report = builder.generate(tar_backup, self.root / 'outputs')
+        self.assertEqual(tar_report['source_kind'], 'manifest-tar')
+        self.assertEqual(folder_report['metadata'], tar_report['metadata'])
+        with builder.NupReader(folder_report['output']) as folder, builder.NupReader(tar_report['output']) as tar:
+            self.assertEqual(len(folder.packages), len(tar.packages))
+            for first, second in zip(folder.packages, tar.packages):
+                self.assertEqual((first.title_id, first.kind, first.version), (second.title_id, second.kind, second.version))
+                self.assertEqual(builder.container_tree(folder, first.root_dir), builder.container_tree(tar, second.root_dir))
+
+    def test_incomplete_manifest_never_falls_back_to_folder(self):
+        self.fixture()
+        (self.backup / 'manifest.json').write_text(json.dumps({'complete': False}))
+        with self.assertRaisesRegex(ValueError, 'não está completo'):
+            builder.generate(self.backup, self.root / 'outputs')
+        self.assertFalse((self.root / 'outputs').exists())
+
+    def test_unknown_content_and_programs_refused_before_hashes(self):
+        for extra in ['Base/programa 1/romfs/data', 'notes.txt', 'Base/programa 0/unknown/data',
+                      'DLC/0100000000001001/1/Base/programa 0/romfs/data',
+                      'DLC/0100000000001001/0/Atualizações/65536/programa 0/romfs/data']:
+            with self.subTest(extra=extra):
+                self.fixture()
+                self.write(extra, b'unsupported')
+                with patch.object(builder, 'digest', side_effect=AssertionError('no hash before preflight')):
+                    with self.assertRaises(ValueError):
+                        builder.generate(self.backup, self.root / 'outputs')
+                self.assertFalse((self.root / 'outputs').exists())
+                # Recreate a clean source for the next distinct invalid layout.
+                __import__('shutil').rmtree(self.backup)
+                self.backup.mkdir()
+
+    def test_missing_executable_and_wrong_identity_are_refused(self):
+        self.fixture()
+        (self.backup / 'Base/programa 0/exefs/main').unlink()
+        with self.assertRaisesRegex(ValueError, 'incompleta'):
+            builder.generate(self.backup, self.root / 'outputs')
+        self.write('Base/programa 0/exefs/main', b'executable')
+        named = self.root / 'Jogo [0100000000001000]'
+        self.backup.rename(named)
+        with self.assertRaisesRegex(ValueError, 'identidade'):
+            builder.generate(named, self.root / 'outputs')
+
+    def test_output_inside_source_is_refused(self):
+        self.fixture()
+        with self.assertRaisesRegex(ValueError, 'fora da pasta de origem'):
+            builder.generate(self.backup, self.backup / 'outputs')
+        self.assertFalse((self.backup / 'outputs').exists())
+
+    def test_mutation_during_copy_is_refused_and_does_not_promote_output(self):
+        self.fixture()
+        original = builder.prepare_folder
+        def mutate(items, stage, **kwargs):
+            self.write('Base/programa 0/romfs/file.bin', b'changed')
+            return original(items, stage, **kwargs)
+        with patch.object(builder, 'prepare_folder', mutate):
+            with self.assertRaisesRegex(ValueError, 'mudou durante a preparação'):
+                builder.generate(self.backup, self.root / 'outputs')
+        self.assertFalse(list((self.root / 'outputs').glob('**/*.nup')))
+
+    def test_added_file_during_pack_is_detected(self):
+        self.fixture()
+        original = builder.pack
+        def add_file(*args, **kwargs):
+            result = original(*args, **kwargs)
+            self.write('Base/programa 0/romfs/new.bin', b'new')
+            return result
+        with patch.object(builder, 'pack', add_file):
+            with self.assertRaisesRegex(ValueError, 'mudou durante a geração'):
+                builder.generate(self.backup, self.root / 'outputs')
+        self.assertFalse(list((self.root / 'outputs').glob('**/*.nup')))
+
+    def test_cancel_folder_copy_cleans_temporary_tree(self):
+        self.fixture()
+        original = builder.prepare_folder
+        def cancel(*args, **kwargs):
+            builder.cancel_requested.set()
+            return original(*args, **kwargs)
+        try:
+            with patch.object(builder, 'prepare_folder', cancel):
+                with self.assertRaises(InterruptedError):
+                    builder.generate(self.backup, self.root / 'outputs')
+        finally:
+            builder.cancel_requested.clear()
+        self.assertFalse(list((self.root / 'outputs').glob('.nup-work-*')))
+        self.assertFalse(list((self.root / 'outputs').glob('**/*.nup')))
+
+    def test_reparse_points_are_refused_before_following(self):
+        from painel_nup_folder import safe_entry
+        from unittest.mock import Mock
+        entry = Mock()
+        entry.lstat.return_value.st_file_attributes = 0x400
+        entry.is_symlink.return_value = False
+        with self.assertRaisesRegex(ValueError, 'pontos de nova análise'):
+            safe_entry(entry)
+
+    def test_invalid_and_oversized_compressed_metadata_is_refused(self):
+        from painel_nup_metadata import nacp_titles
+        raw = bytearray(self.control())
+        raw[2:8] = b'broken'
+        with self.assertRaisesRegex(ValueError, 'NACP'):
+            nacp_titles(raw)
+        for titles in [b'x' * (32 * 0x300 + 1), b'x' * 767]:
+            compressor = zlib.compressobj(wbits=-15)
+            payload = compressor.compress(titles) + compressor.flush()
+            raw = bytearray(0x4000)
+            raw[:2] = len(payload).to_bytes(2, 'little')
+            raw[2:2 + len(payload)] = payload
+            raw[0x3215] = 1
+            with self.assertRaisesRegex(ValueError, 'fora dos limites'):
+                nacp_titles(raw)
 
 
 if __name__ == '__main__':

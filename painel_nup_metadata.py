@@ -5,6 +5,7 @@ That revision's TVL enum starts at zero; SPEC section 5 and Eglantine expect
 the submodule untouched. Unknown upstream layouts are refused.
 """
 from pathlib import Path
+import zlib
 
 
 def use_spec_metadata(format_module):
@@ -35,6 +36,29 @@ def text_field(raw):
     return None
 
 
+def nacp_titles(raw):
+    """Read plain or bounded raw-DEFLATE title records without modifying NACP."""
+    if len(raw) != 0x4000:
+        raise ValueError('Tamanho do controle NACP inválido.')
+    text_format = raw[0x3215]
+    if text_format == 0:
+        return raw[:0x3000]
+    if text_format != 1:
+        raise ValueError('Formato de textos NACP ainda não suportado.')
+    size = int.from_bytes(raw[:2], 'little')
+    if not 0 < size <= 0x2ffe:
+        raise ValueError('Tamanho dos textos NACP comprimidos inválido.')
+    decoder = zlib.decompressobj(-15)
+    try:
+        titles = decoder.decompress(raw[2:2 + size], 32 * 0x300 + 1)
+    except zlib.error as error:
+        raise ValueError('Textos NACP comprimidos inválidos.') from error
+    if (not decoder.eof or decoder.unconsumed_tail or decoder.unused_data or
+            not titles or len(titles) > 32 * 0x300 or len(titles) % 0x300):
+        raise ValueError('Textos NACP comprimidos truncados ou fora dos limites.')
+    return titles
+
+
 def control_metadata(stage, name):
     stage = Path(stage)
     updates = stage / 'updates'
@@ -48,11 +72,12 @@ def control_metadata(stage, name):
         nacp = control / 'control.nacp'
         if nacp.is_file() and nacp.stat().st_size == 0x4000:
             raw = nacp.read_bytes()
+            titles = nacp_titles(raw)
             for index, lang in enumerate(LANGUAGES):
-                title = text_field(raw[index * 0x300:index * 0x300 + 0x200])
+                title = text_field(titles[index * 0x300:index * 0x300 + 0x200])
                 if title:
                     names.setdefault(lang, title)
-                    publisher = publisher or text_field(raw[index * 0x300 + 0x200:(index + 1) * 0x300])
+                    publisher = publisher or text_field(titles[index * 0x300 + 0x200:(index + 1) * 0x300])
             version = version or text_field(raw[0x3060:0x3070])
         for lang, suffix in zip(LANGUAGES, ICON_LANGUAGES):
             file = control / ('icon_' + suffix + '.dat')

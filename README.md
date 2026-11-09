@@ -14,9 +14,9 @@ O pacote inclui Node, Python, compressão e as DLLs necessárias. Não é precis
 - Backup dos arquivos de jogos com OunceCake, transferência FTP de leitura e detecção automática do IP do console.
 - Backup de saves Account/Device em modo somente leitura, com identificação do jogo e usuário.
 - Restauração de arquivos de save existentes, com pré-backup automático, confirmação e verificação após commit; validada no FireRed.
-- **Arquivos / FTP** com Montar/Desmontar, navegação no Explorer e envio opcional de arquivos novos ao SD. Montagem e navegação confirmadas no console; jogos e saves ainda seguem a organização do armazenamento.
-- Em desenvolvimento na 0.1.7: pastas virtuais **Jogos** e **Saves**, com nome e ID, leitura sob demanda e primeiro teste no FireRed concluído. A release pública 0.1.6 mantém o acesso direto ao armazenamento.
-- Geração de NUP pela interface, com conferência dos backups de entrada e verificação integral do pacote.
+- **Arquivos / FTP** com Montar/Desmontar, navegação no Explorer e envio opcional de arquivos novos ao SD.
+- Pastas virtuais **Jogos** e **Saves**, com nome e ID, somente leitura e abertura sob demanda. Leitura e desmontagem validadas no FireRed.
+- Geração de NUP com detecção automática de backup TAR ou pasta copiada pelo FTP, conferência da origem e verificação integral do pacote.
 - Pastas com **Nome do jogo [ID]**, registros de execução e preservação de operações incompletas.
 
 ## Configuração compatível
@@ -81,11 +81,11 @@ A leitura confere os blocos no console, calcula hashes locais, relê os arquivos
 A geração funciona localmente no PC, sem conectar o Switch.
 
 1. Clique em **Gerar NUP** na janela principal.
-2. Selecione a pasta de um backup completo, contendo `manifest.json` e os TARs.
+2. Selecione a pasta do jogo: backup completo com `manifest.json` e TARs ou pasta copiada pelo FTP, contendo `Base/programa 0`.
 3. Escolha a pasta de saída. O nome é opcional para backups antigos sem título no manifesto.
 4. Clique em **Gerar e verificar**. Ao concluir, use **Abrir pasta**.
 
-O pacote e sua pasta usam **Nome do jogo [ID]**. O relatório `build-report.json` registra os hashes, as verificações e a presença de nome/ícone nos metadados. O adaptador usa os identificadores TLV da especificação v1 e incorpora imagens do próprio backup. NUPs gerados antes da 0.1.1 precisam ser gerados novamente para receber a correção; os TARs existentes podem ser reutilizados. Saídas anteriores e backups de origem são preservados. O adaptador aceita `base/program/0`, `updates/<versão>/program/0` e DLC base em `dlc/<ID>/0/base/program/0`; outros índices de programa, versões e atualizações de DLC são recusados. Consulte [formatos e uso pelo terminal](docs/NUP.md).
+O pacote e sua pasta usam **Nome do jogo [ID]**. O relatório `build-report.json` registra o formato identificado, hashes e verificações. Nome, ícone e publicadora são extraídos do controle, incluindo títulos comprimidos. Não há escolha manual do formato: o aplicativo o identifica pela pasta selecionada. Saídas anteriores e arquivos de origem são preservados. Os dois formatos aceitam base, atualizações e DLC base de versão zero, sempre do programa 0; layouts desconhecidos são recusados sem descarte silencioso. Uma pasta FTP pode estar incompleta se a cópia foi interrompida; o conversor verifica os arquivos presentes, sem afirmar que conferiu o conteúdo remoto. Consulte [formatos e uso pelo terminal](docs/NUP.md).
 
 ## Limitações e recuperação
 
