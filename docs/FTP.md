@@ -4,6 +4,8 @@
 
 **0.1.7:** raízes virtuais Jogos/Saves implementadas e primeira leitura validada no FireRed em console real. A 0.1.6 permanece como referência do acesso direto a SD/USER.
 
+**Build de teste 0.1.8:** substituição opcional de arquivos comuns do SD com backup no PC, testada localmente. Não validada no console; a release pública 0.1.7 continua sem sobrescrita.
+
 ## Usar no assistente
 
 1. Mantenha uma sessão 4/4 aberta e clique em **Arquivos / FTP**.
@@ -53,7 +55,31 @@ Uma consulta FTP somente de leitura confirmou `/SD` e `/Interno`. A raiz do SD a
 
 Na implementação 0.1.7, outra consulta somente leitura encontrou 16 jogos e 38 títulos com saves. No FireRed, listou `transaction.sav` e `FireRed_e.sav`; duas leituras de `FireRed_e.sav` (131.072 bytes) produziram o mesmo SHA-256. Foram lidas as seções control, RomFS e ExeFS, com download de `control.nacp` e `main.npdm`. A retomada dos últimos 8.192 bytes de `FireRed_e.gba` foi repetida e comparada. A montagem foi encerrada com confirmação de limpeza, liberação da trava e verificação da saúde da sessão 4/4. Não houve escrita de arquivos no console nem restauração de save. Esse teste não valida todos os jogos, DLCs ou atualizações.
 
-Não há exclusão, renomeação, sobrescrita ou retomada de upload. Copiar sobre um nome existente é recusado; para a primeira versão, use um nome ou pasta novo. Downloads aceitam retomada por offset. Datas de listagem usam 1970 como referência, pois a consulta de diretórios não fornece timestamps.
+Na release 0.1.7 não há exclusão, renomeação, sobrescrita ou retomada de upload. Copiar sobre um nome existente é recusado. Downloads aceitam retomada por offset. Datas de listagem usam 1970 como referência, pois a consulta de diretórios não fornece timestamps.
+
+## Substituição no SD na build de teste 0.1.8
+
+Habilite **Permitir arquivos e pastas novos no SD** e depois **Permitir substituir arquivos no SD**. Escolha a pasta das cópias anteriores no PC; ela é lembrada nas próximas aberturas. Por padrão, usa `ftp-originals` dentro do destino configurado para backups de jogos. A opção de substituição começa desmarcada e é desligada junto do envio.
+
+O cliente FTP continua usando copiar/substituir. O assistente recebe primeiro todo o arquivo no PC. Para um destino existente:
+
+1. Confere o arquivo recebido e verifica espaço para o backup, com reserva de 512 MiB no volume escolhido.
+2. Lê o arquivo anterior do SD, grava `original.bin`, faz flush local e confere SHA-256 por releitura do backup.
+3. Registra `manifest.json`, contendo caminho original, nome, tamanho e hash, e reabre o destino para confirmar que não mudou após o backup.
+4. Respeita cancelamento antes da primeira alteração. Depois de começar a gravar, aguarda redimensionamento, escrita, flush e verificação final antes de desmontar.
+5. Confere tamanho e SHA-256 do novo arquivo por releitura no console. Só então confirma o envio ao cliente.
+
+Cada substituição preserva sua própria cópia anterior, inclusive quando o mesmo nome é enviado várias vezes. O botão **Ver cópias anteriores** abre a pasta mais recente. Os relatórios da operação ficam também em `ftp-uploads` na sessão; os dados recebidos temporariamente são removidos após a tentativa. O limite é 1 GiB tanto para o arquivo novo quanto para o anterior.
+
+A substituição grava no próprio arquivo do SD e não é uma troca atômica. Falha após o início pode deixá-lo incompleto. O backup local é preservado, mas não é enviado de volta automaticamente após um erro incerto. Escritas não são repetidas e erros de transporte ou limpeza invalidam a sessão quando não é possível confirmar o estado. Não há exclusão ou renomeação.
+
+Jogos, Saves e Interno continuam somente leitura. A pasta `Nintendo` do SD também fica bloqueada para criação e substituição, inclusive com as opções de envio habilitadas. Caminhos ambíguos com pontos/espaços finais ou caracteres inválidos são recusados. A restauração de saves permanece no módulo próprio.
+
+O redimensionamento usa `IFile.SetSize`, comando 3, seguido de `Write` 1 e `Flush` 2, conforme [libnx fs.c](https://github.com/switchbrew/libnx/blob/master/nx/source/services/fs.c). Não altera o mecanismo de aquisição.
+
+### Próximo teste no console
+
+Use somente um arquivo descartável, como `/SD/NS2ToolKit-test/arquivo.txt`. Envie uma primeira versão como arquivo novo; habilite substituição e envie versões maior, menor e vazia. Após cada envio, baixe o destino e compare os bytes; confira também `original.bin` e o manifesto no PC. Desmonte e confirme a disponibilidade dos módulos de backup. Esses testes reais ainda estão pendentes; os testes locais usam armazenamento simulado e clientes FTP/WinINet reais.
 
 ## Envio de arquivos novos ao SD
 

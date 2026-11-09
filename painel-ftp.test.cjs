@@ -5,7 +5,7 @@ const sha=b=>crypto.createHash('sha256').update(b).digest('hex');
 async function fixture(t,options={}) {
  const work=await fs.mkdtemp(path.join(os.tmpdir(),'ftp-native-test-'));t.after(()=>fs.rm(work,{recursive:true,force:true}));
  const memory=new Map(),handles=new Map(),calls=[],sd=new Map([['/old.bin',Buffer.from('original')]]),user=new Map([['/info.bin',Buffer.from('internal')]]);
- let next=40,created=0,writes=0;
+ let next=40,created=0,writes=0,resizes=0;
  const allocate=value=>{const handle=next++;handles.set(handle,value);return {result:0,moves:[handle],handle};};
  const reply=(result=0,number=0)=>{const data=Buffer.alloc(8);data.writeBigUInt64LE(BigInt(number));return {result,data};};
  const a={root:10,s:{base:0x100000,write:async(at,bytes)=>memory.set(at,Buffer.from(bytes)),read:async(at,size)=>memory.get(at).subarray(0,size),close:async h=>handles.delete(h),
@@ -20,7 +20,8 @@ async function fixture(t,options={}) {
     memory.set(extra.receive[0].address,bytes);return reply(0,items.length);
    }
    assert.equal(item.kind,'file');
-   if(command===1){writes++;if(options.failWrite)throw Error('Native write timed out');const bytes=memory.get(extra.send[0].address);bytes.copy(item.files.get(item.name),Number(input.readBigUInt64LE(8)));return reply();}
+   if(command===3){if(options.beforeResize)await options.beforeResize();resizes++;assert.equal(item.mode,3);const old=item.files.get(item.name),resized=Buffer.alloc(Number(input.readBigInt64LE()));old.copy(resized);item.files.set(item.name,resized);if(options.failResize)throw Error('Resize response timed out');return reply();}
+   if(command===1){assert.equal(item.mode,3);writes++;if(options.failWrite)throw Error('Native write timed out');const bytes=memory.get(extra.send[0].address);bytes.copy(item.files.get(item.name),Number(input.readBigUInt64LE(8)));return reply();}
    assert.equal(command,2);return reply();
   }},domain:{oneHandle:r=>r.moves[0],send:async(s,label,handle,packet)=>{
    const command=packet.readUInt32LE(24),text=memory.get(s.base+0x2000).toString().split('\0')[0];
@@ -35,13 +36,13 @@ async function fixture(t,options={}) {
     const files=handles.get(handle).files;
     if(command===7)return files.has(name)?reply(0,Buffer.isBuffer(files.get(name))?1:0):reply(0x202);
     if(command===9){assert.equal(name,'/');return allocate({kind:'dir',files,done:false});}
-    assert.equal(command,8);assert.equal(input.readUInt32LE(),3);return files.has(name)?allocate({kind:'file',files,name}):reply(0x202);
+    assert.equal(command,8);assert.equal(input.readUInt32LE(),3);if(options.changeOnRW)files.set(name,Buffer.from('modified'));return files.has(name)?allocate({kind:'file',files,name,mode:3}):reply(0x202);
    },
-   openFile:async(s,handle,name)=>{const files=handles.get(handle).files;return files.has(name)?allocate({kind:'file',files,name}):reply(0x202);},
+   openFile:async(s,handle,name)=>{const files=handles.get(handle).files;return files.has(name)?allocate({kind:'file',files,name,mode:1}):reply(0x202);},
    fileSize:async(s,handle)=>{const item=handles.get(handle);return BigInt(item.files.get(item.name).length);},
    readFile:async(s,handle,offset,size)=>{const item=handles.get(handle);return Buffer.from(item.files.get(item.name).subarray(offset,offset+size));},
    nativeHash:async(s,address,count)=>sha(memory.get(address).subarray(0,count))}};
- return {work,a,options,sd,user,calls,handles,get created(){return created;},get writes(){return writes;}};
+ return {work,a,options,sd,user,calls,handles,get created(){return created;},get writes(){return writes;},get resizes(){return resizes;}};
 }
 test('FTP exposes only SD and USER filesystem 30 and closes temporary directory/file handles',async t=>{
  const f=await fixture(t),adapter=await mountStorage(f.a);
@@ -83,6 +84,79 @@ test('virtual paths never resolve PC paths, NUL, backslashes or line injection',
  assert.equal(virtualPath('/SD/a','../../Interno'),'/Interno');
  for(const name of ['x\\y','x\0y','x\r\ny'])assert.throws(()=>virtualPath('/',name));
 });
+async function overwriteFixture(t,options={}){
+ const f=await fixture(t,options),backupRoot=path.join(f.work,'backups');
+ const adapter=await mountStorage(f.a,{upload:true,overwrite:true,backupRoot,...options.adapter});
+ const local=path.join(f.work,'upload.bin'),journal=path.join(f.work,'upload-report.json');
+ return {...f,fixture:f,adapter,backupRoot,local,journal};
+}
+test('SD overwrite preserves a verified PC backup before resizing and writing a longer file',async t=>{
+ const f=await overwriteFixture(t),bytes=Buffer.alloc(0x11001,7);await fs.writeFile(f.local,bytes);
+ f.fixture.options.beforeResize=async()=>{
+  const stored=JSON.parse(await fs.readFile(f.journal));assert.equal(stored.backupVerified,true);
+  const manifest=JSON.parse(await fs.readFile(path.join(path.dirname(stored.backup),'manifest.json')));
+  assert.equal(manifest.complete,true);assert.equal((await fs.readFile(stored.backup)).toString(),'original');
+ };
+ const report=await f.adapter.uploadNew('/SD/old.bin',f.local,sha(bytes),bytes.length,f.journal);
+ assert.deepEqual(f.fixture.sd.get('/old.bin'),bytes);assert.equal(f.fixture.created,0);assert.equal(f.fixture.resizes,1);
+ assert.equal(report.complete,true);assert.equal(report.backupVerified,true);
+ assert.equal((await fs.readFile(report.backup)).toString(),'original');
+ const manifest=JSON.parse(await fs.readFile(path.join(path.dirname(report.backup),'manifest.json')));
+ assert.equal(manifest.complete,true);assert.equal(manifest.sha256,sha(Buffer.from('original')));assert.equal(manifest.originalName,'old.bin');
+ assert.equal(f.fixture.handles.size,2);
+});
+test('shorter and empty replacements have exact sizes and retain separate original backups',async t=>{
+ const f=await overwriteFixture(t);
+ for(const bytes of [Buffer.from('x'),Buffer.alloc(0)]){
+  await fs.writeFile(f.local,bytes);
+  const report=await f.adapter.uploadNew('/SD/old.bin',f.local,sha(bytes),bytes.length,f.journal);
+  assert.deepEqual(f.fixture.sd.get('/old.bin'),bytes);assert.ok(report.complete);
+ }
+ assert.equal((await fs.readdir(f.backupRoot)).length,2);assert.equal(f.fixture.resizes,2);
+});
+test('pre-backup failure or changed upload never mutates the destination',async t=>{
+ const f=await overwriteFixture(t),bytes=Buffer.from('new');await fs.writeFile(f.local,bytes);
+ await assert.rejects(f.adapter.uploadNew('/SD/old.bin',f.local,sha(Buffer.from('wrong')),bytes.length,f.journal),e=>e.ftpCode===550);
+ t.mock.method(fs,'statfs',async()=>({bavail:0n,bsize:4096n}));
+ await assert.rejects(f.adapter.uploadNew('/SD/old.bin',f.local,sha(bytes),bytes.length,f.journal),e=>e.ftpCode===552);
+ assert.equal(f.fixture.sd.get('/old.bin').toString(),'original');assert.equal(f.fixture.resizes,0);assert.equal(f.fixture.writes,0);
+});
+test('destination changed after backup is refused without writing, preserving the original PC copy',async t=>{
+ const f=await overwriteFixture(t,{changeOnRW:true}),bytes=Buffer.from('new');await fs.writeFile(f.local,bytes);
+ await assert.rejects(f.adapter.uploadNew('/SD/old.bin',f.local,sha(bytes),bytes.length,f.journal),e=>e.ftpCode===550&&!e.ftpUnsafe);
+ assert.equal(f.fixture.resizes,0);assert.equal(f.fixture.writes,0);
+ const report=JSON.parse(await fs.readFile(f.journal));assert.equal((await fs.readFile(report.backup)).toString(),'original');assert.equal(report.complete,false);
+});
+test('cancel after verified backup leaves the console untouched and releases all file handles',async t=>{
+ let cancelled=false;
+ const f=await overwriteFixture(t,{adapter:{send:kind=>{if(kind==='backup_ready')cancelled=true;}}}),bytes=Buffer.from('new');await fs.writeFile(f.local,bytes);
+ await assert.rejects(f.adapter.uploadNew('/SD/old.bin',f.local,sha(bytes),bytes.length,f.journal,{cancelled:()=>cancelled}),e=>e.ftpCode===426&&!e.ftpUnsafe);
+ assert.equal(f.fixture.sd.get('/old.bin').toString(),'original');assert.equal(f.fixture.resizes,0);assert.equal(f.fixture.handles.size,2);
+});
+test('stop during critical overwrite completes verification instead of interrupting the file',async t=>{
+ let stopped=false;
+ const f=await overwriteFixture(t,{adapter:{stop:()=>stopped,send:kind=>{if(kind==='writing')stopped=true;}}}),bytes=Buffer.from('replacement');await fs.writeFile(f.local,bytes);
+ const report=await f.adapter.uploadNew('/SD/old.bin',f.local,sha(bytes),bytes.length,f.journal);assert.equal(report.complete,true);assert.deepEqual(f.fixture.sd.get('/old.bin'),bytes);
+});
+for(const failure of ['failResize','failWrite'])test('uncertain '+failure+' is never replayed and retains the backup',async t=>{
+ const f=await overwriteFixture(t,{[failure]:true}),bytes=Buffer.from('replacement');await fs.writeFile(f.local,bytes);
+ await assert.rejects(f.adapter.uploadNew('/SD/old.bin',f.local,sha(bytes),bytes.length,f.journal),e=>e.ftpUnsafe&&!e.ftpCode);
+ assert.equal(f.fixture.resizes,1);assert.equal(f.fixture.writes,failure==='failWrite'?1:0);assert.equal(f.fixture.handles.size,2);
+ const report=JSON.parse(await fs.readFile(f.journal));assert.equal(report.complete,false);assert.equal(report.backupVerified,true);assert.equal((await fs.readFile(report.backup)).toString(),'original');
+});
+test('an existing destination cannot be overwritten when the upload began as a new file',async t=>{
+ const f=await overwriteFixture(t),bytes=Buffer.from('new');await fs.writeFile(f.local,bytes);
+ const intent=await f.adapter.canUpload('/SD/race.bin');f.fixture.sd.set('/race.bin',Buffer.from('appeared'));
+ await assert.rejects(f.adapter.uploadNew('/SD/race.bin',f.local,sha(bytes),bytes.length,f.journal,{intent}),e=>e.ftpCode===550);
+ assert.equal(f.fixture.sd.get('/race.bin').toString(),'appeared');assert.equal(f.fixture.resizes,0);
+});
+test('Nintendo paths, ambiguous names, directories and USER remain read-only with overwrite enabled',async t=>{
+ const f=await overwriteFixture(t);f.fixture.sd.set('/folder',null);
+ for(const name of ['/SD/Nintendo/file','/sd/nintendo/file','/SD/Nintendo./file','/SD/folder /file','/Interno/info.bin','/SD/folder']){
+  await assert.rejects(f.adapter.canUpload(name),e=>e.ftpCode===550);
+ }
+ assert.equal(f.fixture.writes,0);assert.equal(f.fixture.resizes,0);
+});
 async function lifecycle(t) {
  const run=await fs.mkdtemp(path.join(os.tmpdir(),'ftp-lifecycle-'));t.after(()=>fs.rm(run,{recursive:true,force:true}));
  const previous=process.exitCode;t.after(()=>{process.exitCode=previous;});
@@ -112,4 +186,16 @@ test('an upload failure after creation cannot be reclassified as a harmless moun
   serve:async(adapter,options)=>{queueMicrotask(()=>options.onFatal(Object.assign(Error('partial file write'),{nativeRefusal:true,ftpUnsafe:true})));return {url:'ftp://127.0.0.1:30000/',close:async()=>{}};}});
  assert.equal(probed,false);assert.equal(f.events.at(-1).requiresRestart,true);
  await fs.access(path.join(f.run,'painel-session-invalid.json'));
+});
+test('overwrite requires an absolute backup folder before attaching to the console',async t=>{
+ const f=await lifecycle(t);let attached=false;
+ await require('./painel-ftp.cjs').main([f.run,'sd-overwrite','catalog','relative-folder'],{send:(kind,data)=>f.events.push({kind,...data}),attach:async()=>{attached=true;return f.a;}});
+ assert.equal(attached,false);assert.equal(f.events.at(-1).requiresRestart,false);await assert.rejects(fs.access(path.join(f.run,'painel-operation.lock')));
+});
+test('overwrite mode reaches the adapter and server only with an explicit PC backup folder',async t=>{
+ const f=await lifecycle(t),backupRoot=path.join(f.run,'backups');let mountOptions,serverOptions;
+ await require('./painel-ftp.cjs').main([f.run,'sd-overwrite','storage',backupRoot],{send:f.send,signal:f.controller.signal,attach:async()=>f.a,
+  mount:async(a,options)=>{mountOptions=options;return {scopes:['SD'],unavailable:[]};},serve:async(a,options)=>{serverOptions=options;return {url:'ftp://127.0.0.1:30000/',close:async()=>{}};}});
+ assert.equal(mountOptions.upload,true);assert.equal(mountOptions.overwrite,true);assert.equal(mountOptions.backupRoot,backupRoot);assert.equal(serverOptions.overwrite,true);
+ assert.equal(f.events.at(-1).kind,'complete');assert.ok((await fs.stat(backupRoot)).isDirectory());
 });

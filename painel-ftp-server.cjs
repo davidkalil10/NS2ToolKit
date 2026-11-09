@@ -2,15 +2,16 @@ const net=require('node:net');
 const fs=require('node:fs/promises');
 const path=require('node:path');
 const crypto=require('node:crypto');
-const {virtualPath,denied}=require('./painel-ftp-storage.cjs');
+const {virtualPath,denied,sdWritablePath}=require('./painel-ftp-storage.cjs');
 const networkError=message=>Object.assign(Error(message),{ftpCode:426});
 const quote=text=>'"'+text.replace(/"/g,'""')+'"';
 function listing(row,writable=false) {
   const directory=row.type==='directory';
   // No timestamps are returned by ReadDirectory; 1970 is an explicit placeholder.
-  return (directory?(writable?'drwxr-xr-x':'dr-xr-xr-x'):'-r--r--r--')+' 1 console console '+row.size+' Jan 01  1970 '+row.name+'\r\n';
+  return (directory?(writable?'drwxr-xr-x':'dr-xr-xr-x'):(writable?'-rw-r--r--':'-r--r--r--'))+' 1 console console '+row.size+' Jan 01  1970 '+row.name+'\r\n';
 }
-async function createServer(adapter,{port=0,upload=false,staging,send=()=>{},onFatal=()=>{},dataTimeout=20000,maxUpload=1024*1024*1024}={}) {
+async function createServer(adapter,{port=0,upload=false,overwrite=false,staging,send=()=>{},onFatal=()=>{},dataTimeout=20000,maxUpload=1024*1024*1024}={}) {
+  if(overwrite&&!upload)throw Error('Sobrescrita exige envio habilitado.');
   if(upload&&!staging)throw Error('Destino temporário de uploads ausente.');
   if(upload)await fs.mkdir(staging,{recursive:true});
   let stopping=false,tail=Promise.resolve(),fatalError,uploadBusy=false;
@@ -123,8 +124,8 @@ async function createServer(adapter,{port=0,upload=false,staging,send=()=>{},onF
           const target=virtualPath(client.cwd,arg.replace(/^-[A-Za-z]+(?:\s+|$)/,''));
           const rows=await serial(()=>adapter.list(target));
           const text=rows.map(row=>{
-            const writable=upload&&row.type==='directory'&&/^\/SD(?:\/|$)/i.test(virtualPath(target,row.name));
-            return verb==='NLST'?row.name+'\r\n':verb==='MLSD'?'type='+(row.type==='directory'?'dir':'file')+';size='+row.size+';perm='+(row.type==='directory'?(writable?'elcm':'el'):'r')+'; '+row.name+'\r\n':listing(row,writable);
+            const writable=upload&&sdWritablePath(virtualPath(target,row.name))&&(row.type==='directory'||overwrite);
+            return verb==='NLST'?row.name+'\r\n':verb==='MLSD'?'type='+(row.type==='directory'?'dir':'file')+';size='+row.size+';perm='+(row.type==='directory'?(writable?'elcm':'el'):(writable?'rw':'r'))+'; '+row.name+'\r\n':listing(row,writable);
           }).join('');
           await transfer(data=>write(data,Buffer.from(text,'utf8')));break;
         }
@@ -143,7 +144,7 @@ async function createServer(adapter,{port=0,upload=false,staging,send=()=>{},onF
           const target=filename();uploadBusy=true;
           let work;
           try {
-            await serial(()=>adapter.canUpload(target));
+            const intent=await serial(()=>adapter.canUpload(target));
             work=await fs.mkdtemp(path.join(staging,'upload-'));const local=path.join(work,'data.part');
             let size=0;const hash=crypto.createHash('sha256');
             await transfer(async data=>{
@@ -159,12 +160,12 @@ async function createServer(adapter,{port=0,upload=false,staging,send=()=>{},onF
               if(client.aborted||stopping)throw networkError('Envio cancelado antes da gravacao no SD.');
               data.setTimeout(0);
               const expected=hash.digest('hex');
-              await serial(()=>{if(client.closed||client.aborted)throw networkError('Envio cancelado antes de criar o arquivo.');return adapter.uploadNew(target,local,expected,size,path.join(work,'upload-report.json'));});
+              await serial(()=>{if(client.closed||client.aborted)throw networkError('Envio cancelado antes de gravar o arquivo.');return adapter.uploadNew(target,local,expected,size,path.join(work,'upload-report.json'),{intent,cancelled:()=>client.closed||client.aborted||stopping});});
             },true);
           }finally{uploadBusy=false;if(work)await fs.unlink(path.join(work,'data.part')).catch(error=>{if(error.code!=='ENOENT')throw error;});}
           break;
         }
-        default:reply(['APPE','STOU','DELE','RMD','XRMD','RNFR','RNTO','SITE'].includes(verb)?550:502,'Operacao indisponivel. Sem sobrescrita ou exclusao.');
+        default:reply(['APPE','STOU','DELE','RMD','XRMD','RNFR','RNTO','SITE'].includes(verb)?550:502,'Operacao indisponivel. Exclusao e renomeacao nao suportadas.');
       }
     }
     let input='';socket.on('data',part=>{

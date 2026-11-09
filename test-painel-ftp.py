@@ -3,9 +3,9 @@ from pathlib import Path
 root=Path(__file__).resolve().parent
 node=sys.argv[1] if len(sys.argv)>1 else 'node'
 payload=bytes(i%251 for i in range(300000))
-def test_server(upload):
+def test_server(upload,overwrite=False):
  with tempfile.TemporaryDirectory(prefix='ns2-ftp-test-') as folder:
-  process=subprocess.Popen([node,str(root/'test-ftp-fixture.cjs'),folder,*(['--upload'] if upload else [])],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,encoding='utf-8')
+  process=subprocess.Popen([node,str(root/'test-ftp-fixture.cjs'),folder,*(['--upload'] if upload else []),*(['--overwrite'] if overwrite else [])],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,encoding='utf-8')
   try:
    line=process.stdout.readline()
    assert line,process.stderr.read()
@@ -24,9 +24,17 @@ def test_server(upload):
     for command in ['PORT 10,0,0,1,200,20','DELE hello.bin','RNFR hello.bin','SITE anything','CWD /SYSTEM']:
      try:ftp.sendcmd(command);raise AssertionError(command+' was accepted')
      except ftplib.error_perm:pass
-    for name in ['/Interno/new.bin','/SD/hello.bin']:
+    for name in ['/Interno/new.bin','/SD/Nintendo/new.bin']+([] if overwrite else ['/SD/hello.bin']):
      try:ftp.storbinary('STOR '+name,io.BytesIO(b'replace'));raise AssertionError('overwrite accepted')
      except ftplib.error_perm:pass
+    if overwrite:
+     replacement=b'replacement\x00\xff'
+     ftp.storbinary('STOR /SD/hello.bin',io.BytesIO(replacement))
+     result=io.BytesIO();ftp.retrbinary('RETR /SD/hello.bin',result.write);assert result.getvalue()==replacement
+     backups=list(Path(folder).rglob('original.bin'));assert len(backups)==1 and backups[0].read_bytes()==payload
+     ftp.storbinary('STOR /SD/hello.bin',io.BytesIO(payload))
+     assert sorted(p.read_bytes() for p in Path(folder).rglob('original.bin'))==sorted([payload,replacement])
+     facts=dict(ftp.mlsd('/SD'));assert 'w' in facts['hello.bin']['perm'] and 'c' not in facts['Nintendo']['perm']
     if upload:
      ftp.mkd('/SD/homebrew');data=b'own upload\x00\xff'*4000
      ftp.storbinary('STOR /SD/homebrew/test.nro',io.BytesIO(data))
@@ -47,7 +55,7 @@ def test_server(upload):
     ftp.connect('127.0.0.1',port,timeout=10);ftp.login();assert set(ftp.nlst())=={'SD','Interno'}
    # An idle Explorer connection and an unused passive listener must not prevent unmount.
    waiting=connect();waiting.sendcmd('PASV')
-   print('FTP '+('SD uploads' if upload else 'read-only')+': PASV, EPSV, PORT, UTF-8, list, download, resume, permissions and serialized clients passed.',flush=True)
+   print('FTP '+('SD overwrite' if overwrite else 'SD uploads' if upload else 'read-only')+': PASV, EPSV, PORT, UTF-8, list, download, resume, permissions and serialized clients passed.',flush=True)
   finally:
    process.stdin.write('stop\n');process.stdin.flush()
    output,errors=process.communicate(timeout=10)
@@ -55,3 +63,4 @@ def test_server(upload):
    assert not errors,errors
 test_server(False)
 test_server(True)
+test_server(True,True)

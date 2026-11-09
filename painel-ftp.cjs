@@ -1,4 +1,5 @@
 const path=require('node:path');
+const fs=require('node:fs/promises');
 const {runControlled}=require('./painel-runner.cjs');
 const {emit,failureDetails,closeAttachment,Progress}=require('./painel-progress.cjs');
 const {requireHeldSession,lockSession,invalidateSession}=require('./painel-session.cjs');
@@ -7,7 +8,7 @@ const {attachGame}=require('./tools/OunceCake/engine/session.cjs');
 const {mountStorage}=require('./painel-ftp-storage.cjs');
 const {createServer}=require('./painel-ftp-server.cjs');
 const {virtualStorage}=require('./painel-ftp-virtual.cjs');
-async function main([run,writeFlag,browseFlag],{send=emit,attach=attachGame,mount=mountStorage,browse=virtualStorage,serve=createServer,probe=verifyHeldHealth,signal}={}) {
+async function main([run,writeFlag,browseFlag,backupRoot],{send=emit,attach=attachGame,mount=mountStorage,browse=virtualStorage,serve=createServer,probe=verifyHeldHealth,signal}={}) {
   let a,server,adapter,unlock,failure,nativeTouched=false,stopped=false,release;
   const wait=new Promise(resolve=>{release=resolve;});
   const stop=()=>{stopped=true;release();};
@@ -15,18 +16,19 @@ async function main([run,writeFlag,browseFlag],{send=emit,attach=attachGame,moun
   process.on('SIGINT',stop);process.on('SIGTERM',stop);
   signal?.addEventListener('abort',stop,{once:true});if(signal?.aborted)stop();
   try {
-    if(writeFlag&&!['read-only','sd-new-files'].includes(writeFlag))throw Error('Modo FTP inválido.');
-    if(browseFlag&&browseFlag!=='catalog')throw Error('Navegação FTP inválida.');
+    if(writeFlag&&!['read-only','sd-new-files','sd-overwrite'].includes(writeFlag))throw Error('Modo FTP inválido.');
+    if(browseFlag&&!['catalog','storage'].includes(browseFlag))throw Error('Navegação FTP inválida.');
     run=await requireHeldSession(run);unlock=await lockSession(run,'ftp');
+    const overwrite=writeFlag==='sd-overwrite',upload=overwrite||writeFlag==='sd-new-files';
+    if(overwrite){if(!backupRoot||!path.isAbsolute(backupRoot))throw Error('Selecione uma pasta absoluta para os backups do FTP no PC.');backupRoot=path.resolve(backupRoot);await fs.mkdir(backupRoot,{recursive:true});await fs.access(backupRoot);}
     progress.begin('ftp_mount','Abrindo SD e armazenamento interno USER...');
     nativeTouched=true;a=await attach(run);
-    const upload=writeFlag==='sd-new-files';
-    adapter=await mount(a,{upload,stop:()=>stopped,send});
+    adapter=await mount(a,{upload,overwrite,backupRoot,stop:()=>stopped,send});
     if(browseFlag==='catalog')adapter=await browse(a,adapter,{stop:()=>stopped,send});
     if(stopped)return;
-    server=await serve(adapter,{upload,staging:path.join(run,'ftp-uploads'),send,onFatal:error=>{failure ||= error;stop();}});
+    server=await serve(adapter,{upload,overwrite,staging:path.join(run,'ftp-uploads'),send,onFatal:error=>{failure ||= error;stop();}});
     progress.begin('ftp_active','FTP montado. Navegue pelo Explorer; desmonte ao terminar.');
-    send('ftp_ready',{url:server.url,scopes:adapter.scopes,unavailable:adapter.unavailable,upload});
+    send('ftp_ready',{url:server.url,scopes:adapter.scopes,unavailable:adapter.unavailable,upload,overwrite});
     await wait;
   }catch(error){if(!error.ftpStop||!stopped)failure=error;}
   finally {

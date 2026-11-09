@@ -51,6 +51,8 @@ Atualizado em 7 de novembro de 2026. Prioridade: diagnóstico → backup de save
 
 ## P3 — navegação e FTP
 
+**Escrita na build de teste 0.1.8:** substituição de arquivos comuns no SD implementada com backup local, verificação e opção desativada por padrão. Testes locais concluídos; aguarda teste real com arquivo descartável antes de publicar uma release. Jogos, saves, Interno e Nintendo continuam somente leitura. [Fluxo e roteiro](FTP.md#substituição-no-sd-na-build-de-teste-018).
+
 **Estado: FTP incluído na 0.1.6; testes locais concluídos e montagem/navegação confirmadas no console.** Veja [escopo e validação](FTP.md). Próximo marco: raízes virtuais somente leitura de jogos e saves, com nomes amigáveis e montagem sob demanda reaproveitando os módulos de backup.
 
 Na build 0.1.7, as raízes Jogos/Saves já estão implementadas, com teste inicial no FireRed: leitura de save, controle, ExeFS e retomada de RomFS. Limpeza e continuidade da sessão confirmadas. Validar pela interface e ampliar cobertura de jogos, atualizações e DLC antes de uma nova release. Apelidos de perfil e nomes de títulos ausentes do inventário ficam para uma melhoria posterior.

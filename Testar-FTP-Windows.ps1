@@ -1,4 +1,4 @@
-param([string]$NodePath)
+param([string]$NodePath,[switch]$Overwrite)
 $ErrorActionPreference='Stop'
 $root=$PSScriptRoot
 if(!$NodePath){$NodePath=(Get-Command node).Source}
@@ -7,6 +7,7 @@ New-Item -ItemType Directory -Path $work | Out-Null
 $start=New-Object Diagnostics.ProcessStartInfo
 $start.FileName=$NodePath
 $start.Arguments='"'+(Join-Path $root 'test-ftp-fixture.cjs')+'" "'+$work+'" --upload'
+if($Overwrite){$start.Arguments+=' --overwrite'}
 $start.UseShellExecute=$false;$start.CreateNoWindow=$true;$start.RedirectStandardInput=$true;$start.RedirectStandardOutput=$true;$start.RedirectStandardError=$true
 $process=[Diagnostics.Process]::Start($start)
 $port=($process.StandardOutput.ReadLine()|ConvertFrom-Json).port
@@ -32,7 +33,7 @@ public static class NativeFtpTest {
  [DllImport("wininet.dll",SetLastError=true)]static extern bool InternetSetOption(IntPtr handle,uint option,ref uint value,uint bytes);
  [DllImport("wininet.dll")]static extern bool InternetCloseHandle(IntPtr handle);
  static void Check(bool ok,string message){if(!ok)throw new Exception(message+": "+new Win32Exception(Marshal.GetLastWin32Error()).Message);}
- public static void Run(int port,string folder,bool passive){
+ public static void Run(int port,string folder,bool passive,bool overwrite){
   IntPtr internet=InternetOpen("NS2ToolKit test",1,null,null,0),ftp=IntPtr.Zero,find=IntPtr.Zero;
   try {
    Check(internet!=IntPtr.Zero,"InternetOpen");uint timeout=10000;
@@ -48,15 +49,22 @@ public static class NativeFtpTest {
    for(int i=0;i<bytes.Length;i++)if(bytes[i]!=(byte)(i%251))throw new Exception("Download bytes");
    string small=Path.Combine(folder,"upload.bin");File.WriteAllBytes(small,new byte[]{1,0,255,3});
    Check(FtpPutFile(ftp,small,passive?"/SD/windows-passive.bin":"/SD/windows-active.bin",2,IntPtr.Zero),"FtpPutFile");
+   if(overwrite){
+    string target=passive?"/SD/windows-passive.bin":"/SD/windows-active.bin";
+    File.WriteAllBytes(small,new byte[]{9,0,8});Check(FtpPutFile(ftp,small,target,2,IntPtr.Zero),"FtpPutFile overwrite");
+    string copied=Path.Combine(folder,passive?"overwritten-passive.bin":"overwritten-active.bin");
+    Check(FtpGetFile(ftp,target,copied,true,0,0x80000002u,IntPtr.Zero),"FtpGetFile overwritten");
+    byte[] changed=File.ReadAllBytes(copied);if(changed.Length!=3||changed[0]!=9||changed[1]!=0||changed[2]!=8)throw new Exception("Overwrite bytes");
+   }
   }finally{if(find!=IntPtr.Zero)InternetCloseHandle(find);if(ftp!=IntPtr.Zero)InternetCloseHandle(ftp);if(internet!=IntPtr.Zero)InternetCloseHandle(internet);}
  }
 }
 '@
 try {
  Add-Type -TypeDefinition $native
- [NativeFtpTest]::Run($port,$work,$true)
- [NativeFtpTest]::Run($port,$work,$false)
- Write-Output 'Windows WinINet: listagem, download binario e upload passaram em modos passivo e ativo. Sem console.'
+ [NativeFtpTest]::Run($port,$work,$true,[bool]$Overwrite)
+ [NativeFtpTest]::Run($port,$work,$false,[bool]$Overwrite)
+ Write-Output ('Windows WinINet: listagem, download e upload; sobrescrita='+[bool]$Overwrite+'. Modos passivo e ativo passaram. Sem console.')
 }finally{
  $process.StandardInput.WriteLine('stop');$process.StandardInput.Flush()
  if(!$process.WaitForExit(10000)){$process.Kill();throw 'Fixture nao encerrou'}

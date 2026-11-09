@@ -26,9 +26,9 @@ A confirmação de restauração pertence à interface do programa e ocorre depo
 
 ## D-005 — oferecer acesso a arquivos por escopo
 
-**Estado: proposta; interface FTP dedicada ainda não implementada.** Distinguir exportação de conteúdo do jogo, arquivos do SmileBASIC e saves de outros títulos. Exibir o escopo e o modo de acesso antes de iniciar.
+**Estado: leitura implementada nas versões 0.1.6/0.1.7; sobrescrita no SD em teste na 0.1.8.** Distinguir arquivos comuns do SD, conteúdo instalado e saves. A escrita fica desativada por padrão; o primeiro marco de substituição preserva uma cópia anterior no PC antes de alterar o SD, com hash antes/depois e sem repetição após falha incerta. Jogos, Saves, Interno e a pasta Nintendo do SD permanecem somente leitura.
 
-O FTP já usado internamente pelo OunceCake é de leitura. Um serviço com escrita exige tratamento próprio de commit, interrupções e permissões. Não prometer acesso irrestrito ao microSD ou ao armazenamento interno.
+O FTP usado internamente pelo OunceCake é de leitura. A escrita nova usa apenas o sistema de arquivos do SD e chamadas IFile já delimitadas, sem ampliar o acesso a saves ou conteúdos montados. A substituição não é atômica e o backup não implica rollback automático. O teste no console com arquivo descartável precede a publicação da próxima release.
 
 ## D-006 — uma operação por sessão em cada momento
 

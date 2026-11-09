@@ -1,5 +1,14 @@
 # Histórico de versões
 
+## 0.1.8 — build de teste, escrita no console pendente
+
+- Adiciona opção separada para substituir arquivos comuns do SD, desativada por padrão e disponível somente com envio habilitado.
+- Recebe o envio inteiro no PC, salva a versão anterior em pasta configurável e confere o backup antes de qualquer alteração no SD.
+- Ajusta o tamanho, grava uma única vez, faz flush e compara tamanho/SHA-256 por releitura; aceita arquivos maiores, menores e vazios até 1 GiB.
+- Preserva backup e relatório em falhas, sem repetição automática de escrita nem promessa de rollback após erro incerto.
+- Bloqueia gravação na pasta Nintendo do SD e mantém Jogos, Saves e Interno somente leitura. Exclusão e renomeação continuam indisponíveis.
+- Testes locais cobrem cancelamento, falta de espaço, destino alterado, erros de redimensionamento/escrita, FTP e WinINet. Validação real ainda necessária.
+
 ## 0.1.7 — 9 de novembro de 2026
 
 - Adiciona raízes virtuais **Jogos** e **Saves** ao FTP, com nome do jogo e ID, somente leitura e download.

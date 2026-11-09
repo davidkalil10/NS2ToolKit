@@ -90,10 +90,24 @@ archive = dict(id='7', space=1, type=1, rank=0, index=0, title='0100000000000000
     $ftpScript=Join-Path $work 'ftp-ui-fixture.cjs'
     @'
 const {runControlled}=require(process.argv[2]);
+process.stdin.on('data',data=>{const text=String(data);if(text.includes('simulate-write')){console.log('PANEL:'+JSON.stringify({kind:'backup_ready',path:process.cwd()}));console.log('PANEL:'+JSON.stringify({kind:'writing',message:'Teste de gravacao'}));}if(text.includes('finish-write'))console.log('PANEL:'+JSON.stringify({kind:'write_finished',complete:true,operation:'overwrite'}));});
 runControlled(async()=>{await new Promise(resolve=>{process.once('SIGINT',resolve);console.log('PANEL:'+JSON.stringify({kind:'ftp_ready',url:'ftp://127.0.0.1:30000/',scopes:['SD','Interno'],unavailable:[],upload:false}));});console.log('PANEL:'+JSON.stringify({kind:'complete'}));},[]);
 '@ | Set-Content -LiteralPath $ftpScript -Encoding ASCII
     $ftpWindow=New-Object NS2Panel.FtpWindow($PSScriptRoot,$sessionFixture,$false)
     $ftpFlags=[Reflection.BindingFlags]'NonPublic,Instance'
+    $ftpUpload=$ftpWindow.GetType().GetField('upload',$ftpFlags).GetValue($ftpWindow)
+    $ftpOverwrite=$ftpWindow.GetType().GetField('overwrite',$ftpFlags).GetValue($ftpWindow)
+    $ftpBackups=$ftpWindow.GetType().GetField('backupFolder',$ftpFlags).GetValue($ftpWindow)
+    if($ftpUpload.Checked -or $ftpOverwrite.Checked -or $ftpOverwrite.Enabled -or $ftpBackups.Enabled){throw 'FTP iniciou com gravacao habilitada'}
+    $ftpUpload.Checked=$true;$ftpOverwrite.Checked=$true
+    if(!$ftpOverwrite.Enabled -or !$ftpBackups.Enabled){throw 'Backup nao foi habilitado com a sobrescrita'}
+    $ftpUpload.Checked=$false
+    if($ftpOverwrite.Checked -or $ftpBackups.Enabled){throw 'Sobrescrita nao foi desativada junto do envio'}
+    $ftpBackupTarget=Join-Path $work 'backups ftp personalizados'
+    [NS2Panel.PanelSettings]::SaveDestination('ftp',$ftpBackupTarget)
+    $ftpPrefs=New-Object NS2Panel.FtpWindow($PSScriptRoot,$sessionFixture,$false)
+    if($ftpPrefs.GetType().GetField('backupFolder',$ftpFlags).GetValue($ftpPrefs).Text -ne $ftpBackupTarget){throw 'Pasta dos backups FTP nao persistiu'}
+    $ftpPrefs.Dispose()
     $ftpWorker=New-Object NS2Panel.Runner
     $ftpWorker.Start((Join-Path $PSScriptRoot 'runtime\node\node.exe'),$ftpScript,[NS2Panel.Checks]::QuoteArgument((Join-Path $PSScriptRoot 'painel-runner.cjs')),$PSScriptRoot)
     $ftpWindow.GetType().GetField('worker',$ftpFlags).SetValue($ftpWindow,$ftpWorker)
@@ -102,6 +116,15 @@ runControlled(async()=>{await new Promise(resolve=>{process.once('SIGINT',resolv
     $ftpWindow.Show();$ftpDeadline=[DateTime]::UtcNow.AddSeconds(10)
     while(!$ftpExplorer.Enabled -and [DateTime]::UtcNow -lt $ftpDeadline){[System.Windows.Forms.Application]::DoEvents();Start-Sleep -Milliseconds 40}
     if(!$ftpExplorer.Enabled -or !$ftpWindow.GetType().GetMethod('ValidAddress',$ftpFlags).Invoke($ftpWindow,@())){throw 'FTP pronto nao reconhecido pela interface'}
+    $ftpProcess=$ftpWorker.GetType().GetField('process',$ftpFlags).GetValue($ftpWorker)
+    $ftpProcess.StandardInput.WriteLine('simulate-write');$ftpProcess.StandardInput.Flush()
+    $ftpDeadline=[DateTime]::UtcNow.AddSeconds(10)
+    while(!$ftpWindow.GetType().GetField('critical',$ftpFlags).GetValue($ftpWindow) -and [DateTime]::UtcNow -lt $ftpDeadline){[System.Windows.Forms.Application]::DoEvents();Start-Sleep -Milliseconds 40}
+    if($ftpToggle.Enabled -or !$ftpWindow.GetType().GetField('critical',$ftpFlags).GetValue($ftpWindow)){throw 'Desmontagem nao foi bloqueada durante gravacao'}
+    $ftpProcess.StandardInput.WriteLine('finish-write');$ftpProcess.StandardInput.Flush()
+    $ftpDeadline=[DateTime]::UtcNow.AddSeconds(10)
+    while($ftpWindow.GetType().GetField('critical',$ftpFlags).GetValue($ftpWindow) -and [DateTime]::UtcNow -lt $ftpDeadline){[System.Windows.Forms.Application]::DoEvents();Start-Sleep -Milliseconds 40}
+    if(!$ftpToggle.Enabled -or !$ftpWindow.GetType().GetField('openBackups',$ftpFlags).GetValue($ftpWindow).Enabled){throw 'Verificacao nao liberou desmontagem e acesso as copias anteriores'}
     $ftpToggle.PerformClick();$ftpDeadline=[DateTime]::UtcNow.AddSeconds(10)
     while($ftpWindow.GetType().GetField('worker',$ftpFlags).GetValue($ftpWindow) -ne $null -and [DateTime]::UtcNow -lt $ftpDeadline){[System.Windows.Forms.Application]::DoEvents();Start-Sleep -Milliseconds 40}
     if($ftpWindow.GetType().GetField('worker',$ftpFlags).GetValue($ftpWindow) -ne $null -or $ftpToggle.Text -ne 'Montar FTP' -or $ftpWindow.RequiresRestart){throw ('Desmontagem FTP nao reconhecida: '+$ftpWindow.GetType().GetField('status',$ftpFlags).GetValue($ftpWindow).Text+'; '+$ftpWindow.GetType().GetField('output',$ftpFlags).GetValue($ftpWindow).Text+'; worker alive='+$ftpWorker.Alive+' complete='+$ftpWorker.Complete)}

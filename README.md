@@ -17,6 +17,7 @@ O pacote inclui Node, Python, compressão e as DLLs necessárias. Não é precis
 - **Arquivos / FTP** com Montar/Desmontar, navegação no Explorer e envio opcional de arquivos novos ao SD.
 - Pastas virtuais **Jogos** e **Saves**, com nome e ID, somente leitura e abertura sob demanda. Leitura e desmontagem validadas no FireRed.
 - Geração de NUP com detecção automática de backup TAR ou pasta copiada pelo FTP, conferência da origem e verificação integral do pacote.
+- Build de teste 0.1.8: substituição opcional de arquivos comuns do SD com cópia anterior no PC e verificação. Validação no console pendente; a release pública 0.1.7 mantém a sobrescrita desativada.
 - Pastas com **Nome do jogo [ID]**, registros de execução e preservação de operações incompletas.
 
 ## Configuração compatível

@@ -3,6 +3,7 @@ const path = require('node:path');
 const fs = require('node:fs/promises');
 const crypto = require('node:crypto');
 const {pathRequest} = require('./tools/OunceCake/engine/protocol.cjs');
+const {overwriteFile,MAX_FILE}=require('./painel-ftp-overwrite.cjs');
 const hash = bytes => crypto.createHash('sha256').update(bytes).digest('hex');
 const denied = message => Object.assign(Error(message), {ftpCode:550});
 function check(reply, label) {
@@ -13,7 +14,13 @@ function virtualPath(cwd, text = '') {
   if (/[\\\0\r\n]/.test(text) || Buffer.byteLength(text)>2048) throw denied('Caminho inválido.');
   return path.posix.resolve(cwd, text || '.');
 }
-async function mountStorage(a, {upload=false, stop=()=>false, send=()=>{}} = {}) {
+function sdWritablePath(filename){
+  const parts=virtualPath('/',filename).split('/').filter(Boolean);
+  return parts[0]?.toLowerCase()==='sd'&&parts[1]?.toLowerCase()!=='nintendo'&&
+    parts.every(part=>!/[<>:"|?*\x00-\x1f]/.test(part)&&!/[ .]$/.test(part));
+}
+async function mountStorage(a, {upload=false, overwrite=false, backupRoot, stop=()=>false, send=()=>{}} = {}) {
+  if(overwrite&&(!upload||!backupRoot))throw denied('Sobrescrita exige envio ao SD e pasta de backup no PC.');
   const mounts = new Map(), unavailable = [];
   for (const [key,name,command] of [['sd','SD',18],['interno','Interno',11]]) {
     if (stop()) throw Object.assign(Error('FTP encerrado.'),{ftpStop:true});
@@ -32,7 +39,8 @@ async function mountStorage(a, {upload=false, stop=()=>false, send=()=>{}} = {})
     const normalized=virtualPath('/',filename), parts=normalized.split('/').filter(Boolean);
     const key=(parts.shift()||'').toLowerCase(), mount=mounts.get(key);
     if (!mount) throw denied('Armazenamento indisponível.');
-    if (write && (!upload || key!=='sd' || !parts.length)) throw denied('Envio permitido somente para arquivos novos no SD, quando habilitado.');
+    if (write && (!upload || key!=='sd' || !parts.length)) throw denied('Envio permitido somente no SD, quando habilitado.');
+    if(write&&!sdWritablePath(normalized))throw denied('Pasta Nintendo e caminhos ambíguos são somente leitura.');
     const remote='/'+parts.join('/');
     if (Buffer.byteLength(remote)>=0x301) throw denied('Caminho longo demais para o console.');
     return {mount,remote};
@@ -107,12 +115,28 @@ async function mountStorage(a, {upload=false, stop=()=>false, send=()=>{}} = {})
     if(!reply.result)throw denied('Já existe um arquivo ou pasta com esse nome. Sobrescrita desativada.');
     if((reply.result&0x3fffff)!==0x202)check(reply,'Conferir destino novo');
   }
-  async function canUpload(filename) {const {mount,remote}=resolve(filename,true);await ensureAbsent(mount,remote);}
+  async function canUpload(filename) {
+    interrupted();const {mount,remote}=resolve(filename,true);
+    const reply=await a.filesystem.pathMethod(a.s,mount.handle,7,remote);
+    if(reply.result){if((reply.result&0x3fffff)!==0x202)check(reply,'Conferir destino');return {existing:false};}
+    if(!overwrite)throw denied('Já existe um arquivo ou pasta com esse nome. Sobrescrita desativada.');
+    if(reply.data.readUInt32LE()!==1)throw denied('Não é permitido substituir uma pasta.');
+    const entry=await stat(filename);
+    if(entry.size>MAX_FILE)throw denied('O arquivo anterior excede o limite de backup de 1 GiB.');
+    return {existing:true,size:entry.size};
+  }
   async function mkdir(filename) {
     interrupted();const {mount,remote}=resolve(filename,true);await ensureAbsent(mount,remote);
     check(await mutation(mount,remote,2,Buffer.alloc(0)),'Criar pasta no SD');
   }
-  async function uploadNew(filename,local,expected,size,journalFile) {
+  async function uploadNew(filename,local,expected,size,journalFile,options={}) {
+    if(!Number.isSafeInteger(size)||size<0||size>MAX_FILE||!/^[a-f0-9]{64}$/.test(expected))throw denied('Tamanho ou hash de envio inválido.');
+    const intent=options.intent||await canUpload(filename);
+    const current=await canUpload(filename);
+    if(current.existing!==intent.existing||current.existing&&current.size!==intent.size)throw denied('O destino mudou durante o envio; tente novamente.');
+    if(options.cancelled?.())throw Object.assign(Error('Envio cancelado antes de alterar o SD.'),{ftpCode:426});
+    if(current.existing){const {mount,remote}=resolve(filename,true);return overwriteFile({a,mount,remote,filename,local,expected,size,
+      oldSize:current.size,backupRoot,journalFile,stop,cancelled:options.cancelled,send,check});}
     interrupted();const {mount,remote}=resolve(filename,true);await ensureAbsent(mount,remote);
     const report={file:filename,size,sha256:expected,complete:false,createAttempted:false,created:false,verified:false};
     const save=()=>fs.writeFile(journalFile,JSON.stringify(report,null,2),{mode:0o600});
@@ -162,4 +186,4 @@ async function mountStorage(a, {upload=false, stop=()=>false, send=()=>{}} = {})
   }
   return {list,stat,read,canUpload,mkdir,uploadNew,scopes:[...mounts.values()].map(m=>m.name),unavailable};
 }
-module.exports={mountStorage,virtualPath,denied};
+module.exports={mountStorage,virtualPath,denied,sdWritablePath};
