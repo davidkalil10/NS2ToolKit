@@ -36,7 +36,9 @@ O snapshot de origem não continha uma licença de projeto no diretório raiz. E
 
 [python-zstandard](https://github.com/indygreg/python-zstandard), por Gregory Szorc e contribuidores, é uma dependência preparada separadamente no desenvolvimento e incluída na build portátil em versão fixada (`0.25.0`), sob BSD-3-Clause. Ela utiliza [Zstandard](https://github.com/meta/zstd). As licenças, copyrights e avisos presentes no pacote instalado devem ser preservados ao redistribuir essa dependência. A pasta privada `.runtime/` não é publicada neste repositório.
 
-## Integração kaiHEN na build local 0.1.9
+## Integração kaiHEN a partir da versão 0.1.9
+
+Créditos ao [ouncebrew/kaihen](https://github.com/ouncebrew/kaihen), [ouncebrew/ounce-hbmenu](https://github.com/ouncebrew/ounce-hbmenu), [ouncebrew/ounce-hbloader](https://github.com/ouncebrew/ounce-hbloader) e seus contribuidores. O menu deriva do [switchbrew/nx-hbmenu](https://github.com/switchbrew/nx-hbmenu), cujas atribuições são preservadas. O [OunceShell de kurumuz](https://github.com/kurumuz/ounceshell), [ounce-devkit](https://github.com/ouncebrew/ounce-devkit), [libounce](https://github.com/ouncebrew/libounce) e [OunceVK](https://github.com/ouncebrew/ouncevk) mantêm seus próprios autores, licenças e avisos na distribuição.
 
 `integrations/kaihen/host/` preserva o host do fork [kurumuz/ns2jb](https://gitlab.com/kurumuz/ns2jb), revisão `28f03b5895e5569d8fbc35cbed84906b8f0a65b2`, separado do engine original. Os patches Windows e a origem estão documentados no README dessa pasta. Não se atribui uma licença nova à base de origem.
 
