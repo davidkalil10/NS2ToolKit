@@ -128,7 +128,10 @@ namespace NS2Panel {
                     } else if(kind=="prepared") {
                         planPath=Convert.ToString(value["planPath"]);planHash=Convert.ToString(value["planSha256"]);
                         var names=new List<string>();foreach(var raw in (System.Collections.IEnumerable)value["files"]) {
-                            var file=(Dictionary<string,object>)raw;names.Add(Convert.ToString(file["path"])+(Convert.ToBoolean(file["edited"])?" (editado)":""));
+                            var file=(Dictionary<string,object>)raw;
+                            string resize=file.ContainsKey("beforeSize") && Convert.ToInt64(file["beforeSize"])!=Convert.ToInt64(file["size"])
+                                ?" (tamanho: "+Convert.ToString(file["beforeSize"])+" → "+Convert.ToString(file["size"])+" bytes)":"";
+                            names.Add(Convert.ToString(file["path"])+(Convert.ToBoolean(file["edited"])?" (editado)":"")+resize);
                         }
                         string uid=Convert.ToString(value["uid"]);uid=uid.Trim('0').Length==0?"compartilhado":uid.Substring(0,16);
                         confirmation="Jogo: "+Convert.ToString(value["name"])+" ["+Convert.ToString(value["title"]).ToUpperInvariant()+"]\nUsuário: "+uid+

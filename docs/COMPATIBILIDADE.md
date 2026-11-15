@@ -1,15 +1,15 @@
 # Compatibilidade e possibilidades
 
-Pesquisa de 5 de novembro de 2026. **Documentado por um projeto externo** não significa **validado no NS2ToolKit**.
+Atualização de 15 de novembro de 2026. **Documentado por um projeto externo** não significa **validado no NS2ToolKit**. O histórico de HBLauncher abaixo registra a pesquisa inicial; a frente atual é [kaiHEN e ounce-devkit](ESTUDO-KAIHEN-OUNCE-DEVKIT.md), com [modo kaiHEN de teste integrado](KAIHEN.md).
 
 | Função | Situação no NS2ToolKit |
 | --- | --- |
 | ns2jb 4/4 e RPC mantido | Validado na configuração do checkpoint |
 | Backup de arquivos de jogos | Validado em alguns casos; falhas conhecidas de preparação de conteúdo |
 | Backup de saves | Somente leitura; backup concluído em console real em 06/11/2026 |
-| Restauração de saves | Ainda não integrada |
-| FTP para navegação externa | Ainda não exposto como módulo dedicado; FTP de leitura já é usado pelo backup |
-| HBLauncher | Ainda não integrado |
+| Restauração de saves | Integrada, com pré-backup, commit e releitura; validada no FireRed, incluindo recuperação de 8 KiB para 128 KiB com carregamento confirmado no jogo |
+| FTP para navegação externa | Integrado; SD/USER e vistas Jogos/Saves, com limites próprios de escrita |
+| Homebrew / kaiHEN | Integrado na 0.1.9; ativação e abertura do hbmenu confirmadas no console em 15/11. OunceShell e Netloader ainda não validados |
 | Empacotar backups em NUP | Dois backups verificados; funcionamento relatado no Eglantine 0d86405bd1-nx2; interface integrada e testada com dados sintéticos |
 | Executar NRO de Switch 1 diretamente | Não é uma capacidade comprovada deste projeto ou do SDK pesquisado |
 | Acesso irrestrito de leitura/escrita ao microSD | Não demonstrado e não prometido |

@@ -113,6 +113,7 @@ namespace NS2Panel {
         private readonly Button saves = new Button();
         private readonly Button nup = new Button();
         private readonly Button ftp = new Button();
+        private readonly Button homebrew = new Button();
         private readonly Label status = new Label(), detail = new Label();
         private readonly TextBox output = new TextBox();
         private readonly TextBox[] commands = new TextBox[4];
@@ -126,8 +127,8 @@ namespace NS2Panel {
         public MainWindow(string folder) {
             root = folder;
             Text = "NS2 • Assistente de conexão" + (File.Exists(Path.Combine(root, "VERSION")) ? " • v" + File.ReadAllText(Path.Combine(root, "VERSION")).Trim() : "");
-            ClientSize = new Size(920, 710);
-            MinimumSize = new Size(936, 699);
+            ClientSize = new Size(920, 754);
+            MinimumSize = new Size(936, 743);
             StartPosition = FormStartPosition.CenterScreen;
             BackColor = Color.FromArgb(245, 247, 251);
             Font = new Font("Segoe UI", 10);
@@ -137,7 +138,7 @@ namespace NS2Panel {
             layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 203));
             layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 87));
             layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 44));
+            layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 88));
             Controls.Add(layout);
             var header = new Panel { Dock = DockStyle.Fill };
             header.Controls.Add(new Label { Text = "NS2 • Assistente de conexão", Font = new Font("Segoe UI", 20, FontStyle.Bold), AutoSize = true, Location = new Point(0, 0) });
@@ -195,6 +196,17 @@ namespace NS2Panel {
             nup.Click += delegate { using (var dialog = new NupWindow(root)) dialog.ShowDialog(this); }; footer.Controls.Add(nup);
             ftp.Text = "Arquivos / FTP"; ftp.SetBounds(617,8,165,31); ftp.Enabled=false;
             ftp.Click += delegate {using(var dialog=new FtpWindow(root,progress.Folder)){dialog.ShowDialog(this);if(dialog.RequiresRestart)backupFailed=true;}}; footer.Controls.Add(ftp);
+            homebrew.Text="Homebrew / kaiHEN";homebrew.SetBounds(0,46,190,31);
+            homebrew.Click+=delegate {
+                if(runner!=null&&runner.Alive)return;
+                var choice=addresses.SelectedItem as AddressChoice;if(choice==null){MessageBox.Show(this,"Conecte o PC à rede do console e selecione o endereço.");return;}
+                using(var dialog=new KaihenWindow(root,choice.Address)){
+                    dialog.ShowDialog(this);prepared.Checked=false;
+                    if(dialog.SessionFolder!=null)progress=new RunProgress{Folder=dialog.SessionFolder};
+                    if(dialog.ReadyForGame){status.Text="kaiHEN iniciado • teste o hbmenu e o OunceShell no console";detail.Text="Abra um jogo nativo de Switch 2 segurando R. Para voltar ao modo de backups, reinicie o console.";}
+                }
+            };footer.Controls.Add(homebrew);
+            footer.Controls.Add(new Label{Text="Modo exclusivo para iniciar o launcher e testar homebrews.",AutoSize=true,Location=new Point(205,53)});
             layout.Controls.Add(footer);
             LoadAddresses();
             timer.Interval = 150; timer.Tick += Poll; timer.Start();
@@ -233,6 +245,7 @@ namespace NS2Panel {
                 foreach (var button in copy) button.Enabled = false;
                 runner.Start(node, Path.Combine(root, "painel-runner.cjs"), (held.Checked ? "--rpc " : "") + choice.Address, root);
                 start.Enabled = false; stop.Enabled = true; addresses.Enabled = held.Enabled = prepared.Enabled = false;
+                homebrew.Enabled=false;
                 status.Text = "Iniciando no PC...";
                 detail.Text = "Aguarde a indicação de conexão pronta antes de digitar no console.";
             } catch (Exception error) { MessageBox.Show(this, error.Message, "Não foi possível iniciar"); }
@@ -264,6 +277,7 @@ namespace NS2Panel {
             foreach (string line in runner.Drain()) { output.AppendText(line + Environment.NewLine); progress.Accept(line); }
             if (!stopping) progress.Finish(runner.ExitCode);
             start.Enabled = true; stop.Enabled = false; addresses.Enabled = held.Enabled = prepared.Enabled = true; prepared.Checked = false;
+            homebrew.Enabled=true;
             foreach (var button in copy) button.Enabled = false;
             backup.Enabled = false;
             saves.Enabled = false;

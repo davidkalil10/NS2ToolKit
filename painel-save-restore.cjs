@@ -1,4 +1,4 @@
-// Existing-file, equal-size restoration. Acquisition and upstream engine stay unchanged.
+// Existing-file restoration with verified pre-backup, resize, commit and readback.
 const fs = require('node:fs/promises');
 const path = require('node:path');
 const crypto = require('node:crypto');
@@ -51,13 +51,13 @@ async function inspect(source) {
     assert(/^data[\\/]/.test(entry.local || '') && /^[a-f0-9]{64}$/.test(entry.sha256 || '') &&
       Number.isSafeInteger(entry.size) && entry.size >= 0 && entry.size <= MAX_FILE, 'Entrada de backup inválida ou grande demais.');
     const file = await containedFile(source, entry.local);
-    assert((await fs.stat(file)).size === entry.size, 'Esta versão só restaura arquivos com o tamanho original: ' + entry.path);
+    assert((await fs.stat(file)).size <= MAX_FILE, 'Arquivo de save maior que o limite de 16 MiB: ' + entry.path);
     const bytes = await fs.readFile(file);
-    assert(bytes.length === entry.size, 'Esta versão só restaura arquivos com o tamanho original: ' + entry.path);
+    assert(bytes.length <= MAX_FILE, 'Arquivo de save maior que o limite de 16 MiB: ' + entry.path);
     total += bytes.length; assert(total <= MAX_TOTAL, 'Restauração limitada a 64 MiB nesta versão.');
     const hash = sha(bytes);
-    files.push({path: entry.path, local: entry.local, size: bytes.length, originalSha256: entry.sha256,
-      sha256: hash, edited: hash !== entry.sha256});
+    files.push({path: entry.path, local: entry.local, size: bytes.length, originalSize: entry.size, originalSha256: entry.sha256,
+      sha256: hash, edited: bytes.length !== entry.size || hash !== entry.sha256});
   }
   return {source, manifestSha256: sha(raw), archive: identity(manifest.archive), name: manifest.name, files};
 }
@@ -141,7 +141,8 @@ async function prepare({run, source, parent, selected, allowEdited, targetId, st
   if (failure) {failure.nativeTouched = nativeTouched; throw failure;}
   for (const job of jobs) {
     const before = baseline.manifest.entries.find(e => e.path === job.path);
-    assert(before && before.size === job.size, 'Arquivo ausente ou com tamanho diferente no console: ' + job.path);
+    assert(before, 'Arquivo ausente no console: ' + job.path);
+    job.beforeSize = before.size;
     job.beforeSha256 = before.sha256;
   }
   const baselineRel = path.relative(folder, path.join(baseline.folder, 'manifest.json')).replace(/\\/g,'/');
@@ -158,7 +159,15 @@ async function writeExisting(a, handle, job, bytes, started) {
   assert(!reply.result, 'Arquivo existente não abriu para escrita: ' + job.path);
   const file = a.domain.oneHandle(reply);
   try {
-    assert(Number(await a.filesystem.fileSize(a.s, file)) === bytes.length, 'O tamanho do arquivo atual mudou.');
+    const beforeSize = job.beforeSize ?? job.size;
+    refuseUnless(Number(await a.filesystem.fileSize(a.s, file)) === beforeSize, 'O tamanho do arquivo atual mudou.');
+    if (beforeSize !== bytes.length) {
+      const length = Buffer.alloc(8); length.writeBigInt64LE(BigInt(bytes.length));
+      await started();
+      const resized = await a.s.ipc('Restore FileSetSize', file, 3, length);
+      assert(!resized.result, 'Falha ao ajustar o tamanho de ' + job.path + ': ' + resized.result);
+      assert(Number(await a.filesystem.fileSize(a.s, file)) === bytes.length, 'O novo tamanho não foi confirmado.');
+    }
     for (let offset = 0; offset < bytes.length;) {
       const chunk = bytes.subarray(offset, offset + 0x10000), buffer = a.s.base + 0x20000;
       await a.s.write(buffer, chunk);
@@ -196,7 +205,8 @@ async function apply({run, planPath, planSha256, confirmed, stop = () => false, 
     const before = baseline.entries.find(e => e.path === job.path);
     const bytes = await fs.readFile(await containedFile(folder, job.payload));
     total += bytes.length;
-    assert(bytes.length <= MAX_FILE && total <= MAX_TOTAL && before && before.size === job.size &&
+    assert(Number.isSafeInteger(job.size) && job.size >= 0 && bytes.length <= MAX_FILE && total <= MAX_TOTAL &&
+      before && before.size === (job.beforeSize ?? job.size) &&
       bytes.length === job.size && sha(bytes) === job.sha256 && before.sha256 === job.beforeSha256, 'Arquivo preparado ou pré-backup divergente.');
     jobs.push({job, bytes});
   }
@@ -225,7 +235,7 @@ async function apply({run, planPath, planSha256, confirmed, stop = () => false, 
     }
     const expected = {...baseline, entries: baseline.entries.map(e => {
       const replacement = plan.files.find(j => j.path === e.path);
-      return replacement ? {...e, sha256:replacement.sha256} : e;
+      return replacement ? {...e, size:replacement.size, sha256:replacement.sha256} : e;
     })};
     assert(sameSnapshot(await snapshot(a, handle), expected), 'A conferência antes do commit encontrou divergência.');
     if (!report.writesStarted) refuseUnless(!stop(), 'Restauração cancelada antes da escrita.');

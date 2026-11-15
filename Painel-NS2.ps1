@@ -15,6 +15,7 @@ $source += Get-Content -LiteralPath (Join-Path $PSScriptRoot 'Painel-Backup.cs')
 $source += Get-Content -LiteralPath (Join-Path $PSScriptRoot 'Painel-Nup.cs') -Raw -Encoding UTF8
 $source += Get-Content -LiteralPath (Join-Path $PSScriptRoot 'Painel-Restore.cs') -Raw -Encoding UTF8
 $source += Get-Content -LiteralPath (Join-Path $PSScriptRoot 'Painel-Ftp.cs') -Raw -Encoding UTF8
+$source += Get-Content -LiteralPath (Join-Path $PSScriptRoot 'Painel-Kaihen.cs') -Raw -Encoding UTF8
 Add-Type -TypeDefinition $source -ReferencedAssemblies System.Windows.Forms,System.Drawing,System.Web.Extensions
 if ($SelfTest) {
     [NS2Panel.Checks]::Run($PSScriptRoot)

@@ -37,7 +37,7 @@ Referência: [ns2-savekit](https://github.com/dougchansan/ns2-savekit), revisão
 
 Não foram aplicados os patches de escrita, enumeração de contas ou aquisição do FS desse projeto. O usuário vem do inventário de saves. Os arquivos do mecanismo em `engine/` permanecem iguais aos do checkpoint funcional.
 
-O adaptador de restauração usa os comandos já disponíveis para abrir arquivos existentes em leitura/escrita, enviar blocos, flush e commit. Não cria arquivos nem depende dos patches de criação/descritores adicionais do ns2-savekit. O mecanismo de aquisição e os submódulos permanecem inalterados.
+O adaptador de restauração usa os comandos já disponíveis para abrir arquivos existentes em leitura/escrita, ajustar seu tamanho quando necessário (IFile.SetSize, comando 3), enviar blocos, flush e commit. Não cria arquivos nem depende dos patches de criação/descritores adicionais do ns2-savekit. O mecanismo de aquisição e os submódulos permanecem inalterados.
 
 ## Restaurar a partir da versão 0.1.5
 
@@ -52,7 +52,7 @@ Pré-backups, plano, cópias dos arquivos e relatório ficam em `restauracoes`, 
 
 ### Escopo e confirmação de sucesso
 
-- Substituição de arquivos existentes, com o mesmo tamanho da origem. Sem criação, remoção, redimensionamento ou alteração de diretórios.
+- Substituição de arquivos existentes, incluindo ajuste do tamanho atual ao tamanho do backup. Sem criação, remoção ou alteração de diretórios. O arquivo local pode ter tamanho diferente do manifesto de origem; isso é identificado como edição, sem reescrever o manifesto.
 - Até 256 arquivos, 16 MiB por arquivo e 64 MiB no conjunto.
 - O plano confirma os hashes do pré-backup e dos arquivos preparados; mudanças posteriores no save do console exigem nova preparação.
 - Confere o envio de cada bloco com hash no console, descarrega os arquivos, verifica a árvore, faz um único commit, reabre o save em leitura e confere novamente todos os arquivos, inclusive os que não foram substituídos.
@@ -69,6 +69,8 @@ Testes simulados cobrem integridade dos planos, identidade de destino, mudanças
 No teste de console em 07/11/2026, o relatório registrou `complete`, `committed`, `verified` e `cleanupConfirmed` como verdadeiros. O plano substituiu apenas `/FireRed_e.sav`, com 131.072 bytes. O save editado funcionou no jogo. Esse resultado valida o primeiro caso Account; não certifica todos os jogos ou tipos de save.
 
 ## Cobertura de validação
+
+Em 15/11/2026, o save gravado pelo Zelda sobre a base FireRed tinha 8.192 bytes. Foi feito pré-backup completo, restaurados `/FireRed_e.sav` (131.072 bytes) e `/transaction.sav` (1.024 bytes) da pasta indicada, e confirmados commit, hashes após reabertura, limpeza e saúde da sessão. O destino foi redimensionado sem criar ou excluir arquivos. A origem permaneceu intacta. O carregamento posterior do save no FireRed foi confirmado no console. Os 18 testes locais de restauração incluem crescimento/redução do destino, destino vazio, falha de redimensionamento sem repetição e preservação do pré-backup.
 
 O fluxo de backup foi concluído em console real em 6 de novembro de 2026, e a restauração do FireRed em 7 de novembro. Identidades, hashes e relatórios de execução permanecem nos arquivos privados dos backups.
 

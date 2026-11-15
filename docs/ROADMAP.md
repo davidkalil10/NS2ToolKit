@@ -1,6 +1,6 @@
 # Roadmap
 
-Atualizado em 7 de novembro de 2026. Prioridade: diagnóstico → backup de saves → restauração. Implementação e validação no console são estados separados.
+Atualizado em 14 de novembro de 2026. Prioridade atual: validar o aplicativo separado de mods GBA após a abertura do Zelda pelo fluxo manual. A sequência inicial diagnóstico → backup de saves → restauração permanece registrada abaixo. Implementação e validação no console são estados separados.
 
 ## Referência já validada
 
@@ -51,6 +51,10 @@ Atualizado em 7 de novembro de 2026. Prioridade: diagnóstico → backup de save
 
 ## P3 — navegação e FTP
 
+**Prioridade esclarecida em 09/11/2026:** aplicar ao console a pasta de um jogo modificado, como o backup Emerald derivado do FireRed. A sobrescrita de arquivos comuns do SD não atende a esse objetivo. RomFS/ExeFS foram preparados em um plano local de modloader; instalação residente, integração Windows, entrega da sessão e suporte a Control continuam em estudo. [Análise, limites e próximos passos](JOGOS-MODIFICADOS.md).
+
+**Caso atual:** Zelda A Link to the Past & Four Swords (BR) no mesmo ID do FireRed. Abertura confirmada no console após o patch Windows do iniciador manual. Novo programa separado **NS2 Mods GBA** preparado para receber NUP, extrair/conferir os arquivos e enviar/ativar pela sessão 4/4. Próximos marcos: validar a nova automação no hardware e conferir persistência do save. [Processo completo e guia](MODS-GBA.md).
+
 **Escrita na build de teste 0.1.8:** substituição de arquivos comuns no SD implementada com backup local, verificação e opção desativada por padrão. Testes locais concluídos; aguarda teste real com arquivo descartável antes de publicar uma release. Jogos, saves, Interno e Nintendo continuam somente leitura. [Fluxo e roteiro](FTP.md#substituição-no-sd-na-build-de-teste-018).
 
 **Estado: FTP incluído na 0.1.6; testes locais concluídos e montagem/navegação confirmadas no console.** Veja [escopo e validação](FTP.md). Próximo marco: raízes virtuais somente leitura de jogos e saves, com nomes amigáveis e montagem sob demanda reaproveitando os módulos de backup.
@@ -69,7 +73,12 @@ Primeiro marco: SD e armazenamento interno USER com endereço local e encerramen
 
 ## P4 — HBLauncher e ports próprios
 
-**Estado: pesquisa preliminar.**
+**Histórico inicial: análise estática de kaiHEN e ounce-devkit concluída em 14/11/2026.** São candidatos para launcher e recompilação de ports. O HEN mantém o ambiente no console durante o boot após entrega correta; não é necessário chamar o launcher do PC a cada abertura. A ativação inicial e sua ligação ao nosso host foram implementadas posteriormente na 0.1.9. [Versões, limites, persistência e plano de teste](ESTUDO-KAIHEN-OUNCE-DEVKIT.md).
+
+**Implementação posterior na mesma data:** modo Homebrew / kaiHEN adicionado ao toolkit principal na build local 0.1.9. Host de origem fixado, pacote oficial conferido, hbmenu e OunceShell incluídos; testes locais do controlador e da interface aprovados. Validação de 15/11: HEN e hbmenu abriram no console. Próximo marco: executar OunceShell e testar Netloader; depois adaptar os ports próprios. Não confundir esse modo com o aplicativo GBA separado. [Roteiro](KAIHEN.md).
+
+- Preservar a branch costela e ligar sua interface a um backend real antes de anunciar deploy/execução.
+- Testar inicialmente HEN e loader GBA em inicializações separadas; a coexistência ainda não foi demonstrada.
 
 - Fixar launcher/SDK e validar o ambiente de compilação e a ligação com nossa sessão.
 - Abrir primeiro um exemplo mínimo e retornar ao launcher.
@@ -101,6 +110,8 @@ Primeiro marco: SD e armazenamento interno USER com endereço local e encerramen
 **Critérios de conclusão:** teste sintético de ida e volta, entradas inválidas recusadas e um backup próprio empacotado/verificado, com os casos não suportados claramente informados.
 
 ## Ordem de execução
+
+- [ ] Adicionar gestão de espaço do histórico `runs`: mostrar tamanho e data, proteger sessões ativas e evidências de operações incertas, oferecer limpeza das sessões encerradas e definir retenção. Atualmente o histórico não é apagado ao fechar o programa.
 
 Ordem confirmada: P0 → P1 → P2, validando a leitura antes da restauração. Por solicitação posterior do usuário, o teste CLI de NUP com dois backups locais foi antecipado, sem operações no console. A interface NUP foi adicionada a pedido do usuário; FTP e HBLauncher continuam para etapas posteriores.
 

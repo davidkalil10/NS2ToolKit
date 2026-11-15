@@ -1,4 +1,4 @@
-﻿param([switch]$Offline, [string]$OutputRoot)
+﻿param([switch]$Offline, [string]$OutputRoot, [string]$PythonModules = (Join-Path $PSScriptRoot '.runtime/nup-python'))
 $ErrorActionPreference = 'Stop'
 # Build machine only: Git, Windows PowerShell and the already installed zstandard
 # wheel are required. The output has no Git/Python/Node installation dependency.
@@ -16,11 +16,15 @@ function Get-PinnedFile($Name, $Uri, $Hash) {
 $python = Get-PinnedFile 'python-3.13.4-embed-amd64.zip' 'https://www.python.org/ftp/python/3.13.4/python-3.13.4-embed-amd64.zip' '514ca14ec356ecb7749a7c0a1ef1eac9fd9c67d57af4812cb1f0822b0d3a85e8'
 $node = Get-PinnedFile 'node.exe' 'https://nodejs.org/dist/v22.16.0/win-x64/node.exe' 'c5ff4c736112dd483c750fd4149d30c8a116db1a49b8b3ec88be4b65e6c86c19'
 $nodeLicense = Get-PinnedFile 'NODE-LICENSE.txt' 'https://raw.githubusercontent.com/nodejs/node/v22.16.0/LICENSE' '1ae62e2015784ba438db7b04ebd33f3c4ff3efdb824c111c4ececd99945fd52d'
-$zstd = Join-Path $PSScriptRoot '.runtime\nup-python\zstandard'
+$zstd = Join-Path $PythonModules 'zstandard'
 if (!(Test-Path -LiteralPath $zstd)) { throw 'Prepare a dependência de build: python -m pip install --target .runtime/nup-python --only-binary=:all: --no-deps -r requirements-nup.txt' }
 $version = (Get-Content -LiteralPath (Join-Path $PSScriptRoot 'VERSION') -Raw).Trim()
 if ($version -notmatch '^\d+\.\d+\.\d+$') { throw 'VERSION invalida.' }
 $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
+& powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'Preparar-Kaihen.ps1') -Offline
+if ($LASTEXITCODE -ne 0) { throw 'O pacote kaiHEN não passou na conferência.' }
+& powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'Preparar-Fontes-Kaihen.ps1') -Offline
+if ($LASTEXITCODE -ne 0) { throw 'As fontes kaiHEN não passaram na conferência.' }
 $dist = if ($OutputRoot) { [IO.Path]::GetFullPath($OutputRoot) } else { Join-Path $PSScriptRoot 'dist' }
 $package = Join-Path $dist ("NS2ToolKit-v$version-portatil-win-x64-$stamp-" + [guid]::NewGuid().ToString('N').Substring(0,6))
 New-Item -ItemType Directory -Path $package -Force | Out-Null
@@ -28,6 +32,11 @@ $files = @(& git -C $PSScriptRoot ls-files --recurse-submodules)
 if ($LASTEXITCODE -ne 0) { throw 'Não foi possível ler os arquivos versionados.' }
 # Explicit new files also allow a local preview before committing the feature.
 $files += @('Painel-Nup.cs', 'Empacotar-Portatil.ps1', 'Testar-Portatil.ps1', 'docs/PORTATIL.md')
+$files += @('Painel-Kaihen.cs','painel-kaihen.cjs','Preparar-Kaihen.ps1','Testar-Kaihen.ps1','docs/KAIHEN.md','docs/ESTUDO-KAIHEN-OUNCE-DEVKIT.md','docs/CONTINUIDADE.md','docs/JOGOS-MODIFICADOS.md','docs/MODS-GBA.md')
+$files += @('integrations/kaihen/README.md','integrations/kaihen/runtime-manifest.json','painel-kaihen.test.cjs')
+$files += @('Preparar-Fontes-Kaihen.ps1','integrations/kaihen/source-manifest.json','integrations/kaihen/SOURCES.md')
+$kaihenManifest = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'integrations/kaihen/runtime-manifest.json') -Raw | ConvertFrom-Json
+$files += @($kaihenManifest.hostFiles.PSObject.Properties | ForEach-Object { 'integrations/kaihen/host/'+$_.Name })
 foreach ($relative in ($files | Sort-Object -Unique)) {
     if ($relative -match '(^|/)(\.git|\.runtime|runtime|runs|dumps|backups|saves-backups|exports|dist)(/|$)') { throw "Arquivo privado na lista de publicação: $relative" }
     $source = Join-Path $PSScriptRoot $relative
@@ -39,6 +48,14 @@ foreach ($relative in ($files | Sort-Object -Unique)) {
 foreach ($required in @('tools/OunceCake/ouncecake.cjs', 'tools/ns2-savekit/tools/lib/save-attr.cjs', 'tools/nup/tools/nup/nup/pack.py', 'engine/switch2/ro/payload/main', 'NS2 Assistente.exe')) {
     if (!(Test-Path -LiteralPath (Join-Path $package $required))) { throw "Dependência ausente: $required" }
 }
+Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'integrations/kaihen/runtime-manifest.json') -Destination (Join-Path $package 'integrations/kaihen/runtime-manifest.json') -Force
+Copy-Item -LiteralPath (Join-Path $PSScriptRoot '.runtime/kaihen-cache/package-20261114d') -Destination (Join-Path $package 'integrations/kaihen/payload') -Recurse
+$targetSource = Join-Path $package 'integrations/kaihen/sources'
+New-Item -ItemType Directory -Path $targetSource -Force | Out-Null
+$sourceManifest = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'integrations/kaihen/source-manifest.json') -Raw | ConvertFrom-Json
+foreach ($entry in $sourceManifest.entries) {
+    Copy-Item -LiteralPath (Join-Path $PSScriptRoot ('.runtime/kaihen-source-archives/'+$entry.file)) -Destination $targetSource
+}
 & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'Compilar-Painel.ps1') -OutputFolder $package
 if ($LASTEXITCODE -ne 0) { throw 'Falha na compilacao do assistente.' }
 $pythonDir = Join-Path $package 'runtime\python'
@@ -48,7 +65,7 @@ Expand-Archive -LiteralPath $python -DestinationPath $pythonDir
 # Isolated embedded interpreter: stdlib ZIP, its own extensions, and app source.
 @('python313.zip', '.', '..\..') | Set-Content -LiteralPath (Join-Path $pythonDir 'python313._pth') -Encoding ASCII
 Copy-Item -LiteralPath $zstd -Destination $pythonDir -Recurse
-Copy-Item -LiteralPath (Join-Path $PSScriptRoot '.runtime\nup-python\zstandard-0.25.0.dist-info') -Destination $pythonDir -Recurse
+Copy-Item -LiteralPath (Join-Path $PythonModules 'zstandard-0.25.0.dist-info') -Destination $pythonDir -Recurse
 Copy-Item -LiteralPath $node -Destination (Join-Path $nodeDir 'node.exe')
 Copy-Item -LiteralPath $nodeLicense -Destination (Join-Path $nodeDir 'LICENSE.txt')
 $embedded = Join-Path $pythonDir 'python.exe'
@@ -63,10 +80,14 @@ if ($LASTEXITCODE -ne 0) { throw 'Falha na validação do Python/compressor incl
 } | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $package 'portable-build.json') -Encoding UTF8
 & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $package 'Testar-Portatil.ps1')
 if ($LASTEXITCODE -ne 0) { throw 'Pacote não passou na validação portátil. ZIP não gerado.' }
+& (Join-Path $nodeDir 'node.exe') -e "require(process.argv[1]).verifyRuntime(process.argv[2]).then(()=>console.log('kaiHEN portátil conferido.')).catch(e=>{console.error(e);process.exitCode=1;})" (Join-Path $package 'painel-kaihen.cjs') $package
+if ($LASTEXITCODE -ne 0) { throw 'Falha na verificação kaiHEN do portátil.' }
+& powershell.exe -NoProfile -STA -ExecutionPolicy Bypass -File (Join-Path $package 'Testar-Kaihen.ps1') -Package $package
+if ($LASTEXITCODE -ne 0) { throw 'Falha no teste local da interface kaiHEN.' }
 # Hash actual distribution bytes, including expanded dependencies (not Git blobs).
 $releaseFiles = @(Get-ChildItem -LiteralPath $package -Recurse -File | Where-Object {
     $relative = $_.FullName.Substring($package.Length + 1).Replace('\','/')
-    $relative -notmatch '(^|/)__pycache__/|\.pyc$|^exports/'
+    $relative -notmatch '(^|/)(__pycache__|runs|dumps|\.runtime|exports|backups|saves-backups)/|\.pyc$'
 } | Sort-Object FullName)
 $hashLines = $releaseFiles | ForEach-Object {
     (Get-FileHash -LiteralPath $_.FullName).Hash.ToLowerInvariant() + '  ' + $_.FullName.Substring($package.Length + 1).Replace('\','/')

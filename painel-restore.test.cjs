@@ -39,6 +39,15 @@ async function fixture(t, options = {}) {
           s.handles.add(id); return {result:0,moves:[id]};
         }
         const object = objects.get(handle); assert.ok(object,'owned handle');
+        if (object.kind === 'file' && command === 3) {
+          assert.equal(input.length,8);
+          if (options.resizeFails) return {result:99};
+          const resized = Buffer.alloc(Number(input.readBigInt64LE()));
+          object.fs.data.get(object.name).copy(resized);
+          object.fs.data.set(object.name,resized);
+          if (options.resizeTimeout) throw Error('Resize timed out');
+          return {result:0};
+        }
         if (command === 10 && object.kind === 'fs') {
           if (options.commitFails) return {result:99};
           for (const [name,bytes] of object.data) live.set(name,Buffer.from(bytes));
@@ -91,6 +100,43 @@ test('restore snapshots live bytes first, commits once, reopens and verifies all
   const report = JSON.parse(await fs.readFile(result.reportPath)); assert.equal(report.complete,true); assert.equal(report.verified,true);
   await assert.rejects(restore.apply({...f,...plan,confirmed:true}),/já foi executado/);
 });
+
+test('existing destination can grow, shrink or become empty; pre-backup retains every original byte',async t => {
+  for (const size of [2,32,0]) {
+    const f = await fixture(t), current = Buffer.alloc(size,7);
+    f.live.set('/FireRed_e.sav',current);
+    const plan = await f.prepare();
+    assert.equal(plan.files[0].beforeSize,size);
+    assert.deepEqual(await fs.readFile(path.join(plan.backupFolder,'data/FireRed_e.sav')),current);
+    const result = await restore.apply({...f,...plan,confirmed:true});
+    assert.deepEqual(f.live.get('/FireRed_e.sav'),f.edited);
+    assert.deepEqual(f.live.get('/transaction.sav'),f.untouched);
+    assert.equal(f.calls.filter(c=>c.command===3).length,1);
+    assert.equal(f.calls.filter(c=>c.command===10).length,1);
+    assert.equal(JSON.parse(await fs.readFile(result.reportPath)).complete,true);
+  }
+});
+
+test('resize failure or timeout records mutation intent, never retries or commits, and preserves pre-backup',async t => {
+  for (const options of [{resizeFails:true},{resizeTimeout:true}]) {
+    const f = await fixture(t,options), current=Buffer.alloc(2,7);
+    f.live.set('/FireRed_e.sav',current);
+    const plan=await f.prepare();
+    await assert.rejects(restore.apply({...f,...plan,confirmed:true}),e=>e.writesStarted);
+    assert.equal(f.calls.filter(c=>c.command===3).length,1);
+    assert.equal(f.calls.filter(c=>c.command===10).length,0);
+    assert.deepEqual(await fs.readFile(path.join(plan.backupFolder,'data/FireRed_e.sav')),current);
+  }
+});
+
+test('resize plans refuse changed destination sizes and missing files before mutation',async t => {
+  const f=await fixture(t);f.live.set('/FireRed_e.sav',Buffer.alloc(2));
+  const plan=await f.prepare();f.live.set('/FireRed_e.sav',Buffer.alloc(3));
+  await assert.rejects(restore.apply({...f,...plan,confirmed:true}),e=>e.restoreRefusal && !e.writesStarted);
+  assert.equal(f.calls.filter(c=>c.command===3).length,0);
+  f.live.delete('/FireRed_e.sav');
+  await assert.rejects(f.prepare(),/Arquivo ausente no console/);
+});
 test('confirmation, plan hash, payload and original pre-backup integrity are required before attaching for write',async t => {
   const f = await fixture(t), plan = await f.prepare();
   await assert.rejects(restore.apply({...f,...plan,confirmed:false}),/confirmação/);
@@ -129,15 +175,28 @@ test('bad upload hash stops before a file write and missing confirmation never a
   await assert.rejects(restore.apply({...f,...plan,confirmed:true}),/envio do bloco/);
   assert.equal(f.writing,0); assert.equal(f.calls.filter(c=>c.command===10).length,0);
 });
-test('backup paths, nested preparation inside source, resized edits and identity mismatch are rejected',async t => {
+test('backup paths and nested preparation inside source are rejected; resized edits are identified',async t => {
   const f = await fixture(t);
   await assert.rejects(restore.prepare({...f,parent:path.join(f.source,'.hidden'),selected:['/FireRed_e.sav'],allowEdited:true}),/fora do backup/);
   await fs.writeFile(path.join(f.source,'data/FireRed_e.sav'),Buffer.from('wrong size'));
-  await assert.rejects(restore.inspect(f.source),/tamanho original/);
+  const inspected=await restore.inspect(f.source);
+  assert.equal(inspected.files[0].size,10); assert.equal(inspected.files[0].originalSize,f.old.length);
+  assert.equal(inspected.files[0].edited,true);
   await fs.writeFile(path.join(f.source,'data/FireRed_e.sav'),f.edited);
   const file = path.join(f.source,'manifest.json'), m = JSON.parse(await fs.readFile(file));
   m.entries[0].local = '../outside'; await fs.writeFile(file,JSON.stringify(m));
   await assert.rejects(restore.inspect(f.source),/Entrada de backup/);
+});
+
+test('edited local save may grow, shrink or be empty without changing its original manifest',async t => {
+  for(const size of [0,2,32]) {
+    const f=await fixture(t),bytes=Buffer.alloc(size,9),manifest=await fs.readFile(path.join(f.source,'manifest.json'));
+    await fs.writeFile(path.join(f.source,'data/FireRed_e.sav'),bytes);
+    const plan=await f.prepare();
+    await restore.apply({...f,...plan,confirmed:true});
+    assert.deepEqual(f.live.get('/FireRed_e.sav'),bytes);
+    assert.deepEqual(await fs.readFile(path.join(f.source,'manifest.json')),manifest);
+  }
 });
 test('modified pre-backup data and a different session are refused before native write access',async t => {
   const f = await fixture(t), plan = await f.prepare(), otherRun = path.join(f.root,'other-run'); await fs.mkdir(otherRun);

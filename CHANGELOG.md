@@ -1,5 +1,15 @@
 # Histórico de versões
 
+## 0.1.9 — 15 de novembro de 2026
+
+- Adiciona **Homebrew / kaiHEN** à janela principal, com aquisição própria, host isolado e pacote oficial kaiHEN 20261114d verificado. Inclui hbmenu e OunceShell; não exige compiladores no PC de uso.
+- Ativação e abertura do hbmenu confirmadas no console. Execução de homebrews pelo launcher e Netloader continuam em validação; não há conversão automática de NROs de Switch 1.
+- Remove a exigência de tamanhos iguais na restauração de saves existentes, tanto no console quanto para arquivos locais editados. Mantém pré-backup automático, plano confirmado, ajuste de tamanho, commit e releitura integral.
+- Recuperação do FireRed após save do Zelda: 8 KiB → 128 KiB, com gravação, integridade e carregamento no jogo confirmados. Não cria nem remove arquivos de save.
+- Documenta o fluxo manual validado de mods GBA e preserva o assistente GBA como aplicativo separado, ainda em teste. Não integra mods GBA à janela de backups.
+- Inclui fontes, revisões, receitas de compilação e licenças dos componentes kaiHEN no portátil.
+- Reúne a opção experimental de sobrescrita de arquivos comuns do SD desenvolvida na 0.1.8; permanece desativada por padrão, com pré-backup e sem escrita nas vistas Jogos/Saves/Interno do FTP.
+
 ## 0.1.8 — build de teste, escrita no console pendente
 
 - Adiciona opção separada para substituir arquivos comuns do SD, desativada por padrão e disponível somente com envio habilitado.

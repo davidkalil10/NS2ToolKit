@@ -36,6 +36,14 @@ O snapshot de origem não continha uma licença de projeto no diretório raiz. E
 
 [python-zstandard](https://github.com/indygreg/python-zstandard), por Gregory Szorc e contribuidores, é uma dependência preparada separadamente no desenvolvimento e incluída na build portátil em versão fixada (`0.25.0`), sob BSD-3-Clause. Ela utiliza [Zstandard](https://github.com/meta/zstd). As licenças, copyrights e avisos presentes no pacote instalado devem ser preservados ao redistribuir essa dependência. A pasta privada `.runtime/` não é publicada neste repositório.
 
+## Integração kaiHEN na build local 0.1.9
+
+`integrations/kaihen/host/` preserva o host do fork [kurumuz/ns2jb](https://gitlab.com/kurumuz/ns2jb), revisão `28f03b5895e5569d8fbc35cbed84906b8f0a65b2`, separado do engine original. Os patches Windows e a origem estão documentados no README dessa pasta. Não se atribui uma licença nova à base de origem.
+
+O portátil inclui a release [kaiHEN 20261114d](https://github.com/ouncebrew/kaihen/releases/tag/20261114d), revisão `5ac772560698b325551db014478a5a43e941474c`, com hash do arquivo oficial conferido. kaiHEN declara GPL-2.0-only com sua exceção; libkaihen é ISC. O pacote agrega ounce-hbloader, ounce-hbmenu e OunceShell/ftpd, com licenças e revisões indicadas no Dockerfile e na release. As licenças originais são copiadas com o payload; fontes dos componentes, bibliotecas do SDK e receitas/patches de compilação acompanham a build em `integrations/kaihen/sources/`, com revisões e hashes em `source-manifest.json`. Inclui OunceShell GPL-3.0, kaiHEN GPL-2.0, libconfig LGPL-2.1 e seus caminhos de recompilação; os demais componentes mantêm suas licenças originais. Consulte [fontes e reconstrução](integrations/kaihen/SOURCES.md).
+
+ounce-devkit foi estudado para futuros ports; o compilador/SDK não é instalado nem distribuído pelo modo homebrew do assistente. A frente Mods GBA também permanece separada do runtime kaiHEN.
+
 ## Referências sem código incorporado
 
 ezBasic foi utilizado no preparo inicial do console. IZ2S Platform, HBLauncher/SDK e ftpd-sb foram consultados para recuperação e estudo de funcionalidades. Seus repositórios são vinculados no README; essas referências não anunciam integração nem transferem autoria ao NS2ToolKit.

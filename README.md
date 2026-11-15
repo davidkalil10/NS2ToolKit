@@ -17,7 +17,9 @@ O pacote inclui Node, Python, compressão e as DLLs necessárias. Não é precis
 - **Arquivos / FTP** com Montar/Desmontar, navegação no Explorer e envio opcional de arquivos novos ao SD.
 - Pastas virtuais **Jogos** e **Saves**, com nome e ID, somente leitura e abertura sob demanda. Leitura e desmontagem validadas no FireRed.
 - Geração de NUP com detecção automática de backup TAR ou pasta copiada pelo FTP, conferência da origem e verificação integral do pacote.
-- Build de teste 0.1.8: substituição opcional de arquivos comuns do SD com cópia anterior no PC e verificação. Validação no console pendente; a release pública 0.1.7 mantém a sobrescrita desativada.
+- Substituição opcional de arquivos comuns do SD com cópia anterior no PC e verificação, desativada por padrão. A escrita nesse modo continua experimental; Jogos, Saves e Interno permanecem somente leitura no FTP.
+- Aplicativo separado de teste **NS2 Mods GBA** para preparar/enviar/ativar mods a partir do NUP da ferramenta GBA. Zelda abriu no console pelo fluxo manual; a nova automação aguarda validação. [Processo completo](docs/MODS-GBA.md).
+- **Homebrew / kaiHEN** na janela principal, com hbmenu e OunceShell incluídos. O modo abre uma aquisição própria; abertura do hbmenu validada no console em 15/11/2026. Execução de homebrews e Netloader ainda em validação. [Instruções](docs/KAIHEN.md).
 - Pastas com **Nome do jogo [ID]**, registros de execução e preservação de operações incompletas.
 
 ## Configuração compatível
@@ -75,7 +77,7 @@ As pastas usam **Nome do jogo [ID]**. Repetições recebem `(2)`, `(3)` e assim 
 
 O destino dos saves é lembrado separadamente do destino dos jogos. As preferências ficam em `%LOCALAPPDATA%/NS2ToolKit/settings.json`.
 
-A leitura confere os blocos no console, calcula hashes locais, relê os arquivos no PC e verifica novamente a estrutura. O manifesto só indica conclusão após a limpeza dos recursos. **Restaurar save** permite selecionar a pasta e o jogo/usuário lido do console; cria um pré-backup automático e pede confirmação antes da escrita. Aceita arquivos existentes do mesmo tamanho, até 16 MiB por arquivo e 64 MiB no conjunto, com no máximo 256 arquivos. O fluxo foi validado no FireRed; a aceitação de saves editados por outros jogos exige teste próprio. Consulte [escopo e verificação dos saves](docs/SAVES.md).
+A leitura confere os blocos no console, calcula hashes locais, relê os arquivos no PC e verifica novamente a estrutura. O manifesto só indica conclusão após a limpeza dos recursos. **Restaurar save** permite selecionar a pasta e o jogo/usuário lido do console; cria um pré-backup automático e pede confirmação antes da escrita. Aceita arquivos existentes, incluindo arquivos locais editados com tamanho diferente do manifesto, ajustando o tamanho do destino ao arquivo selecionado, até 16 MiB por arquivo e 64 MiB no conjunto, com no máximo 256 arquivos. O fluxo foi validado no FireRed; a aceitação de saves editados por outros jogos exige teste próprio. Consulte [escopo e verificação dos saves](docs/SAVES.md).
 
 ## Gerar NUP
 
@@ -92,9 +94,11 @@ O pacote e sua pasta usam **Nome do jogo [ID]**. O relatório `build-report.json
 
 A aquisição do FS depende de temporização e pode falhar. Algumas combinações de conteúdo também apresentam falhas de preparação no OunceCake. Após uma falha que invalide a sessão, preserve os registros em `runs/`, encerre a conexão e reinicie o console antes de tentar novamente. O assistente bloqueia repetições quando a limpeza não está confirmada. Uma recusa conhecida de conteúdo permite escolher outro jogo após confirmação da limpeza e verificação dos endpoints; timeouts e falhas desconhecidas ainda exigem uma sessão nova.
 
-O backup de jogos não inclui saves ou chaves e não gera imagens NSP/XCI instaláveis. O FTP mantém o armazenamento interno somente leitura e permite apenas criação no SD quando habilitada; veja [uso e limitações](docs/FTP.md). HBLauncher ainda não está integrado. A restauração de saves não cria nem apaga arquivos e exige o mesmo jogo/usuário e arquivos do mesmo tamanho. O acesso ao console é temporário e depende do PC e do SmileBASIC em execução. Use seus próprios jogos e console.
+O backup de jogos não inclui saves ou chaves e não gera imagens NSP/XCI instaláveis. O FTP mantém o armazenamento interno somente leitura; veja [uso e limitações](docs/FTP.md). A versão 0.1.9 inclui o modo kaiHEN, com aquisição própria e abertura do launcher validada no console. A restauração de saves não cria nem apaga arquivos e exige o mesmo jogo/usuário. O destino pode ser redimensionado ao tamanho do arquivo local selecionado. Os módulos de backup dependem do PC/SmileBASIC ativos; o HEN usa outro ciclo de vida, descrito no [guia de homebrew](docs/KAIHEN.md). Use seus próprios jogos e console.
 
 Consulte [incidentes conhecidos](docs/INCIDENTES.md), [compatibilidade](docs/COMPATIBILIDADE.md), [roadmap](docs/ROADMAP.md) e o [índice da documentação](docs/README.md).
+
+Para retomar o desenvolvimento, consulte o [documento de continuidade técnica](docs/CONTINUIDADE.md), com arquitetura, estado dos experimentos, limites e próximos passos.
 
 ## Perfis experimentais em desenvolvimento
 

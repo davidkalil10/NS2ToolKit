@@ -4,6 +4,11 @@ Este diretório registra evidências, decisões e trabalho planejado. Uma funç�
 
 | Documento | Finalidade |
 | --- | --- |
+| [Continuidade técnica — começar aqui](CONTINUIDADE.md) | Arquitetura, funções, estado local/publicado, teste Zelda, comandos e próximos passos para retomar o desenvolvimento |
+| [Aplicar jogos modificados](JOGOS-MODIFICADOS.md) | Caso Zelda sobre FireRed, loader experimental, correção Windows e roteiro de teste |
+| [Mods GBA a partir de NUP](MODS-GBA.md) | Abertura do Zelda confirmada, processo completo e novo aplicativo separado para preparar/enviar/ativar mods |
+| [Estudo kaiHEN e ounce-devkit](ESTUDO-KAIHEN-OUNCE-DEVKIT.md) | Ambiente residente, launcher, persistência por boot, compilação de ports e requisitos de integração |
+| [Homebrew / kaiHEN no toolkit](KAIHEN.md) | Modo integrado ao assistente principal, OunceShell de teste e roteiro para validar no console |
 | [Checkpoint de 05/11/2026](CHECKPOINT-2026-11-05.md) | Configuração e resultados do primeiro checkpoint funcional |
 | [Aprendizados](APRENDIZADOS.md) | O que foi observado, o que isso permite concluir e o que permanece incerto |
 | [Incidentes](INCIDENTES.md) | Falhas conhecidas, diagnóstico e recuperação |

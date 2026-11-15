@@ -56,7 +56,7 @@ archive = dict(id='7', space=1, type=1, rank=0, index=0, title='0100000000000000
     & $python $fixtureFile $backup
     if ($LASTEXITCODE -ne 0) { throw 'Python incluído não conseguiu preparar a amostra.' }
     $source = ''
-    foreach ($file in @('Painel-NS2.cs','Painel-Backup.cs','Painel-Nup.cs','Painel-Restore.cs','Painel-Ftp.cs')) {
+    foreach ($file in @('Painel-NS2.cs','Painel-Backup.cs','Painel-Nup.cs','Painel-Restore.cs','Painel-Ftp.cs','Painel-Kaihen.cs')) {
         $source += Get-Content -LiteralPath (Join-Path $PSScriptRoot $file) -Raw -Encoding UTF8
         $source += "`n"
     }
