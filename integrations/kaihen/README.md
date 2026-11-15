@@ -4,6 +4,8 @@ Snapshot do fork kurumuz/ns2jb, revisão `28f03b5895e5569d8fbc35cbed84906b8f0a65
 
 Patches locais: endpoint Windows named pipe, escrita atômica de relatórios (`atomic-file.cjs`) e `NS2_WORKSPACE` para manter as sessões em `runs` do aplicativo. `painel-kaihen.cjs` coordena o host real; não usa a mensagem de deploy da branch de testes como prova de execução.
 
+Na versão 0.1.10, `test-gate.cjs` exporta `main` para chamada aguardada sem executar uma operação nativa no import. O adaptador `package.cjs` foi incorporado também ao endpoint FS original, junto de seu encaminhamento explícito e anúncio de capacidade. `painel-kaihen-held.cjs` usa esses comandos para a transição de uma conexão 4/4 já aberta. Os clientes do host e provas são copiados para uma pasta privada da sessão; o endpoint ativo não é sobrescrito. A transição pela conexão mantida e a abertura do hbmenu foram confirmadas no console em 15/11/2026.
+
 Payloads da release oficial kaiHEN 20261114d ficam no cache privado durante o desenvolvimento e em `payload/` no pacote portátil. `Preparar-Kaihen.ps1` verifica o ZIP e o conteúdo extraído antes de gerar `runtime-manifest.json`. Binários não são baixados durante a ativação. Fontes kaiHEN e licenças acompanham a build; preservar as atribuições dos demais componentes indicados na release.
 
 Este modo tem lifecycle próprio: após HEN confirmado, fechar SmileBASIC mantendo o host até a desconexão. Não aplicar o encerramento do modo de backups ao estágio de inicialização do HEN. Detalhes em `docs/KAIHEN.md`.

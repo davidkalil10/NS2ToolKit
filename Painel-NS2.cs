@@ -123,6 +123,7 @@ namespace NS2Panel {
         private bool stopping;
         private bool cleaning;
         private bool backupFailed;
+        private bool homebrewTransition;
 
         public MainWindow(string folder) {
             root = folder;
@@ -196,17 +197,18 @@ namespace NS2Panel {
             nup.Click += delegate { using (var dialog = new NupWindow(root)) dialog.ShowDialog(this); }; footer.Controls.Add(nup);
             ftp.Text = "Arquivos / FTP"; ftp.SetBounds(617,8,165,31); ftp.Enabled=false;
             ftp.Click += delegate {using(var dialog=new FtpWindow(root,progress.Folder)){dialog.ShowDialog(this);if(dialog.RequiresRestart)backupFailed=true;}}; footer.Controls.Add(ftp);
-            homebrew.Text="Homebrew / kaiHEN";homebrew.SetBounds(0,46,190,31);
+            homebrew.Text="Ativar Homebrew";homebrew.SetBounds(0,46,190,31);homebrew.Enabled=false;
             homebrew.Click+=delegate {
-                if(runner!=null&&runner.Alive)return;
+                if(runner==null||!runner.Alive||progress.State!=RunState.Held||homebrewTransition)return;
                 var choice=addresses.SelectedItem as AddressChoice;if(choice==null){MessageBox.Show(this,"Conecte o PC à rede do console e selecione o endereço.");return;}
-                using(var dialog=new KaihenWindow(root,choice.Address)){
-                    dialog.ShowDialog(this);prepared.Checked=false;
-                    if(dialog.SessionFolder!=null)progress=new RunProgress{Folder=dialog.SessionFolder};
+                homebrewTransition=true;
+                using(var dialog=new KaihenWindow(root,choice.Address,null,progress.Folder)){
+                    dialog.ShowDialog(this);homebrewTransition=dialog.RequiresRestart||dialog.ReadyForGame;
                     if(dialog.ReadyForGame){status.Text="kaiHEN iniciado • teste o hbmenu e o OunceShell no console";detail.Text="Abra um jogo nativo de Switch 2 segurando R. Para voltar ao modo de backups, reinicie o console.";}
+                    else if(dialog.RequiresRestart){status.Text="Transição homebrew interrompida • reinicie o console";detail.Text="Preserve os registros. Feche SmileBASIC e reinicie antes de outra tentativa.";}
                 }
             };footer.Controls.Add(homebrew);
-            footer.Controls.Add(new Label{Text="Modo exclusivo para iniciar o launcher e testar homebrews.",AutoSize=true,Location=new Point(205,53)});
+            footer.Controls.Add(new Label{Text="Conecte pela tela inicial. Após 4/4, ative o launcher com orientações na tela.",AutoSize=true,Location=new Point(205,53)});
             layout.Controls.Add(footer);
             LoadAddresses();
             timer.Interval = 150; timer.Tick += Poll; timer.Start();
@@ -239,7 +241,7 @@ namespace NS2Panel {
                 string node = Checks.FindNode(root);
                 Checks.CheckNode(node, root);
                 if (runner != null) runner.Dispose();
-                runner = new Runner(); progress = new RunProgress(); stopping = false; cleaning = false; backupFailed = false;
+                runner = new Runner(); progress = new RunProgress(); stopping = false; cleaning = false; backupFailed = false; homebrewTransition=false;
                 output.Clear(); bar.Value = 0;
                 commands[3].Text = "Aguardando o programa iniciar...";
                 foreach (var button in copy) button.Enabled = false;
@@ -259,13 +261,15 @@ namespace NS2Panel {
             }
             if (progress.StartCommand != null) commands[3].Text = progress.StartCommand;
             bar.Value = progress.Stage;
-            backup.Enabled = progress.State == RunState.Held && !cleaning && !stopping && !backupFailed && runner.Alive;
+            backup.Enabled = progress.State == RunState.Held && !cleaning && !stopping && !backupFailed && !homebrewTransition && runner.Alive;
             saves.Enabled = backup.Enabled;
             ftp.Enabled = backup.Enabled;
+            homebrew.Enabled=backup.Enabled;
+            stop.Enabled=!homebrewTransition&&!cleaning&&!stopping;
             stop.Text = progress.State == RunState.Held ? "Encerrar conexão" : "Interromper";
             bool waiting = progress.State == RunState.Waiting;
             foreach (var button in copy) button.Enabled = waiting;
-            if (!stopping) {
+            if (!stopping&&!homebrewTransition) {
                 if (waiting) { status.Text = "PC pronto • siga os quatro comandos no Switch"; detail.Text = "Se o Windows solicitar acesso à rede, permita na sua rede privada. Não desative o firewall."; }
                 else if (progress.State == RunState.Running) { status.Text = "Etapa " + progress.Stage + " de 4 • trabalhando no console"; detail.Text = "Mantenha o SmileBASIC aberto e aguarde. Não digite outros comandos."; }
                 else if (progress.State == RunState.Held) { status.Text = "4/4 confirmado • conexão mantida aberta"; detail.Text = "Ferramentas compatíveis podem usar esta sessão. Deixe o PC e o SmileBASIC ligados."; }
@@ -277,12 +281,13 @@ namespace NS2Panel {
             foreach (string line in runner.Drain()) { output.AppendText(line + Environment.NewLine); progress.Accept(line); }
             if (!stopping) progress.Finish(runner.ExitCode);
             start.Enabled = true; stop.Enabled = false; addresses.Enabled = held.Enabled = prepared.Enabled = true; prepared.Checked = false;
-            homebrew.Enabled=true;
+            homebrew.Enabled=false;
             foreach (var button in copy) button.Enabled = false;
             backup.Enabled = false;
             saves.Enabled = false;
             ftp.Enabled = false;
-            if (stopping) { status.Text = "Tentativa interrompida • reinicie o console"; detail.Text = "A limpeza não foi confirmada. Reinicie completamente antes de tentar outra vez."; }
+            if(homebrewTransition){status.Text="Conexão do SmileBASIC encerrada • acompanhe as orientações do homebrew";detail.Text="Após a confirmação do kaiHEN, abra um jogo nativo de Switch 2 segurando R. Reinicie para voltar aos backups.";}
+            else if (stopping) { status.Text = "Tentativa interrompida • reinicie o console"; detail.Text = "A limpeza não foi confirmada. Reinicie completamente antes de tentar outra vez."; }
             else if (progress.State == RunState.Verified) { status.Text = "Sucesso • 4/4 verificado e limpeza concluída"; detail.Text = "A demonstração terminou e fechou a conexão. Reinicie o console para finalizar."; }
             else { status.Text = "Sessão encerrada • confira os registros e reinicie o console"; detail.Text = "RPC STOP no Switch não comprova sucesso. O resultado depende das verificações do PC."; }
             SaveTranscript();
@@ -319,6 +324,7 @@ namespace NS2Panel {
         }
 
         private void HandleFormClosing(object sender, FormClosingEventArgs args) {
+            if(homebrewTransition&&runner!=null&&runner.Alive){args.Cancel=true;MessageBox.Show(this,"Feche SmileBASIC no console e aguarde o encerramento da conexão. Preserve esta janela enquanto o homebrew está sendo ativado.","Ativação de homebrew");return;}
             if (runner != null && runner.Alive) {
                 if (MessageBox.Show(this, "Há uma sessão em andamento. Fechar interrompe a execução e exige reiniciar o Switch 2. Deseja fechar?", "Sessão em andamento", MessageBoxButtons.YesNo) != DialogResult.Yes) { args.Cancel = true; return; }
                 runner.Stop(); SaveTranscript();

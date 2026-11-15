@@ -1,5 +1,14 @@
 # Histórico de versões
 
+## 0.1.10 — 15 de novembro de 2026
+
+- Centraliza a conexão na tela inicial. **Ativar Homebrew** fica disponível após 4/4 mantido e usa a mesma sessão, sem pedir LOAD/RUN/REMOVE/START novamente.
+- Preserva a janela guiada: aguardar HEN, orientar o fechamento de SmileBASIC sem reiniciar, aguardar o encerramento do host e explicar a abertura de um jogo nativo de Switch 2 com R para entrar no hbmenu.
+- Adiciona transição exclusiva FS → frontend RO kaiHEN → HEN, com verificação de capacidade, trava compartilhada, PID do RO anterior, releitura do pacote e verificação nativa do bootstrap. Requer uma conexão nova aberta por esta build.
+- Conserva o mecanismo de aquisição FS anterior, acrescentando ao endpoint os comandos de pacotes/arquivos do fork kaiHEN. Transição pela mesma conexão 4/4 e abertura posterior do hbmenu confirmadas no console.
+- Corrige a leitura da prova FS: valida restauração nas duas tentativas do registro detalhado, eliminando o bloqueio incorreto antes da ativação.
+- Mantém o registro de falhas de limpeza após fechar o SmileBASIC; a sessão ativada não pode voltar a backups ou FTP antes de reiniciar.
+
 ## 0.1.9 — 15 de novembro de 2026
 
 - Adiciona **Homebrew / kaiHEN** à janela principal, com aquisição própria, host isolado e pacote oficial kaiHEN 20261114d verificado. Inclui hbmenu e OunceShell; não exige compiladores no PC de uso.

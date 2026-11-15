@@ -19,7 +19,8 @@ O pacote inclui Node, Python, compressão e as DLLs necessárias. Não é precis
 - Geração de NUP com detecção automática de backup TAR ou pasta copiada pelo FTP, conferência da origem e verificação integral do pacote.
 - Substituição opcional de arquivos comuns do SD com cópia anterior no PC e verificação, desativada por padrão. A escrita nesse modo continua experimental; Jogos, Saves e Interno permanecem somente leitura no FTP.
 - Aplicativo separado de teste **NS2 Mods GBA** para preparar/enviar/ativar mods a partir do NUP da ferramenta GBA. Zelda abriu no console pelo fluxo manual; a nova automação aguarda validação. [Processo completo](docs/MODS-GBA.md).
-- **Homebrew / kaiHEN** na janela principal, com hbmenu e OunceShell incluídos. O modo abre uma aquisição própria; abertura do hbmenu validada no console em 15/11/2026. Execução de homebrews e Netloader ainda em validação. [Instruções](docs/KAIHEN.md).
+- **Homebrew / kaiHEN** com hbmenu e OunceShell incluídos. Ativação pela conexão 4/4 e abertura do hbmenu validadas no console em 15/11/2026. [Instruções](docs/KAIHEN.md).
+- **Ativar Homebrew** usa a conexão 4/4 da tela inicial, sem repetir os comandos. As mensagens guiadas orientam quando fechar o SmileBASIC e como abrir o hbmenu.
 - Pastas com **Nome do jogo [ID]**, registros de execução e preservação de operações incompletas.
 
 ## Configuração compatível
@@ -94,7 +95,7 @@ O pacote e sua pasta usam **Nome do jogo [ID]**. O relatório `build-report.json
 
 A aquisição do FS depende de temporização e pode falhar. Algumas combinações de conteúdo também apresentam falhas de preparação no OunceCake. Após uma falha que invalide a sessão, preserve os registros em `runs/`, encerre a conexão e reinicie o console antes de tentar novamente. O assistente bloqueia repetições quando a limpeza não está confirmada. Uma recusa conhecida de conteúdo permite escolher outro jogo após confirmação da limpeza e verificação dos endpoints; timeouts e falhas desconhecidas ainda exigem uma sessão nova.
 
-O backup de jogos não inclui saves ou chaves e não gera imagens NSP/XCI instaláveis. O FTP mantém o armazenamento interno somente leitura; veja [uso e limitações](docs/FTP.md). A versão 0.1.9 inclui o modo kaiHEN, com aquisição própria e abertura do launcher validada no console. A restauração de saves não cria nem apaga arquivos e exige o mesmo jogo/usuário. O destino pode ser redimensionado ao tamanho do arquivo local selecionado. Os módulos de backup dependem do PC/SmileBASIC ativos; o HEN usa outro ciclo de vida, descrito no [guia de homebrew](docs/KAIHEN.md). Use seus próprios jogos e console.
+O backup de jogos não inclui saves ou chaves e não gera imagens NSP/XCI instaláveis. O FTP mantém o armazenamento interno somente leitura; veja [uso e limitações](docs/FTP.md). A versão 0.1.10 ativa kaiHEN pela conexão 4/4 mantida aberta e orienta a abertura do hbmenu, com fluxo validado no console. A restauração de saves não cria nem apaga arquivos e exige o mesmo jogo/usuário. O destino pode ser redimensionado ao tamanho do arquivo local selecionado. Os módulos de backup dependem do PC/SmileBASIC ativos; o HEN usa outro ciclo de vida, descrito no [guia de homebrew](docs/KAIHEN.md). Use seus próprios jogos e console.
 
 Consulte [incidentes conhecidos](docs/INCIDENTES.md), [compatibilidade](docs/COMPATIBILIDADE.md), [roadmap](docs/ROADMAP.md) e o [índice da documentação](docs/README.md).
 

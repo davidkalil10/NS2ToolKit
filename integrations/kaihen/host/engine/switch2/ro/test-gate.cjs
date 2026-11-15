@@ -53,5 +53,7 @@ async function main() {
   result.closed = await memory.request({command: 'root-native-close-handle', handle: copy.handle});
   await save();
   console.log(JSON.stringify({file, verified: result.verified, restored: result.restored, attempts: gate.steps.map(s => s.attempts.length)}));
+  return {file, ...result};
 }
-main().catch(e => { console.error(e.stack); process.exitCode = 1; });
+module.exports = {main};
+if (require.main === module) main().catch(e => { console.error(e.stack); process.exitCode = 1; });

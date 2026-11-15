@@ -122,7 +122,7 @@
                       "engine/switch2/ro/sdk-thread.cjs":  "45657c0520e9cf1a020b0f6401d255d59d40ff214de3c55d3557101d6656b949",
                       "engine/switch2/ro/stage-image.cjs":  "6db50df9b9045c540244978bff5183fe80ad2aa2afe4704e5b1bd96d70afafaf",
                       "engine/switch2/ro/start-hen.cjs":  "943b66252d445e23435794a26e345308fc9b4b91898ab4b5448293e45490836e",
-                      "engine/switch2/ro/test-gate.cjs":  "4f02737a568fb299d8aaa766860ee6731b942edac5db6d06149e92d3616ae88a",
+                      "engine/switch2/ro/test-gate.cjs":  "01f4d887b459908badde32a34020f63f81009c8ea36f60c4cfab33aa3ebf0448",
                       "engine/switch2/ro/test-sm.cjs":  "62b4c640d53fb2ec5d5e3de61eea4234baedcfae70c7df1693fd3a1265961684",
                       "engine/switch2/ro/worker-control.cjs":  "8490f2afd850de2329ba4b9747c6be8fe39b9225824faeb9453f9272a4927f59",
                       "engine/switch2/tools/endpoint.cjs":  "8319180e9189d560e2aaadea500fbf6e60b459e3e1844c0aac9d41b28be9e4c8",

@@ -32,7 +32,9 @@ async function lockSession(run, operation) {
   }
   try {await handle.writeFile(JSON.stringify({pid: process.pid, operation, at: new Date().toISOString()}));}
   catch (error) {await handle.close(); await fs.unlink(file); throw error;}
-  return async () => {await handle.close(); await fs.unlink(file);};
+  const unlock = async () => {await handle.close(); await fs.unlink(file);};
+  unlock.retain = async () => {await handle.close();};
+  return unlock;
 }
 
 async function invalidateSession(run, reason) {

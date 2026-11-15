@@ -17,7 +17,7 @@ async function dispatch(context, request) {
     await save();
   }
   const command = request.command.slice('root-native-'.length);
-  if (command === 'info') return state;
+  if (command === 'info') return {...state, toolkitCapabilities: ['kaihen-transition-v1']};
   check(await s.ready(), 'Current native bridge is not ready');
   if (command === 'pm-exceptions') {
     const handle = state.services.find(item => item.name === 'pm:dmnt')?.handle;
@@ -53,6 +53,8 @@ async function dispatch(context, request) {
     state.calls.push(entry); await save();
     return entry;
   }
+  if (command === 'file-stage' || command === 'file-delete' || command.startsWith('package-'))
+    return require('./package.cjs').dispatch(context, request, state, domain);
   if (command.startsWith('code-') || command.startsWith('file-') || command.startsWith('donor-'))
     return require("./files.cjs").dispatch(context, request, state, domain);
   if (command === 'ncm-list-system')

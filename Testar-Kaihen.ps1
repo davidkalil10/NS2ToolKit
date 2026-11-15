@@ -40,5 +40,15 @@ try{
 }finally{$taskWindow.Close();$taskWindow.Dispose()}
 # The entry point must be present on the main backup/FTP assistant.
 $taskMain=[Activator]::CreateInstance($taskAssembly.GetType('NS2Panel.MainWindow'),@($Package))
-try{if((TaskGet $taskMain 'homebrew').Text -ne 'Homebrew / kaiHEN'){throw 'Entrada kaiHEN ausente do toolkit principal.'}}finally{$taskMain.Dispose()}
+try{if((TaskGet $taskMain 'homebrew').Text -ne 'Ativar Homebrew'){throw 'Entrada kaiHEN ausente do toolkit principal.'};if((TaskGet $taskMain 'homebrew').Enabled){throw 'Ativação disponível antes de conectar.'}}finally{$taskMain.Dispose()}
+$taskWindow=[Activator]::CreateInstance($taskAssembly.GetType('NS2Panel.KaihenWindow'),[object[]]@([string]$Package,[string]'192.0.2.1',[string]$taskSuccess,[string]$taskFixture))
+try{
+    TaskShow $taskWindow
+    foreach($taskField in (TaskGet $taskWindow 'commands')){if($taskField.Visible){throw 'A janela de sessão ativa repetiu os comandos de conexão.'}}
+    if((TaskGet $taskWindow 'status').Text -notmatch '4/4'){throw 'A conexão existente não foi identificada.'}
+    $taskWindow.GetType().GetMethod('Start',$taskFlags).Invoke($taskWindow,@())|Out-Null;TaskPump $taskWindow
+    if(-not $taskWindow.ReadyForGame){throw 'A ativação com sessão existente não foi reconhecida.'}
+    if((TaskGet $taskWindow 'guide').Text -notmatch 'OunceShell'){throw 'As instruções guiadas foram perdidas.'}
+    if($Screenshot){$taskImage=New-Object Drawing.Bitmap($taskWindow.Width,$taskWindow.Height);try{$taskWindow.DrawToBitmap($taskImage,(New-Object Drawing.Rectangle(0,0,$taskWindow.Width,$taskWindow.Height)));$taskImage.Save($Screenshot)}finally{$taskImage.Dispose()}}
+}finally{$taskWindow.Close();$taskWindow.Dispose()}
 Write-Output 'Interface kaiHEN integrada ao painel principal: conclusão, falha e instruções validadas sem console.'

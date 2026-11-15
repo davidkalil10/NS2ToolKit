@@ -35,6 +35,7 @@ $files += @('Painel-Nup.cs', 'Empacotar-Portatil.ps1', 'Testar-Portatil.ps1', 'd
 $files += @('Painel-Kaihen.cs','painel-kaihen.cjs','Preparar-Kaihen.ps1','Testar-Kaihen.ps1','docs/KAIHEN.md','docs/ESTUDO-KAIHEN-OUNCE-DEVKIT.md','docs/CONTINUIDADE.md','docs/JOGOS-MODIFICADOS.md','docs/MODS-GBA.md')
 $files += @('integrations/kaihen/README.md','integrations/kaihen/runtime-manifest.json','painel-kaihen.test.cjs')
 $files += @('Preparar-Fontes-Kaihen.ps1','integrations/kaihen/source-manifest.json','integrations/kaihen/SOURCES.md')
+$files += @('painel-kaihen-held.cjs','painel-kaihen-held.test.cjs','engine/switch2/ro/package.cjs')
 $kaihenManifest = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'integrations/kaihen/runtime-manifest.json') -Raw | ConvertFrom-Json
 $files += @($kaihenManifest.hostFiles.PSObject.Properties | ForEach-Object { 'integrations/kaihen/host/'+$_.Name })
 foreach ($relative in ($files | Sort-Object -Unique)) {

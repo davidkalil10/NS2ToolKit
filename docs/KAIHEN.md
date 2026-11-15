@@ -1,19 +1,23 @@
 # Homebrew / kaiHEN no NS2ToolKit
 
-**Versão 0.1.9 — integração na janela principal de backups, saves e FTP.** O aplicativo Mods GBA continua separado. A ativação e a abertura do hbmenu foram confirmadas no console em 15/11/2026. Execução do OunceShell, de outros homebrews e transferências por Netloader ainda precisam de validação própria.
+**Versão 0.1.10 — conexão única pela tela inicial e ativação guiada após 4/4.** O aplicativo Mods GBA continua separado. A transição da sessão FS mantida para kaiHEN e a abertura do hbmenu foram confirmadas no console em 15/11/2026. OunceShell ainda depende de validação própria.
 
 ## Usar o novo modo
 
 1. Extraia a pasta portátil completa e abra **NS2 Assistente.exe**.
 2. Encerre qualquer sessão anterior e reinicie o console antes deste teste. Mantenha o SD inserido e abra SmileBASIC na memória interna, modo Direct.
-3. Confira o endereço Ethernet do PC na janela principal e clique em **Homebrew / kaiHEN**. Não inicie antes a conexão de backup: este modo abre sua própria aquisição.
-4. Marque a confirmação e clique em **Iniciar kaiHEN**. Quando o PC estiver pronto, execute as quatro linhas exibidas: LOAD NS2, RUN, REMOVE e START. O bootstrap NS2 já usado pelo toolkit é o mesmo; não é preciso redigitá-lo.
+3. Confira o endereço Ethernet do PC na janela principal, mantenha **Manter conexão aberta após 4/4** marcado e clique em **Iniciar conexão**. Execute LOAD NS2, RUN, REMOVE e START uma única vez, conforme as instruções da tela inicial. O bootstrap salvo continua sendo o mesmo.
+4. Aguarde **4/4 confirmado** e conclua/desmonte qualquer transferência FTP ou backup. Clique em **Ativar Homebrew** e depois **Iniciar kaiHEN**. A janela usa a conexão existente; não repete os quatro comandos nem abre uma nova aquisição. Enquanto aguarda a ativação, mantenha SmileBASIC aberto.
 5. Aguarde **kaiHEN iniciado**. Só então feche SmileBASIC normalmente pelo HOME, **sem reiniciar o console**. Mantenha a janela e o PC executando até ela confirmar o fechamento.
 6. Abra um **jogo nativo de Switch 2 segurando R**. Split Fiction é um candidato entre os títulos já identificados neste projeto, sem garantia de compatibilidade até o teste. O HEN examinado seleciona IDs no espaço 04; um título Switch 1 não substitui esse primeiro teste.
 7. Se o jogo abrir normalmente na primeira vez, feche-o e abra novamente segurando R. O primeiro lançamento pode ser usado para guardar a política necessária. Nas próximas aberturas, deve aparecer o hbmenu.
 8. No hbmenu, escolha **OunceShell**. Confira a abertura, imagem, controles, navegação no SD e saída. A primeira verificação é de leitura; não é preciso escrever arquivos ou usar o FTP do OunceShell.
 
-**A ordem deste modo é própria:** aguardar o HEN e depois fechar SmileBASIC, mantendo o host até a desconexão. Não usar como atalho o encerramento do host do modo de backups ou o procedimento do aplicativo GBA.
+**A ordem após a ativação é própria:** aguardar o HEN e depois fechar SmileBASIC, mantendo o host até a desconexão. Não encerrar a conexão pelo PC nessa etapa nem usar o procedimento do aplicativo GBA. A janela mantém as mensagens de status, confirma o encerramento observado pelo host e só então apresenta a orientação para abrir o hbmenu.
+
+Uma conexão aberta antes desta build não anuncia a capacidade de transição. Nesse caso, o aplicativo recusa a ativação antes de modificar o console e explica que é preciso reiniciar e conectar pela versão nova. Não basta trocar os arquivos do programa com uma sessão antiga aberta.
+
+Na release pública 0.1.9, o modo ainda usa aquisição própria na janela Homebrew / kaiHEN. A partir da 0.1.10, a conexão única é o fluxo validado.
 
 ## O que vem incluído
 
@@ -26,6 +30,8 @@ Release oficial **kaiHEN 20261114d**: RO, HEN, bootstrap, hbloader, hbmenu e Oun
 O host foi obtido do fork kurumuz/ns2jb, revisão `28f03b5895e5569d8fbc35cbed84906b8f0a65b2`, que já implementa `hen.cjs` e `start-hen.cjs`. Fica em `integrations/kaihen/host/`, separado do engine original dos backups. Adaptações locais: named pipe Windows já usado pelo toolkit, substituição atômica de relatórios e diretório de sessões do aplicativo.
 
 O controlador `painel-kaihen.cjs` usa o host como módulo, seleciona o RO do pacote e chama o inicializador real. `Painel-Kaihen.cs` implementa a janela acessada pelo botão do assistente principal. A branch costela foi preservada; não foi feito merge de um deploy sem implementação nativa.
+
+Na conexão única, `painel-kaihen-held.cjs` verifica a sessão FS e sua prova nativa, obtém a trava compartilhada com os outros módulos e confere a capacidade `kaihen-transition-v1`. A aquisição FS normal permanece com a sequência anterior; foram incorporados ao seu controlador apenas os comandos de arquivos/pacotes do fork kaiHEN e o anúncio dessa capacidade. A transição cria cópia privada dos clientes do fork e dos registros correspondentes, sem sobrescrever o código do endpoint ativo. Prepara o novo RO, confere o pacote por releitura, requalifica o gate, identifica por PID o RO anterior e o substitui pelo frontend kaiHEN. Depois segue o mesmo bootstrap e a mesma verificação nativa de HEN. A sessão de backups é marcada como exclusiva antes da mutação e continua bloqueada até reiniciar. Erros nativos não são repetidos automaticamente.
 
 Não é preciso instalar ounce-devkit, compiladores ou Docker para testar o pacote pré-compilado. Essas ferramentas serão necessárias na frente de adaptação dos ports.
 
@@ -67,4 +73,8 @@ Referências: [kaiHEN 20261114d](https://github.com/ouncebrew/kaihen/releases/ta
 
 A opção Netloader do hbmenu recebe um arquivo homebrew do PC pela rede e prepara sua execução. O cliente usual é `nxlink`; é útil para testar novas compilações sem copiar o arquivo manualmente para o SD. A conexão é diretamente com o console, independente da ponte FTP do NS2ToolKit. Não converte formatos e não adapta NROs de Switch 1: o executável precisa ser compatível com o ambiente Switch 2.
 
-O código da revisão incluída implementa o receptor em `common/netloader.c`. A presença da opção no menu foi confirmada; o envio/lançamento pelo Netloader ainda não foi testado nesta configuração. O toolkit 0.1.9 não inclui um cliente nxlink nem um botão de envio de homebrew. Referência: [receptor da versão incluída](https://github.com/ouncebrew/ounce-hbmenu/blob/d7e10c028b53da17867615ee0a3c453b9cf9464a/common/netloader.c).
+O código da revisão incluída implementa o receptor em `common/netloader.c`. Transferência e execução dos ports recompilados Heroes Lore Zero, Wind of Soltia, Heroes Lore 2 e Heroes Lore 3 foram confirmadas no console. O toolkit não inclui um botão de envio de homebrew; os testes usaram um cliente externo. Referência: [receptor da versão incluída](https://github.com/ouncebrew/ounce-hbmenu/blob/d7e10c028b53da17867615ee0a3c453b9cf9464a/common/netloader.c).
+
+## Correcao da prova FS na transicao 4/4 (15/11/2026)
+
+O arquivo detalhado `fs-execution-*.json` confirma restauracao por tentativa em `trials[i].restored`; ele nao possui `restored` global. O resumo `fs-execution-current.json` possui esse campo global. A preflight do modo de sessao mantida deve validar os dois trials detalhados como `verified === true` e `restored === true`, alem da identidade da sessao, em vez de exigir o campo global no arquivo detalhado. A validacao anterior bloqueava uma conexao 4/4 saudavel antes de qualquer mutacao com a mensagem "A prova nativa FS nao corresponde a conexao". A correcao mantem os checks de saude, capacidades do endpoint e exclusividade. Teste de regressao cobre prova realista sem `restored` global e rejeita trials incompletos ou nao restaurados.

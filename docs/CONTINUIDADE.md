@@ -1,5 +1,17 @@
 # Continuidade técnica do NS2ToolKit
 
+## Atualização prioritária — build local 0.1.10
+
+Pedido de 15/11/2026: eliminar a conexão duplicada da janela homebrew e preservar todas as orientações após a ativação. A nova interface conecta pela tela principal; **Ativar Homebrew** só habilita após 4/4 mantido. A janela compacta usa `painel-kaihen.cjs --session <run>`, sem LOAD/RUN/REMOVE/START. A sequência de mensagens permanece: HEN confirmado → fechar SmileBASIC sem reiniciar, mantendo o PC → aguardar o relatório final de desconexão → abrir jogo nativo de Switch 2 com R, repetir se o primeiro lançamento apenas capturar a política.
+
+`painel-kaihen-held.cjs` implementa a transição, ainda sem teste real no console. O endpoint FS da nova sessão anuncia `kaihen-transition-v1`; sessões antigas são recusadas antes de mutação e continuam utilizáveis para backups. Alterações na aquisição: a sequência de pipeline anterior foi preservada; apenas `engine/switch2/ro/control.cjs` ganhou encaminhamento dos comandos de arquivos/pacotes e anúncio da capacidade. `engine/switch2/ro/package.cjs` é cópia do fork kaiHEN fixado. Não substituir o engine inteiro por um backend diferente durante a depuração.
+
+Antes da transição: validar provas FS/RO, identidade da sessão, estado ativo e saúde; recusar sessão usada por modloader; obter a trava compartilhada. A transição copia clientes do fork e provas específicas para `run/kaihen-runtime-*`, sem sobrescrever arquivos do endpoint ativo. Confere o pacote RO por releitura, renova bindings/tipos, qualifica gate, lança RO e chama `runtime.activate` com o PID anterior verificado por PM. Só depois da troca e do frontend pronto chama o bootstrap HEN conhecido. O host normal continua vivo; o controlador não chama aquisição nem encerra o host. Após mutação mantém marcador de sessão inválida e trava exclusiva; `lockSession().retain()` fecha o descritor sem remover a trava. Não apagar esses marcadores para reutilizar a sessão. Não repetir chamadas nativas após erro incerto.
+
+No host isolado, `test-gate.cjs` agora exporta `main` e só executa no CLI quando chamado diretamente. Isso permite aguardar a qualificação sem importar código que dispare operações nativas, nem encerrar um subprocesso por timeout. Manifesto de integridade atualizado. O modo anterior de aquisição própria permanece disponível pelo controlador para referência/testes; a janela principal usa apenas a sessão mantida.
+
+Validação local: 118 testes Node aprovados (10 novos da transição), compilação C# e simulação das duas janelas aprovadas. Falta teste físico da transição FS → frontend RO → HEN e confirmação de que backups/FTP continuam funcionando antes dela. A release pública continua 0.1.9; não publicar a 0.1.10 como validada sem esses testes. A sessão que já estava aberta antes desta build não pode receber a capacidade nova em tempo de execução; o teste exige reiniciar o console e abrir uma conexão nova com a build 0.1.10.
+
 Atualizado em **14/11/2026**, após a confirmação de abertura do Zelda no console e a preparação do novo assistente de mods. Este documento permite continuar o trabalho sem depender do histórico do chat. É um retrato do estado verificado nesta máquina; antes de editar, conferir novamente o Git, os arquivos e o estado real do console. Os documentos antigos registram etapas anteriores e podem conter tarefas que já foram concluídas.
 
 ## 1. Ler primeiro: situação atual e próxima ação
@@ -317,3 +329,17 @@ Pesquisas anteriores: Elliot completo PC versus Debut Demo Switch resultou em sa
 ## Checkpoint de release 0.1.9 — 15/11/2026
 
 A recuperação do save FireRed foi aprovada dentro do jogo. Abertura do hbmenu via modo kaiHEN também confirmada no console, com opção Netloader visível. Não inferir execução do OunceShell nem funcionamento do Netloader a partir dessa confirmação. A sessão de HEN não deve ser reaproveitada para backups, saves ou FTP. O pedido atual autoriza publicar main e release 0.1.9. A restauração aceita redimensionamento de arquivos existentes e arquivos locais editados de outro tamanho, com pré-backup e confirmação; não cria nem apaga arquivos. O pacote inclui fontes/licenças dos componentes kaiHEN verificadas por manifesto, sem dados de runs/backups. O aplicativo Mods GBA continua separado.
+
+## Correcao e teste real da transicao 4/4 para kaiHEN — 15/11/2026
+
+Sessao `switch2-okUzX3`: preflight recusava com "A prova nativa FS nao corresponde a conexao" porque esperava `restored` global no arquivo detalhado de execucao. O engine grava essa confirmacao em cada um dos dois trials. Corrigido `painel-kaihen-held.cjs` para exigir os dois trials verificados/restaurados e a mesma sessao, sem remover validacao de saude/capacidade/exclusividade. Fixture de teste ajustada ao formato real e regressao adicionada; 21 testes de kaihen/held/session aprovados.
+
+A mesma sessao foi aproveitada sem nova aquisicao: preflight live aprovado, RO anterior PID 209 promovido para frontend kaiHEN PID 210, pacote remoto relido/verificado, bootstrap HEN PID 211 confirmado, gateRestorePending=false. David fechou SmileBASIC conforme orientado; host confirmou disconnected. Houve erro de limpeza do endpoint FS no host depois do fechamento, preservado em `result.json`/`painel-kaihen.json` (nao afirmar cleanup limpo). Abertura efetiva de hbmenu por R aguardando confirmacao; nao retomar backups/FTP nesta sessao.
+
+HL3: build antiga 043b047 falhou por startup/bibliotecas Switch 1 puxados via sdl2.pc. Build corrigida 49b6629 passou gate OUN0 e mapa de linkagem; arquivo no D em NS2ToolKit-homebrew/Heroes-Lore-3-Switch2-49b6629. Ainda nao enviada apos reboot; aguardar hbmenu/Netloader. Historico e provas no repositorio isolado `.runtime/hl3-switch2`, branch codex/switch2-action.
+
+Confirmacao posterior: David abriu o hbmenu com R apos a transicao usando a mesma sessao 4/4. Isso valida a ativacao/HOME/fechamento/takeover deste teste, mantendo o erro de cleanup registrado. Netloader confirmado em 192.168.18.139:28280 e build HL3 corrigida 49b6629 enviada com recebimento aceito; gameplay e ausencia do aviso aguardando retorno.
+
+## Publicacao autorizada 0.1.10
+
+Conexao unica 4/4 → kaiHEN → fechamento SmileBASIC → hbmenu foi aprovada. Correcao de prova FS por trial incluida. HL3 49b6629 tambem aprovado em console e publicado na release v1.0.8 do jogo; pipeline integrado a main do HL3. Toolkit 0.1.10 autorizado para main/release, com verificacao completa do portatil antes de publicar. O erro de cleanup apos desconexao permanece documentado; nao afirmar cleanup confirmado.

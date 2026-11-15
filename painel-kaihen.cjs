@@ -95,4 +95,10 @@ async function run(root,host,{send=emit,verify=verifyRuntime,acquire,launch,moni
   }
 }
 module.exports={Monitor,verifyStartup,verifyRuntime,run};
-if(require.main===module)run(__dirname,process.argv[2],{onCancelWaiting:()=>process.exit(0)}).catch(error=>{emit('error',{summary:error.message,requiresRestart:error.requiresRestart===true});process.exitCode=1;});
+if(require.main===module){
+  const args=process.argv.slice(2);
+  const task=args[0]==='--session'&&args.length===2
+    ?require('./painel-kaihen-held.cjs').activateHeld(__dirname,args[1])
+    :run(__dirname,args[0],{onCancelWaiting:()=>process.exit(0)});
+  task.catch(error=>{if(!error.reported)emit('error',{summary:error.message,requiresRestart:error.requiresRestart===true});process.exitCode=1;});
+}
