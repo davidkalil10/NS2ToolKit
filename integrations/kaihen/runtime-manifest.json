@@ -1,8 +1,16 @@
 {
-    "release":  "20261114d",
-    "kaihenCommit":  "5ac772560698b325551db014478a5a43e941474c",
+    "release":  "20261117.1",
+    "kaihenCommit":  "3695f364f9270686aa72cc39627bb1281752b2d3",
     "hostCommit":  "28f03b5895e5569d8fbc35cbed84906b8f0a65b2",
-    "archiveSha256":  "9d0d1a7c6d91d018576121a9513f691ff397883a58090b585f0384965144f38f",
+    "archiveSha256":  "3f7ded0b360b2f0bf97f8e958c3bfe93a8d76dd8d43ce2e8f7d060e647ad0978",
+    "configurationSha256":  "2c2c85939e852d96a4a50f918c8e0478127f0ca854ed17bdc92387b00b6df368",
+    "compatibility":  {
+                          "profile":  "held-fs-kaihen-v1",
+                          "bootstrapArgumentBytes":  432,
+                          "startOperation":  10,
+                          "sdkRelease":  "20261117",
+                          "henProtocolVersion":  7
+                      },
     "localPatches":  [
                          "windows-named-pipe",
                          "windows-atomic-report",
@@ -134,10 +142,10 @@
                       "run.cjs":  "e0f7b76e6d97c5931d20343101edce495454d9334c28f6d01ef811a93362b602"
                   },
     "payloadFiles":  {
-                         "bootstrap.bin":  "c7a00d324ef1a13f43596b9806539b027761ffb2dd7ab6d4d8cf5fd1327b0be1",
-                         "game/main":  "f72ac5f94b8263a83e2ae698ca5ef91b192127d01778105293419d896247563c",
-                         "hbmenu.nro":  "274df7a0e95334c4746f98552e57d3d9c897d9ae98b7d247aa8e1841e63cb797",
-                         "hen/main":  "72fb37e4f88194a6b00d7183504bac59f8410e025f919161ef9afb9c7ed1291e",
+                         "bootstrap.bin":  "92481a1622ccde9978d789eec251d6d1d338c9bd1e6adbcc62f4057c2f188665",
+                         "game/main":  "cd57628d91f11784085c858438fb392add20c6126bf7411c43d5a3dc83048874",
+                         "hbmenu.nro":  "1a6c34c007577544aa4ace67adf405d9a740d509e2c0c4a2f3dcc9ad3514edff",
+                         "hen/main":  "b4f161e36482d50de006b3caee909eb8413a42b6593a602324cface3d2a5ead9",
                          "licenses/bzip2/LICENSE":  "c6dbbf828498be844a89eaa3b84adbab3199e342eb5cb2ed2f0d4ba7ec0f38a3",
                          "licenses/expat-MIT.txt":  "46336ab2fec900803e2f1a4253e325ac01d998efb09bc6906651f7259e636f76",
                          "licenses/freetype/FTL.TXT":  "08c135755dd589039470f1fdbb400daaabaaa50d0b366d19cebff4d22986baa1",
@@ -175,7 +183,7 @@
                          "licenses/sdl2_ttf/LICENSE.txt":  "a0e8ce06504966e45088ee1cc7583cc8af9aac615d4cf56d47d847da9cb15139",
                          "licenses/sdl2-zlib.txt":  "9928507f684c1965d07f2b6ef4b4723d5efc2f6b4ab731f743a413c51c319927",
                          "licenses/zlib/LICENSE":  "807c3a7dd7f6203b3dae80e28c3064f231c333685488541825b040081087fc4d",
-                         "programs/ounceshell.nro":  "269226069dda865c5b197a9c4e102b0a06ef6a34a4bb85b000901ff2d62d8232",
-                         "ro/main":  "eed2f243fa7261607f33c19ee4fe916a7a1fe77319d38a17cca9dd759a97a2a0"
+                         "programs/ounceshell.nro":  "e506fab96b6031831cfbf3cf9459ed70f0bda92f6d619f8230b8e0a000165735",
+                         "ro/main":  "2e577a4c680a3ba580bcda2f8d41ada443cb33cad79e06230ce4bcf6700661b7"
                      }
 }

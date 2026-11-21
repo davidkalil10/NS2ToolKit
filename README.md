@@ -2,6 +2,10 @@
 
 Assistente para Windows para executar o ns2jb no SmileBASIC, fazer backup de jogos e saves do Nintendo Switch 2 e gerar pacotes NUP no PC.
 
+## Versão atual
+
+A versão 0.1.11 inclui kaiHEN 20261117.1 e configuração centralizada. Reconexão 4/4 e reativação do hbmenu validadas no console. [Como atualizar](docs/ATUALIZAR-KAIHEN.md).
+
 ## Download
 
 Baixe o **pacote portátil Windows x64** na [página de releases](https://github.com/davidkalil10/NS2ToolKit/releases/latest), extraia o ZIP inteiro para uma pasta gravável e abra **NS2 Assistente.exe**. Mantenha as subpastas junto do executável.

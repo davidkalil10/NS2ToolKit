@@ -35,7 +35,7 @@ $files += @('Painel-Nup.cs', 'Empacotar-Portatil.ps1', 'Testar-Portatil.ps1', 'd
 $files += @('Painel-Kaihen.cs','painel-kaihen.cjs','Preparar-Kaihen.ps1','Testar-Kaihen.ps1','docs/KAIHEN.md','docs/ESTUDO-KAIHEN-OUNCE-DEVKIT.md','docs/CONTINUIDADE.md','docs/JOGOS-MODIFICADOS.md','docs/MODS-GBA.md')
 $files += @('integrations/kaihen/README.md','integrations/kaihen/runtime-manifest.json','painel-kaihen.test.cjs')
 $files += @('Preparar-Fontes-Kaihen.ps1','integrations/kaihen/source-manifest.json','integrations/kaihen/SOURCES.md')
-$files += @('painel-kaihen-held.cjs','painel-kaihen-held.test.cjs','engine/switch2/ro/package.cjs')
+$files += @('painel-kaihen-held.cjs','painel-kaihen-held.test.cjs','engine/switch2/ro/package.cjs','kaihen-config.cjs','kaihen-config.test.cjs','Ler-Config-Kaihen.ps1','Atualizar-Kaihen.ps1','integrations/kaihen/kaihen-config.json','docs/ATUALIZAR-KAIHEN.md')
 $kaihenManifest = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'integrations/kaihen/runtime-manifest.json') -Raw | ConvertFrom-Json
 $files += @($kaihenManifest.hostFiles.PSObject.Properties | ForEach-Object { 'integrations/kaihen/host/'+$_.Name })
 foreach ($relative in ($files | Sort-Object -Unique)) {
@@ -50,7 +50,9 @@ foreach ($required in @('tools/OunceCake/ouncecake.cjs', 'tools/ns2-savekit/tool
     if (!(Test-Path -LiteralPath (Join-Path $package $required))) { throw "Dependência ausente: $required" }
 }
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'integrations/kaihen/runtime-manifest.json') -Destination (Join-Path $package 'integrations/kaihen/runtime-manifest.json') -Force
-Copy-Item -LiteralPath (Join-Path $PSScriptRoot '.runtime/kaihen-cache/package-20261114d') -Destination (Join-Path $package 'integrations/kaihen/payload') -Recurse
+. (Join-Path $PSScriptRoot 'Ler-Config-Kaihen.ps1')
+$taskKaihenSetup=Read-KaihenConfiguration $PSScriptRoot
+Copy-Item -LiteralPath $taskKaihenSetup.paths.payload -Destination (Join-Path $package 'integrations/kaihen/payload') -Recurse
 $targetSource = Join-Path $package 'integrations/kaihen/sources'
 New-Item -ItemType Directory -Path $targetSource -Force | Out-Null
 $sourceManifest = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'integrations/kaihen/source-manifest.json') -Raw | ConvertFrom-Json
@@ -75,6 +77,7 @@ if ($LASTEXITCODE -ne 0) { throw 'Falha na validação do Python/compressor incl
 @{
     version = $version; built = (Get-Date -Format o); architecture = 'win-x64'; sourceCommit = (& git -C $PSScriptRoot rev-parse HEAD)
     sourceWorkingTreeModified = [bool](& git -C $PSScriptRoot status --porcelain)
+    kaihenRelease = $taskKaihenSetup.config.release; kaihenConfigurationSha256 = $taskKaihenSetup.configurationSha256
     node = '22.16.0'; python = '3.13.4'; zstandard = '0.25.0'
     pythonArchiveSha256 = (Get-FileHash -LiteralPath $python).Hash
     nodeSha256 = (Get-FileHash -LiteralPath $node).Hash

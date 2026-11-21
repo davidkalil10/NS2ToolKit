@@ -60,5 +60,5 @@ test('Windows memory endpoint is the same validated implementation as the existi
   assert.equal(canonical(await fs.readFile('integrations/kaihen/host/engine/switch2/memory/fs-memory-control.cjs','utf8')),canonical(await fs.readFile('engine/switch2/memory/fs-memory-control.cjs','utf8')));
 });
 test('official cache and host hashes verify without opening a console connection',async()=>{
-  const value=await verifyRuntime(process.cwd());assert.equal(value.manifest.release,'20261114d');
+  const value=await verifyRuntime(process.cwd());const {config}=await require('./kaihen-config.cjs').loadConfig(process.cwd());assert.equal(value.manifest.release,config.release);
 });

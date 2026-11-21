@@ -1,7 +1,8 @@
 param([switch]$Offline)
 $ErrorActionPreference = 'Stop'
-$manifest = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'integrations/kaihen/source-manifest.json') -Raw | ConvertFrom-Json
-if ($manifest.format -ne 'ns2toolkit-kaihen-sources-v1') { throw 'Manifesto de fontes invalido.' }
+. (Join-Path $PSScriptRoot 'Ler-Config-Kaihen.ps1')
+$taskSetup = Read-KaihenConfiguration $PSScriptRoot
+$manifest = [pscustomobject]@{format='ns2toolkit-kaihen-sources-v1';entries=@($taskSetup.config.sources)}
 $cache = Join-Path $PSScriptRoot '.runtime/kaihen-source-archives'
 New-Item -ItemType Directory -Path $cache -Force | Out-Null
 foreach ($entry in $manifest.entries) {
@@ -9,8 +10,14 @@ foreach ($entry in $manifest.entries) {
     $target = Join-Path $cache $entry.file
     if (!(Test-Path -LiteralPath $target -PathType Leaf)) {
         if ($Offline) { throw "Fonte ausente: $($entry.file)" }
-        Invoke-WebRequest -Uri $entry.url -OutFile $target
+        $temporary=$target+'.'+[guid]::NewGuid().ToString('N')+'.part'
+        Invoke-WebRequest -Uri $entry.url -OutFile $temporary
+        if ((Get-FileHash -LiteralPath $temporary -Algorithm SHA256).Hash.ToLowerInvariant() -ne $entry.sha256) { throw "Fonte divergente: $($entry.file)" }
+        Move-Item -LiteralPath $temporary -Destination $target
     }
     if ((Get-FileHash -LiteralPath $target -Algorithm SHA256).Hash.ToLowerInvariant() -ne $entry.sha256) { throw "Fonte divergente: $($entry.file)" }
 }
+$taskSourceManifest=Join-Path $PSScriptRoot 'integrations/kaihen/source-manifest.json'
+[IO.File]::WriteAllText(($taskSourceManifest+'.pending'),($manifest|ConvertTo-Json -Depth 8),[Text.UTF8Encoding]::new($false))
+Move-Item -LiteralPath ($taskSourceManifest+'.pending') -Destination $taskSourceManifest -Force
 Write-Output 'Fontes dos componentes kaiHEN conferidas.'

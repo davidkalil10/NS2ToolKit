@@ -27,7 +27,7 @@ namespace NS2Panel {
             Text="NS2 • Homebrew / kaiHEN (teste)";ClientSize=new Size(940,745);Font=new Font("Segoe UI",10);
             BackColor=Color.FromArgb(245,247,251);FormBorderStyle=FormBorderStyle.FixedDialog;MaximizeBox=false;StartPosition=FormStartPosition.CenterParent;
             AddLabel("Homebrew no Switch 2",24,22,900,38,true);
-            AddLabel("Ative kaiHEN, abra o hbmenu e teste o OunceShell incluído no pacote.",26,65,890,28,false);
+            AddLabel("kaiHEN "+ConfiguredRelease()+" • hbmenu e OunceShell incluídos no pacote.",26,65,890,28,false);
             AddLabel(heldSession==null?"Modo exclusivo: comece com o console reiniciado e sem outra conexão ativa.":"A conexão 4/4 atual será usada. Após ativar, reinicie para voltar aos backups ou FTP.",26,104,890,26,false);
             prepared.SetBounds(26,139,890,30);prepared.Text=heldSession==null?"Reiniciei o console; SmileBASIC está aberto na memória interna e o cartão SD está inserido.":"Conexão mantida aberta • mantenha SmileBASIC aberto até a orientação para fechar.";prepared.Checked=heldSession!=null;Controls.Add(prepared);
             start.Text="Iniciar kaiHEN";start.SetBounds(26,181,195,38);start.Click+=delegate{Start();};Controls.Add(start);
@@ -44,6 +44,11 @@ namespace NS2Panel {
             output.SetBounds(26,feedbackY+172,883,105);output.Multiline=true;output.ReadOnly=true;output.ScrollBars=ScrollBars.Both;output.WordWrap=false;output.Font=new Font("Consolas",8);Controls.Add(output);
             timer.Interval=100;timer.Tick+=Poll;timer.Start();
             FormClosing+=delegate(object sender,FormClosingEventArgs args){if(worker!=null){args.Cancel=true;if(waiting&&!connected){closeRequested=true;CancelWaiting();}else MessageBox.Show(this,"Mantenha esta janela aberta. Após kaiHEN iniciado, feche SmileBASIC no console e aguarde a conclusão.","Operação no console");}else timer.Stop();};
+        }
+        string ConfiguredRelease(){
+            try{var row=json.Deserialize<Dictionary<string,object>>(File.ReadAllText(Path.Combine(root,"integrations/kaihen/kaihen-config.json")));
+                string value=Convert.ToString(row["release"]);return System.Text.RegularExpressions.Regex.IsMatch(value,@"^\d{8}(?:[a-z]|\.\d+)?$")?value:"não identificado";
+            }catch{return "não identificado";}
         }
         void AddLabel(string text,int x,int y,int w,int h,bool heading){var label=new Label{Text=text};label.SetBounds(x,y,w,h);if(heading)label.Font=new Font("Segoe UI",20,FontStyle.Bold);Controls.Add(label);}
         void Start(){

@@ -1,6 +1,6 @@
 # Homebrew / kaiHEN no NS2ToolKit
 
-**Versão 0.1.10 — conexão única pela tela inicial e ativação guiada após 4/4.** O aplicativo Mods GBA continua separado. A transição da sessão FS mantida para kaiHEN e a abertura do hbmenu foram confirmadas no console em 15/11/2026. OunceShell ainda depende de validação própria.
+**Versão 0.1.11 — kaiHEN 20261117.1.** A reconexão 4/4 pela tela inicial e a reativação do hbmenu com o pacote atualizado foram confirmadas no console em 21/11/2026. O fluxo guiado e as adaptações Windows foram preservados. Essa confirmação não substitui testes específicos de cada homebrew.
 
 ## Usar o novo modo
 
@@ -21,10 +21,10 @@ Na release pública 0.1.9, o modo ainda usa aquisição própria na janela Homeb
 
 ## O que vem incluído
 
-Release oficial **kaiHEN 20261114d**: RO, HEN, bootstrap, hbloader, hbmenu e OunceShell. O ZIP foi baixado e conferido pelo SHA-256 publicado:
+Release oficial **kaiHEN 20261117.1**: RO, HEN, bootstrap, hbloader, hbmenu e OunceShell. O ZIP foi baixado e conferido pelo SHA-256 publicado:
 
 ```text
-9d0d1a7c6d91d018576121a9513f691ff397883a58090b585f0384965144f38f
+3f7ded0b360b2f0bf97f8e958c3bfe93a8d76dd8d43ce2e8f7d060e647ad0978
 ```
 
 O host foi obtido do fork kurumuz/ns2jb, revisão `28f03b5895e5569d8fbc35cbed84906b8f0a65b2`, que já implementa `hen.cjs` e `start-hen.cjs`. Fica em `integrations/kaihen/host/`, separado do engine original dos backups. Adaptações locais: named pipe Windows já usado pelo toolkit, substituição atômica de relatórios e diretório de sessões do aplicativo.
@@ -78,3 +78,7 @@ O código da revisão incluída implementa o receptor em `common/netloader.c`. T
 ## Correcao da prova FS na transicao 4/4 (15/11/2026)
 
 O arquivo detalhado `fs-execution-*.json` confirma restauracao por tentativa em `trials[i].restored`; ele nao possui `restored` global. O resumo `fs-execution-current.json` possui esse campo global. A preflight do modo de sessao mantida deve validar os dois trials detalhados como `verified === true` e `restored === true`, alem da identidade da sessao, em vez de exigir o campo global no arquivo detalhado. A validacao anterior bloqueava uma conexao 4/4 saudavel antes de qualquer mutacao com a mensagem "A prova nativa FS nao corresponde a conexao". A correcao mantem os checks de saude, capacidades do endpoint e exclusividade. Teste de regressao cobre prova realista sem `restored` global e rejeita trials incompletos ou nao restaurados.
+
+## Atualizacoes do pacote
+
+Versao, URL, SHA-256, revisoes, fontes e perfil de compatibilidade ficam em `integrations/kaihen/kaihen-config.json`. O aplicativo mostra a versao dessa configuracao e recusa manifesto que nao corresponda a ela. Consulte [manutencao e roteiro de teste](ATUALIZAR-KAIHEN.md). Preparar os arquivos no PC nao atualiza o HEN que ja esta rodando: reinicie o console e ative novamente para testar o novo pacote. O programa NS2 salvo no SmileBASIC continua o mesmo nesta atualizacao.

@@ -1,0 +1,105 @@
+{
+  "format": "ns2toolkit-kaihen-config-v1",
+  "release": "20261117.1",
+  "kaihenCommit": "3695f364f9270686aa72cc39627bb1281752b2d3",
+  "hostCommit": "28f03b5895e5569d8fbc35cbed84906b8f0a65b2",
+  "archive": {
+    "file": "kaiHEN-20261117.1.zip",
+    "url": "https://github.com/ouncebrew/kaihen/releases/download/20261117.1/kaiHEN-20261117.1.zip",
+    "sha256": "3f7ded0b360b2f0bf97f8e958c3bfe93a8d76dd8d43ce2e8f7d060e647ad0978"
+  },
+  "compatibility": {
+    "profile": "held-fs-kaihen-v1",
+    "bootstrapArgumentBytes": 432,
+    "startOperation": 10,
+    "sdkRelease": "20261117",
+    "henProtocolVersion": 7
+  },
+  "localPatches": [
+    "windows-named-pipe",
+    "windows-atomic-report",
+    "toolkit-run-directory"
+  ],
+  "sources": [
+    {
+      "name": "kaihen",
+      "repository": "https://github.com/ouncebrew/kaihen",
+      "revision": "3695f364f9270686aa72cc39627bb1281752b2d3",
+      "url": "https://codeload.github.com/ouncebrew/kaihen/zip/3695f364f9270686aa72cc39627bb1281752b2d3",
+      "file": "kaihen-3695f364f9270686aa72cc39627bb1281752b2d3.zip",
+      "sha256": "634c0d8c5b1d3e9d025f9cb03e8771e3ee3ab54c31d84eb8dae8e01e870f25e9"
+    },
+    {
+      "name": "hbloader",
+      "repository": "https://github.com/ouncebrew/ounce-hbloader",
+      "revision": "2d38bcbe944b317e92acdc32ccf7b53b65093bf6",
+      "url": "https://codeload.github.com/ouncebrew/ounce-hbloader/zip/2d38bcbe944b317e92acdc32ccf7b53b65093bf6",
+      "file": "hbloader-2d38bcbe944b317e92acdc32ccf7b53b65093bf6.zip",
+      "sha256": "f4ea354d3a3a9892d3b73dc651c84b7fc15549884ce2fb26f2659438e5e73c29"
+    },
+    {
+      "name": "hbmenu",
+      "repository": "https://github.com/ouncebrew/ounce-hbmenu",
+      "revision": "43845d247487dedaa902f53f7d24ed61a116e982",
+      "url": "https://codeload.github.com/ouncebrew/ounce-hbmenu/zip/43845d247487dedaa902f53f7d24ed61a116e982",
+      "file": "hbmenu-43845d247487dedaa902f53f7d24ed61a116e982.zip",
+      "sha256": "556e9f62c338c01ef84b8e04e0135b1764988f5518b087e1cae32ed6731d8e56"
+    },
+    {
+      "name": "ounceshell",
+      "repository": "https://github.com/kurumuz/ounceshell",
+      "revision": "b2655caf6f8e48084bde84f18c28f834358f8286",
+      "url": "https://codeload.github.com/kurumuz/ounceshell/zip/b2655caf6f8e48084bde84f18c28f834358f8286",
+      "file": "ounceshell-b2655caf6f8e48084bde84f18c28f834358f8286.zip",
+      "sha256": "b95545972d417ea56d63e85e5ab8c7e07a5ad0872eb14cfdb27f9ef584940fd6"
+    },
+    {
+      "name": "libounce",
+      "repository": "https://github.com/ouncebrew/libounce",
+      "revision": "39406be1f25a2f1da3f7dfdaf7a42d2216cda4d0",
+      "url": "https://codeload.github.com/ouncebrew/libounce/zip/39406be1f25a2f1da3f7dfdaf7a42d2216cda4d0",
+      "file": "libounce-39406be1f25a2f1da3f7dfdaf7a42d2216cda4d0.zip",
+      "sha256": "7aa9f5753bd45abc6b47f872fb7e71a65184c22574db01619c81c34925046602"
+    },
+    {
+      "name": "ouncevk",
+      "repository": "https://github.com/ouncebrew/ouncevk",
+      "revision": "114e9298fc0e6ba351d68a1b22be7f4072a759f8",
+      "url": "https://codeload.github.com/ouncebrew/ouncevk/zip/114e9298fc0e6ba351d68a1b22be7f4072a759f8",
+      "file": "ouncevk-114e9298fc0e6ba351d68a1b22be7f4072a759f8.zip",
+      "sha256": "4af03e9ec8a71fea495302e9eb8e8f7f421cd3221569be3c64b6462118434d26"
+    },
+    {
+      "name": "libkaihen-sdk",
+      "repository": "https://github.com/ouncebrew/kaihen",
+      "revision": "ddbf020066725a12274e65537066efbf268f67bc",
+      "url": "https://codeload.github.com/ouncebrew/kaihen/zip/ddbf020066725a12274e65537066efbf268f67bc",
+      "file": "libkaihen-sdk-ddbf020066725a12274e65537066efbf268f67bc.zip",
+      "sha256": "4d9e582b9eb8c29ed3f3e6aadfb9ffb09833dd46ef87fb761bd01b17607608a0"
+    },
+    {
+      "name": "ounce-devkit",
+      "repository": "https://github.com/ouncebrew/ounce-devkit",
+      "revision": "devkit-20261117",
+      "url": "https://codeload.github.com/ouncebrew/ounce-devkit/zip/devkit-20261117",
+      "file": "ounce-devkit-devkit-20261117.zip",
+      "sha256": "01a1483b37106adfd93a0ec89db1c05f0f8ad9e40ebe769f7bf7f88179fd9976"
+    },
+    {
+      "name": "libconfig",
+      "repository": "https://github.com/hyperrealm/libconfig",
+      "revision": "v1.7.2",
+      "url": "https://codeload.github.com/hyperrealm/libconfig/zip/v1.7.2",
+      "file": "libconfig-v1.7.2.zip",
+      "sha256": "a3ae202153fafb40558c26831429ce39845b2395ad8d30269a50e309a7585a8c"
+    },
+    {
+      "name": "devkitpro-portlibs",
+      "repository": "https://github.com/devkitPro/pacman-packages",
+      "revision": "f2fa9349470e7d42a4999bbea537ef9821782416",
+      "url": "https://codeload.github.com/devkitPro/pacman-packages/zip/f2fa9349470e7d42a4999bbea537ef9821782416",
+      "file": "devkitpro-portlibs-f2fa9349470e7d42a4999bbea537ef9821782416.zip",
+      "sha256": "dd959519219d2428f41b01703d576a1e32f2d1de49479d038054d54165bc6f57"
+    }
+  ]
+}

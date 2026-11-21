@@ -2,7 +2,7 @@
 const fs=require('node:fs/promises'),path=require('node:path'),net=require('node:net'),crypto=require('node:crypto');
 const {format}=require('node:util');
 const {emit}=require('./painel-progress.cjs');
-const PACKAGE_HASH='9d0d1a7c6d91d018576121a9513f691ff397883a58090b585f0384965144f38f';
+const {loadConfig}=require('./kaihen-config.cjs');
 const read=async file=>JSON.parse(await fs.readFile(file,'utf8'));
 const sha=bytes=>crypto.createHash('sha256').update(bytes).digest('hex');
 function safeFile(base,name){
@@ -10,17 +10,20 @@ function safeFile(base,name){
   return path.join(base,...name.split('/'));
 }
 async function verifyRuntime(root){
-  const base=path.join(root,'integrations/kaihen'),manifest=await read(path.join(base,'runtime-manifest.json'));
-  if(manifest.hostCommit!=='28f03b5895e5569d8fbc35cbed84906b8f0a65b2'||manifest.release!=='20261114d'||manifest.archiveSha256!==PACKAGE_HASH)throw Error('Versão kaiHEN não reconhecida.');
+  const {config,configurationSha256,base,paths}=await loadConfig(root);
+  const manifest=await read(path.join(base,'runtime-manifest.json'));
+  if(manifest.hostCommit!==config.hostCommit||manifest.kaihenCommit!==config.kaihenCommit||manifest.release!==config.release||
+    manifest.archiveSha256!==config.archive.sha256||manifest.configurationSha256!==configurationSha256)
+    throw Error('Configuração e manifesto kaiHEN não correspondem. Prepare o pacote novamente.');
   let payload=path.join(base,'payload');
-  try{await fs.access(payload);}catch(error){if(error.code!=='ENOENT')throw error;payload=path.join(root,'.runtime/kaihen-cache/package-20261114d');}
+  try{await fs.access(payload);}catch(error){if(error.code!=='ENOENT')throw error;payload=paths.payload;}
   for(const [directory,rows] of [[path.join(base,'host'),manifest.hostFiles],[payload,manifest.payloadFiles]]){
     if(!rows||!Object.keys(rows).length)throw Error('Manifesto kaiHEN incompleto.');
     for(const [name,expected]of Object.entries(rows))if(sha(await fs.readFile(safeFile(directory,name)))!==expected)throw Error('Arquivo kaiHEN alterado: '+name);
   }
   for(const name of ['ro/main','hen/main','game/main'])if((await fs.readFile(safeFile(payload,name))).toString('ascii',0,4)!=='NSO0')throw Error('Executável kaiHEN inválido: '+name);
   for(const name of ['hbmenu.nro','programs/ounceshell.nro'])if((await fs.readFile(safeFile(payload,name))).toString('ascii',16,20)!=='NRO0')throw Error('Homebrew inválido: '+name);
-  return {base,payload,manifest};
+  return {base,payload,manifest,configuration:config};
 }
 function verifyStartup(record,session){
   if(record.session!==session||record.complete!==true||record.joined!==true||record.operation!==10||record.result!==0||record.channelRestoreResult!==0||
@@ -41,7 +44,8 @@ class Monitor {
 }
 async function run(root,host,{send=emit,verify=verifyRuntime,acquire,launch,monitor=new Monitor(send),onCancelWaiting}={}){
   if(!net.isIPv4(host))throw Error('Selecione o endereço IPv4 do PC.');
-  const {base,payload}=await verify(root),originalLog=console.log;
+  const runtime=await verify(root),{base,payload}=runtime,originalLog=console.log;
+  const identity={kaihenRelease:runtime.manifest?.release||null,kaihenArchiveSha256:runtime.manifest?.archiveSha256||null,kaihenConfigurationSha256:runtime.manifest?.configurationSha256||null};
   const oldEnv={};for(const key of ['NS2_RO_IMAGE','NS2_BASIC_ARITY','NS2_WORKSPACE','NS2_RUN_DIR','HBMENU_NRO'])oldEnv[key]=process.env[key];
   let readyResolve,readyReject,readySeen=false,started=false,runFolder,proof;
   const frontend=new Promise((resolve,reject)=>{readyResolve=resolve;readyReject=reject;});
@@ -71,11 +75,11 @@ async function run(root,host,{send=emit,verify=verifyRuntime,acquire,launch,moni
     proof=verifyStartup(await read(result.file),path.basename(runFolder));
     if(proof.pid!==String(result.pid))throw Error('O processo HEN difere do registro da inicialização.');
     started=true;
-    await fs.writeFile(path.join(runFolder,'painel-kaihen.json'),JSON.stringify({ready:true,...proof,launcherOpened:false,homebrewOpened:false}));
+    await fs.writeFile(path.join(runFolder,'painel-kaihen.json'),JSON.stringify({ready:true,...proof,...identity,launcherOpened:false,homebrewOpened:false}));
     send('kaihen_ready',{message:'kaiHEN iniciado. Agora feche SmileBASIC pelo HOME, SEM REINICIAR. Mantenha esta janela aberta até confirmar o encerramento.',...proof});
     const outcome=await acquisition;
     const final=await read(path.join(runFolder,'result.json'));
-    const report={ready:true,...proof,hostClosed:final.rpc?.state==='closed',reason:final.rpc?.reason,hostError:final.error||outcome.error?.message||null,
+    const report={ready:true,...proof,...identity,hostClosed:final.rpc?.state==='closed',reason:final.rpc?.reason,hostError:final.error||outcome.error?.message||null,
       cleanupErrors:final.cleanupErrors||[],launcherOpened:false,homebrewOpened:false};
     await fs.writeFile(path.join(runFolder,'painel-kaihen.json'),JSON.stringify(report,null,2));
     if(final.rpc?.reason!=='disconnected'||!report.hostClosed)throw Error('O host terminou de uma forma inesperada; preserve os registros.');

@@ -343,3 +343,17 @@ Confirmacao posterior: David abriu o hbmenu com R apos a transicao usando a mesm
 ## Publicacao autorizada 0.1.10
 
 Conexao unica 4/4 → kaiHEN → fechamento SmileBASIC → hbmenu foi aprovada. Correcao de prova FS por trial incluida. HL3 49b6629 tambem aprovado em console e publicado na release v1.0.8 do jogo; pipeline integrado a main do HL3. Toolkit 0.1.10 autorizado para main/release, com verificacao completa do portatil antes de publicar. O erro de cleanup apos desconexao permanece documentado; nao afirmar cleanup confirmado.
+
+## Teste local 0.1.11 — kaiHEN 20261117.1 (21/11/2026)
+
+Pedido: atualizar pacote kaiHEN e centralizar configuracao; gerar portatil de teste, sem publicar release ate aprovacao em console. Console permanece com hbmenu antigo aberto; nenhuma conexao ou escrita no console foi feita nesta etapa.
+
+Fonte unica: `integrations/kaihen/kaihen-config.json`. `kaihen-config.cjs` valida descriptor, perfil, URLs e hashes; preparadores, aplicativo e empacotador consomem essa fonte. `Atualizar-Kaihen.ps1` coordena fontes, pacote e testes no checkout; portateis completos devem ser gerados novamente. Download temporario, extracao em pasta versionada nova, recusa de cache divergente e manifestos escritos por arquivo temporario. Perfil desconhecido e contrato de bootstrap diferente recusados; revisar host antes de aceitar futuros protocolos.
+
+Payload oficial 20261117.1, SHA 3f7ded0b360b2f0bf97f8e958c3bfe93a8d76dd8d43ce2e8f7d060e647ad0978, commit 3695f364f9270686aa72cc39627bb1281752b2d3. Host Windows 28f03b5895e5569d8fbc35cbed84906b8f0a65b2 e patches preservados. Bootstrap/RO comparados com 20261114d: mudanca de polling para flag atomica, sem mudanca no contrato de entrada. Fontes SDK20261117: libounce39406be, OunceVK114e929, libkaihenddbf020; hbloader2d38bcb, hbmenu43845d2; revisoes/hashes completos no config.
+
+Proximo passo: validar portatil local e fornecer caminho no D. Depois aguardar teste de David: reiniciar console, conectar 4/4 pelo novo portatil, ativar HEN e abrir hbmenu por R. Nao alterar BASIC NS2 salvo. Ver docs/ATUALIZAR-KAIHEN.md. Nao publicar, taguear ou substituir release 0.1.10 antes da confirmacao. Corrigir protocolos nao cobertos conforme evidencias, sem repetir operacoes nativas incertas.
+
+## Aprovacao e publicacao 0.1.11 — 21/11/2026
+
+David testou o portatil 0.1.11 com kaiHEN 20261117.1 e confirmou reconexao 4/4 e reativacao do hbmenu. Autorizou gerar a release. Codigo de ativacao/configuracao comparado com o ZIP de teste e identico; apenas documentacao de aprovacao e metadados de distribuicao sao finalizados. Nao inferir validacao individual de NROs, OunceShell ou novas APIs fsp-ldr a partir da abertura do menu.

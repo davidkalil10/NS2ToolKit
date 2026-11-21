@@ -111,7 +111,9 @@ async function activateHeld(root,run,{send=emit,verify,probe,info,prepare=worksp
     const folder=await prepare(run,config.base,config.manifest);
     process.env.NS2_RUN_DIR=folder;process.env.HBMENU_NRO=path.join(config.payload,'hbmenu.nro');
     const client=await tools(folder);
-    record={...record,session:path.basename(run),workspace:folder,started:new Date().toISOString()};
+    record={...record,session:path.basename(run),workspace:folder,started:new Date().toISOString(),
+      kaihenRelease:config.manifest?.release||null,kaihenArchiveSha256:config.manifest?.archiveSha256||null,
+      kaihenConfigurationSha256:config.manifest?.configurationSha256||null};
     await fs.writeFile(path.join(run,'painel-kaihen.json'),JSON.stringify(record,null,2));
     await invalidateSession(run,'Transição exclusiva para kaiHEN. Reinicie antes de voltar a backups ou FTP.');
     mutated=true;

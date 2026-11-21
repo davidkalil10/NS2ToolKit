@@ -1,5 +1,14 @@
 # Histórico de versões
 
+## 0.1.11 — 21 de novembro de 2026
+
+- Atualiza o pacote homebrew para kaiHEN 20261117.1; reconexão 4/4 e reativação do hbmenu confirmadas no console.
+- Centraliza versão, origem, hashes, fontes e perfil de integração em `kaihen-config.json`.
+- Adiciona `Atualizar-Kaihen.ps1` para preparar e verificar arquivos no PC, sem operações no console.
+- Valida downloads temporários e extração em pasta nova antes de aceitar o cache.
+- Mostra a versão do kaiHEN na janela e registra versão/configuração usada na sessão e no portátil.
+- Preserva o host Windows, o fluxo 4/4 e os módulos de saves, backups e FTP.
+
 ## 0.1.10 — 15 de novembro de 2026
 
 - Centraliza a conexão na tela inicial. **Ativar Homebrew** fica disponível após 4/4 mantido e usa a mesma sessão, sem pedir LOAD/RUN/REMOVE/START novamente.

@@ -1,8 +1,8 @@
 # Fontes dos componentes distribuídos
 
-O portátil contém os arquivos oficiais de kaiHEN 20261114d, sem recompilação ou modificação dos binários. As licenças originais acompanham `payload/licenses`. Os arquivos ZIP em `sources/` contêm fontes e receitas de compilação dos projetos distribuídos, nas revisões listadas em `source-manifest.json`, com SHA-256.
+O portátil contém os arquivos oficiais de kaiHEN 20261117.1, sem recompilação ou modificação dos binários. As licenças originais acompanham `payload/licenses`. Os arquivos ZIP em `sources/` contêm fontes e receitas de compilação dos projetos distribuídos, nas revisões listadas em `source-manifest.json`, com SHA-256.
 
-Componentes: kaiHEN, ounce-hbloader, ounce-hbmenu, OunceShell (incluindo ftpd), libounce, OunceVK, libkaihen do SDK e ounce-devkit 20261114. O manifesto também inclui libconfig 1.7.2 e as receitas/patches Switch de devkitPro. São arquivos de desenvolvimento; não precisam ser extraídos para executar o assistente. Consulte os avisos e as licenças dentro de cada projeto antes de redistribuir modificações.
+Componentes: kaiHEN, ounce-hbloader, ounce-hbmenu, OunceShell (incluindo ftpd), libounce, OunceVK, libkaihen do SDK e ounce-devkit 20261117. O manifesto também inclui libconfig 1.7.2 e as receitas/patches Switch de devkitPro. São arquivos de desenvolvimento; não precisam ser extraídos para executar o assistente. Consulte os avisos e as licenças dentro de cada projeto antes de redistribuir modificações.
 
 ## Compilar ou modificar
 
@@ -14,3 +14,5 @@ Componentes: kaiHEN, ounce-hbloader, ounce-hbmenu, OunceShell (incluindo ftpd), 
 O host JavaScript modificado fica em `host/`, com README e licença de origem. Os patches locais estão descritos no README desta integração. Não há alterações locais nos binários oficiais nem alegação de reprodução binária idêntica em uma máquina diferente.
 
 No repositório do NS2ToolKit, `Preparar-Fontes-Kaihen.ps1` baixa/confere os arquivos de fonte antes do empacotamento; `-Offline` exige os arquivos já presentes no cache. `Empacotar-Portatil.ps1` exige todos os arquivos e os inclui no ZIP da release, junto do manifesto e deste guia.
+
+A lista de fontes e revisoes e definida apenas em `kaihen-config.json`; `source-manifest.json` e gerado por `Preparar-Fontes-Kaihen.ps1` apos verificar todos os arquivos. Os hashes tornam o cache independente de alteracoes posteriores em tags remotas.

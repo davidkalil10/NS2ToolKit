@@ -45,6 +45,9 @@ $taskWindow=[Activator]::CreateInstance($taskAssembly.GetType('NS2Panel.KaihenWi
 try{
     TaskShow $taskWindow
     foreach($taskField in (TaskGet $taskWindow 'commands')){if($taskField.Visible){throw 'A janela de sessão ativa repetiu os comandos de conexão.'}}
+    $taskConfiguredRelease=(Get-Content -LiteralPath (Join-Path $Package 'integrations/kaihen/kaihen-config.json') -Raw | ConvertFrom-Json).release
+    $taskVersionLabels=@($taskWindow.Controls | Where-Object {$_ -is [Windows.Forms.Label] -and $_.Text.Contains('kaiHEN '+$taskConfiguredRelease)})
+    if($taskVersionLabels.Count -ne 1){throw 'A janela nao mostra a versao definida na configuracao central.'}
     if((TaskGet $taskWindow 'status').Text -notmatch '4/4'){throw 'A conexão existente não foi identificada.'}
     $taskWindow.GetType().GetMethod('Start',$taskFlags).Invoke($taskWindow,@())|Out-Null;TaskPump $taskWindow
     if(-not $taskWindow.ReadyForGame){throw 'A ativação com sessão existente não foi reconhecida.'}
